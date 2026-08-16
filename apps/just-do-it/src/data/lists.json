@@ -1,0 +1,10 @@
+[
+  {
+    "id": "bucket-list",
+    "name": "Bucket List",
+    "items": [
+      { "id": "visit-japan", "title": "Visit Japan", "complete": false },
+      { "id": "learn-photography", "title": "Learn photography", "complete": false }
+    ]
+  }
+]

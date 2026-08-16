@@ -1,0 +1,61 @@
+import { z } from 'zod'
+
+import booksFixture from './books.json'
+import goalsFixture from './goals.json'
+import habitsFixture from './habits.json'
+import listsFixture from './lists.json'
+import tasksFixture from './tasks.json'
+
+const taskSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  category: z.enum(['Personal', 'Reading', 'Workout', 'Hobby', 'Errand', 'Other']),
+  complete: z.boolean(),
+})
+
+const habitSchema = z.object({
+  id: z.string(),
+  label: z.string().min(1),
+  days: z.array(z.boolean()).length(5),
+})
+
+const goalSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  period: z.string().min(1),
+  progress: z.number().min(0).max(100),
+  remainingLabel: z.string().min(1),
+})
+
+const bookSchema = z.object({
+  id: z.string(),
+  title: z.string().min(1),
+  author: z.string().min(1),
+  status: z.enum(['want_to_read', 'reading', 'finished', 'abandoned']),
+})
+
+const listSchema = z.object({
+  id: z.string(),
+  name: z.string().min(1),
+  items: z.array(
+    z.object({
+      id: z.string(),
+      title: z.string().min(1),
+      complete: z.boolean(),
+    }),
+  ),
+})
+
+export type DashboardTask = z.infer<typeof taskSchema>
+
+export const dashboardData = {
+  tasks: z.array(taskSchema).parse(tasksFixture),
+  habits: z.array(habitSchema).parse(habitsFixture),
+  goal: z.array(goalSchema).min(1).parse(goalsFixture)[0],
+}
+
+export const staticData = {
+  books: z.array(bookSchema).parse(booksFixture),
+  lists: z.array(listSchema).parse(listsFixture),
+}

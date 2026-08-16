@@ -1,0 +1,26 @@
+[
+  {
+    "id": "read-20-pages",
+    "title": "Read 20 pages",
+    "category": "Reading",
+    "complete": false
+  },
+  {
+    "id": "go-for-a-run",
+    "title": "Go for a run",
+    "category": "Workout",
+    "complete": false
+  },
+  {
+    "id": "finish-portfolio-landing-page",
+    "title": "Finish portfolio landing page",
+    "category": "Personal",
+    "complete": false
+  },
+  {
+    "id": "buy-groceries",
+    "title": "Buy groceries",
+    "category": "Errand",
+    "complete": true
+  }
+]

@@ -2,33 +2,14 @@ import { ArrowUpRight, Check, Circle, Plus, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
 import { Badge, Button, Card, cn, Input } from '@just-do-it/ui'
-
-type Task = {
-  id: number
-  title: string
-  category: 'Personal' | 'Reading' | 'Workout' | 'Errand'
-  complete: boolean
-}
-
-const initialTasks: Task[] = [
-  { id: 1, title: 'Read 20 pages', category: 'Reading', complete: false },
-  { id: 2, title: 'Go for a run', category: 'Workout', complete: false },
-  { id: 3, title: 'Finish portfolio landing page', category: 'Personal', complete: false },
-  { id: 4, title: 'Buy groceries', category: 'Errand', complete: true },
-]
-
-const habits = [
-  { label: 'Workout', days: [true, true, true, false, true] },
-  { label: 'Reading', days: [true, true, true, true, false] },
-  { label: 'Meditation', days: [true, true, false, true, false] },
-]
+import { dashboardData, type DashboardTask } from '../data/dashboard'
 
 export function TodayPage() {
-  const [tasks, setTasks] = useState(initialTasks)
+  const [tasks, setTasks] = useState(() => dashboardData.tasks)
   const [newTask, setNewTask] = useState('')
   const incompleteCount = useMemo(() => tasks.filter((task) => !task.complete).length, [tasks])
 
-  function toggleTask(id: number) {
+  function toggleTask(id: string) {
     setTasks((current) =>
       current.map((task) => (task.id === id ? { ...task, complete: !task.complete } : task)),
     )
@@ -40,7 +21,7 @@ export function TodayPage() {
 
     setTasks((current) => [
       ...current,
-      { id: Date.now(), title, category: 'Personal', complete: false },
+      { id: crypto.randomUUID(), title, category: 'Personal', complete: false } satisfies DashboardTask,
     ])
     setNewTask('')
   }
@@ -132,7 +113,7 @@ export function TodayPage() {
           <Card>
             <h2 className="mb-5 text-lg font-bold">Habits</h2>
             <div className="space-y-5">
-              {habits.map((habit) => (
+              {dashboardData.habits.map((habit) => (
                 <div key={habit.label}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium">{habit.label}</span>
@@ -160,20 +141,23 @@ export function TodayPage() {
           <Card variant="accent">
             <div className="flex items-start justify-between">
               <div>
-                <Badge tone="accent">August goal</Badge>
-                <h2 className="mt-3 font-bold">Build momentum</h2>
+                <Badge tone="accent">{dashboardData.goal.period} goal</Badge>
+                <h2 className="mt-3 font-bold">{dashboardData.goal.title}</h2>
                 <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                  Complete your most important tasks this month.
+                  {dashboardData.goal.description}
                 </p>
               </div>
               <ArrowUpRight aria-hidden="true" className="size-5 text-[var(--primary)]" />
             </div>
             <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/70">
-              <div className="h-full w-[72%] rounded-full bg-[var(--primary)]" />
+              <div
+                className="h-full rounded-full bg-[var(--primary)]"
+                style={{ width: `${dashboardData.goal.progress}%` }}
+              />
             </div>
             <div className="mt-2 flex justify-between text-xs text-[var(--muted-foreground)]">
-              <span>72% complete</span>
-              <span>18 days left</span>
+              <span>{dashboardData.goal.progress}% complete</span>
+              <span>{dashboardData.goal.remainingLabel}</span>
             </div>
           </Card>
 

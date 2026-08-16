@@ -1,0 +1,17 @@
+[
+  {
+    "id": "workout",
+    "label": "Workout",
+    "days": [true, true, true, false, true]
+  },
+  {
+    "id": "reading",
+    "label": "Reading",
+    "days": [true, true, true, true, false]
+  },
+  {
+    "id": "meditation",
+    "label": "Meditation",
+    "days": [true, true, false, true, false]
+  }
+]
