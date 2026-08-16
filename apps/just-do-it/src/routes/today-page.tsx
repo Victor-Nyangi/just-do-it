@@ -1,10 +1,7 @@
 import { ArrowUpRight, Check, Circle, Plus, Sparkles } from 'lucide-react'
 import { useMemo, useState } from 'react'
 
-import { Badge } from '../components/ui/badge'
-import { Button } from '../components/ui/button'
-import { Card } from '../components/ui/card'
-import { cn } from '../lib/cn'
+import { Badge, Button, Card, cn, Input } from '@just-do-it/ui'
 
 type Task = {
   id: number
@@ -117,8 +114,8 @@ export function TodayPage() {
               <h2 className="font-bold">Quick add</h2>
             </div>
             <div className="flex gap-2">
-              <input
-                className="h-10 min-w-0 flex-1 rounded-lg border bg-transparent px-3 text-sm outline-none placeholder:text-[var(--muted-foreground)] focus:ring-2 focus:ring-[var(--ring)]"
+              <Input
+                className="flex-1"
                 onChange={(event) => setNewTask(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') addTask()
