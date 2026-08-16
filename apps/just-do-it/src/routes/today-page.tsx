@@ -3,11 +3,21 @@ import { format } from 'date-fns'
 import { useState } from 'react'
 
 import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
-import { dashboardData } from '../data/dashboard'
-import { TaskMetadata, toTaskInput, useCreateTask, useOpenTaskCount, useTodayTasks, useToggleTaskCompletion } from '../features/tasks'
+import { usePrimaryGoal } from '../features/goals'
+import { selectHabitCompletionCount, useHabits } from '../features/habits'
+import {
+  TaskMetadata,
+  toTaskInput,
+  useCreateTask,
+  useOpenTaskCount,
+  useTodayTasks,
+  useToggleTaskCompletion,
+} from '../features/tasks'
 
 export function TodayPage() {
   const tasks = useTodayTasks()
+  const habits = useHabits()
+  const goal = usePrimaryGoal()
   const openTaskCount = useOpenTaskCount()
   const createTask = useCreateTask()
   const toggleTaskCompletion = useToggleTaskCompletion()
@@ -145,12 +155,12 @@ export function TodayPage() {
           <Card>
             <h2 className="mb-5 text-lg font-bold">Habits</h2>
             <div className="space-y-5">
-              {dashboardData.habits.map((habit) => (
-                <div key={habit.label}>
+              {habits.map((habit) => (
+                <div key={habit.id}>
                   <div className="mb-2 flex items-center justify-between">
                     <span className="text-sm font-medium">{habit.label}</span>
                     <span className="text-xs text-[var(--muted-foreground)]">
-                      {habit.days.filter(Boolean).length}/5 this week
+                      {selectHabitCompletionCount(habit)}/5 this week
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -170,28 +180,30 @@ export function TodayPage() {
             </div>
           </Card>
 
-          <Card variant="accent">
-            <div className="flex items-start justify-between">
-              <div>
-                <Badge tone="accent">{dashboardData.goal.period} goal</Badge>
-                <h2 className="mt-3 font-bold">{dashboardData.goal.title}</h2>
-                <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                  {dashboardData.goal.description}
-                </p>
+          {goal ? (
+            <Card variant="accent">
+              <div className="flex items-start justify-between">
+                <div>
+                  <Badge tone="accent">{goal.period} goal</Badge>
+                  <h2 className="mt-3 font-bold">{goal.title}</h2>
+                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                    {goal.description}
+                  </p>
+                </div>
+                <ArrowUpRight aria-hidden="true" className="size-5 text-[var(--primary)]" />
               </div>
-              <ArrowUpRight aria-hidden="true" className="size-5 text-[var(--primary)]" />
-            </div>
-            <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/70">
-              <div
-                className="h-full rounded-full bg-[var(--primary)]"
-                style={{ width: `${dashboardData.goal.progress}%` }}
-              />
-            </div>
-            <div className="mt-2 flex justify-between text-xs text-[var(--muted-foreground)]">
-              <span>{dashboardData.goal.progress}% complete</span>
-              <span>{dashboardData.goal.remainingLabel}</span>
-            </div>
-          </Card>
+              <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/70">
+                <div
+                  className="h-full rounded-full bg-[var(--primary)]"
+                  style={{ width: `${goal.progress}%` }}
+                />
+              </div>
+              <div className="mt-2 flex justify-between text-xs text-[var(--muted-foreground)]">
+                <span>{goal.progress}% complete</span>
+                <span>{goal.remainingLabel}</span>
+              </div>
+            </Card>
+          ) : null}
 
           <div className="rounded-xl border border-dashed border-[var(--border)] p-5">
             <div className="flex items-center gap-3">
