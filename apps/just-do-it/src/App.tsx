@@ -1,10 +1,11 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom';
 
-import { AppLayout } from './layouts/app-layout'
-import { CalendarPage } from './routes/calendar-page'
-import { PlaceholderPage } from './routes/placeholder-page'
-import { TasksPage } from './routes/tasks-page'
-import { TodayPage } from './routes/today-page'
+import { AppLayout } from './layouts/app-layout';
+import { CalendarPage } from './routes/calendar-page';
+import { GoalsPage } from './routes/goals-page';
+import { PlaceholderPage } from './routes/placeholder-page';
+import { TasksPage } from './routes/tasks-page';
+import { TodayPage } from './routes/today-page';
 
 export default function App() {
   return (
@@ -14,7 +15,7 @@ export default function App() {
         <Route path="/today" element={<TodayPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
-        <Route path="/goals" element={<PlaceholderPage title="Goals" />} />
+        <Route path="/goals" element={<GoalsPage />} />
         <Route path="/habits" element={<PlaceholderPage title="Habits" />} />
         <Route path="/books" element={<PlaceholderPage title="Books" />} />
         <Route path="/lists" element={<PlaceholderPage title="Lists" />} />
@@ -23,5 +24,5 @@ export default function App() {
       </Route>
       <Route path="*" element={<Navigate replace to="/today" />} />
     </Routes>
-  )
+  );
 }

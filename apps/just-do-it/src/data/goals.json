@@ -2,9 +2,37 @@
   {
     "id": "build-momentum",
     "title": "Build momentum",
-    "description": "Complete your most important tasks this month.",
-    "period": "August",
+    "description": "Complete your most important work this month without losing the bigger picture.",
+    "period": "August focus",
+    "targetDate": "2026-08-31",
     "progress": 72,
-    "remainingLabel": "18 days left"
+    "status": "active"
+  },
+  {
+    "id": "reading-rhythm",
+    "title": "Finish 4 books",
+    "description": "Keep the reading stack moving with consistent evening sessions.",
+    "period": "Summer reading",
+    "targetDate": "2026-09-12",
+    "progress": 50,
+    "status": "active"
+  },
+  {
+    "id": "portfolio-refresh",
+    "title": "Ship portfolio refresh",
+    "description": "Pause the redesign until the core planner experience is in a stronger place.",
+    "period": "Q3 project",
+    "targetDate": "2026-09-30",
+    "progress": 35,
+    "status": "paused"
+  },
+  {
+    "id": "steady-workouts",
+    "title": "Complete 12 workouts",
+    "description": "Keep the month anchored with consistent training sessions.",
+    "period": "August wellness",
+    "targetDate": "2026-08-28",
+    "progress": 100,
+    "status": "completed"
   }
 ]
