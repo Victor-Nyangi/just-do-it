@@ -1,10 +1,15 @@
-import { format, subDays } from 'date-fns'
-import { CheckCheck, Flame, Goal, ListTodo, Plus, Sparkles } from 'lucide-react'
-import { useState } from 'react'
+import { format, subDays } from 'date-fns';
+import { CheckCheck, Flame, Goal, ListTodo, Plus, Sparkles } from 'lucide-react';
+import { useState } from 'react';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
-import { useGoals } from '../features/goals'
-import { HABIT_DAY_COUNT, selectHabitCompletionCount, useHabits, useToggleHabitCompletion } from '../features/habits'
+import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
+import { formatGoalDeadlineLabel, formatGoalStatusLabel, useGoals } from '../features/goals';
+import {
+  HABIT_DAY_COUNT,
+  selectHabitCompletionCount,
+  useHabits,
+  useToggleHabitCompletion,
+} from '../features/habits';
 import {
   TaskMetadata,
   selectTodayTaskSections,
@@ -14,17 +19,17 @@ import {
   useTasks,
   useToggleTaskCompletion,
   type TodayTaskSectionKey,
-} from '../features/tasks'
+} from '../features/tasks';
 
-const todayHabitIndex = HABIT_DAY_COUNT - 1
+const todayHabitIndex = HABIT_DAY_COUNT - 1;
 
 const sectionCopy: Record<
   TodayTaskSectionKey,
   {
-    description: string
-    emptyLabel: string
-    title: string
-    tone: 'accent' | 'neutral' | 'warning'
+    description: string;
+    emptyLabel: string;
+    title: string;
+    tone: 'accent' | 'neutral' | 'warning';
   }
 > = {
   overdue: {
@@ -45,39 +50,39 @@ const sectionCopy: Record<
     emptyLabel: 'No flexible tasks waiting.',
     tone: 'neutral',
   },
-}
+};
 
 function getGoalTone(progress: number): 'accent' | 'neutral' | 'success' {
-  if (progress >= 100) return 'success'
-  if (progress > 0) return 'accent'
-  return 'neutral'
+  if (progress >= 100) return 'success';
+  if (progress > 0) return 'accent';
+  return 'neutral';
 }
 
 export function TodayPage() {
-  const now = new Date()
-  const tasks = useTasks()
-  const todaySections = selectTodayTaskSections(tasks, now)
-  const habits = useHabits()
-  const goals = useGoals()
-  const openTaskCount = useOpenTaskCount()
-  const createTask = useCreateTask()
-  const toggleTaskCompletion = useToggleTaskCompletion()
-  const toggleHabitCompletion = useToggleHabitCompletion()
-  const [newTask, setNewTask] = useState('')
+  const now = new Date();
+  const tasks = useTasks();
+  const todaySections = selectTodayTaskSections(tasks, now);
+  const habits = useHabits();
+  const goals = useGoals();
+  const openTaskCount = useOpenTaskCount();
+  const createTask = useCreateTask();
+  const toggleTaskCompletion = useToggleTaskCompletion();
+  const toggleHabitCompletion = useToggleHabitCompletion();
+  const [newTask, setNewTask] = useState('');
 
-  const overdueCount = todaySections[0]?.tasks.length ?? 0
-  const todayCount = todaySections[1]?.tasks.length ?? 0
-  const unscheduledCount = todaySections[2]?.tasks.length ?? 0
-  const actionableTaskCount = overdueCount + todayCount + unscheduledCount
-  const checkedHabitsTodayCount = habits.filter((habit) => habit.days[todayHabitIndex]).length
+  const overdueCount = todaySections[0]?.tasks.length ?? 0;
+  const todayCount = todaySections[1]?.tasks.length ?? 0;
+  const unscheduledCount = todaySections[2]?.tasks.length ?? 0;
+  const actionableTaskCount = overdueCount + todayCount + unscheduledCount;
+  const checkedHabitsTodayCount = habits.filter((habit) => habit.days[todayHabitIndex]).length;
   const recentHabitDates = Array.from({ length: HABIT_DAY_COUNT }, (_, index) =>
     subDays(now, HABIT_DAY_COUNT - index - 1),
-  )
-  const primaryGoal = goals[0] ?? null
+  );
+  const primaryGoal = goals[0] ?? null;
 
   function addTask() {
-    const title = newTask.trim()
-    if (!title) return
+    const title = newTask.trim();
+    if (!title) return;
 
     createTask(
       toTaskInput({
@@ -90,8 +95,8 @@ export function TodayPage() {
         recurrence: 'none',
         recurrenceInterval: 1,
       }),
-    )
-    setNewTask('')
+    );
+    setNewTask('');
   }
 
   return (
@@ -123,7 +128,9 @@ export function TodayPage() {
             </div>
           </div>
           <p className="text-sm text-[var(--muted-foreground)]">
-            {overdueCount === 0 ? 'No carry-over tasks.' : `${todayCount} due today and ${unscheduledCount} flexible next.`}
+            {overdueCount === 0
+              ? 'No carry-over tasks.'
+              : `${todayCount} due today and ${unscheduledCount} flexible next.`}
           </p>
         </Card>
 
@@ -153,7 +160,9 @@ export function TodayPage() {
             </div>
           </div>
           <p className="text-sm text-[var(--muted-foreground)]">
-            {primaryGoal ? primaryGoal.remainingLabel : 'No goals in view yet.'}
+            {primaryGoal
+              ? formatGoalDeadlineLabel(primaryGoal.targetDate)
+              : 'No goals in view yet.'}
           </p>
         </Card>
       </div>
@@ -180,13 +189,14 @@ export function TodayPage() {
                 </div>
                 <h3 className="mt-4 text-lg font-bold">No actionable tasks remain</h3>
                 <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-                  You&apos;re clear on overdue, due-today, and unscheduled work. Add a new focus item below or visit Tasks for upcoming plans.
+                  You&apos;re clear on overdue, due-today, and unscheduled work. Add a new focus
+                  item below or visit Tasks for upcoming plans.
                 </p>
               </div>
             ) : (
               <div className="space-y-6">
                 {todaySections.map((section) => {
-                  const copy = sectionCopy[section.key]
+                  const copy = sectionCopy[section.key];
 
                   return (
                     <section key={section.key}>
@@ -237,7 +247,11 @@ export function TodayPage() {
                                             </p>
                                           ) : null}
                                         </div>
-                                        <Badge tone={task.status === 'in_progress' ? 'accent' : 'neutral'}>
+                                        <Badge
+                                          tone={
+                                            task.status === 'in_progress' ? 'accent' : 'neutral'
+                                          }
+                                        >
                                           {task.status === 'in_progress' ? 'In progress' : 'Ready'}
                                         </Badge>
                                       </div>
@@ -253,12 +267,12 @@ export function TodayPage() {
                                   </div>
                                 </div>
                               </li>
-                            )
+                            );
                           })}
                         </ul>
                       ) : null}
                     </section>
-                  )
+                  );
                 })}
               </div>
             )}
@@ -278,8 +292,8 @@ export function TodayPage() {
             <form
               className="flex flex-col gap-3 sm:flex-row"
               onSubmit={(event) => {
-                event.preventDefault()
-                addTask()
+                event.preventDefault();
+                addTask();
               }}
             >
               <label className="sr-only" htmlFor="today-quick-add">
@@ -314,17 +328,25 @@ export function TodayPage() {
                   Toggle today&apos;s status without creating separate local state.
                 </p>
               </div>
-              <Badge tone={checkedHabitsTodayCount === habits.length && habits.length > 0 ? 'success' : 'accent'}>
+              <Badge
+                tone={
+                  checkedHabitsTodayCount === habits.length && habits.length > 0
+                    ? 'success'
+                    : 'accent'
+                }
+              >
                 {checkedHabitsTodayCount}/{habits.length} today
               </Badge>
             </div>
 
             {habits.length === 0 ? (
-              <p className="text-sm text-[var(--muted-foreground)]">No habits are being tracked yet.</p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No habits are being tracked yet.
+              </p>
             ) : (
               <ul className="space-y-4">
                 {habits.map((habit) => {
-                  const completedToday = habit.days[todayHabitIndex]
+                  const completedToday = habit.days[todayHabitIndex];
 
                   return (
                     <li key={habit.id}>
@@ -359,7 +381,10 @@ export function TodayPage() {
 
                         <div aria-hidden="true" className="mt-4 flex items-center gap-2">
                           {habit.days.map((complete, index) => (
-                            <div className="flex flex-col items-center gap-1" key={`${habit.id}-${index}`}>
+                            <div
+                              className="flex flex-col items-center gap-1"
+                              key={`${habit.id}-${index}`}
+                            >
                               <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
                                 {format(recentHabitDates[index], 'EEEEE')}
                               </span>
@@ -369,7 +394,9 @@ export function TodayPage() {
                                   complete
                                     ? 'border-[var(--primary)] bg-[var(--primary)]'
                                     : 'border-[var(--border)] bg-[var(--surface)]',
-                                  index === todayHabitIndex ? 'ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-[var(--surface-muted)]' : '',
+                                  index === todayHabitIndex
+                                    ? 'ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-[var(--surface-muted)]'
+                                    : '',
                                 )}
                               />
                             </div>
@@ -377,7 +404,7 @@ export function TodayPage() {
                         </div>
                       </div>
                     </li>
-                  )
+                  );
                 })}
               </ul>
             )}
@@ -397,7 +424,9 @@ export function TodayPage() {
             </div>
 
             {goals.length === 0 ? (
-              <p className="text-sm text-[var(--muted-foreground)]">No goals are active right now.</p>
+              <p className="text-sm text-[var(--muted-foreground)]">
+                No goals are active right now.
+              </p>
             ) : (
               <ul className="space-y-4">
                 {goals.map((goal) => (
@@ -428,8 +457,8 @@ export function TodayPage() {
                           />
                         </div>
                         <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
-                          <span>{goal.status.replaceAll('_', ' ')}</span>
-                          <span>{goal.remainingLabel}</span>
+                          <span>{formatGoalStatusLabel(goal.status)}</span>
+                          <span>{formatGoalDeadlineLabel(goal.targetDate)}</span>
                         </div>
                       </div>
                     </div>
@@ -441,5 +470,5 @@ export function TodayPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

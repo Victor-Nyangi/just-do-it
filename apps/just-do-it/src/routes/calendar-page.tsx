@@ -17,7 +17,7 @@ import {
   startOfDay,
   startOfMonth,
   startOfWeek,
-} from 'date-fns'
+} from 'date-fns';
 import {
   CalendarClock,
   CheckCircle2,
@@ -28,12 +28,12 @@ import {
   ListTodo,
   RotateCcw,
   type LucideIcon,
-} from 'lucide-react'
-import { useMemo, useState } from 'react'
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
 
-import { Badge, Button, Card, cn } from '@just-do-it/ui'
-import { useGoals, type Goal } from '../features/goals'
-import { HABIT_DAY_COUNT, useHabits, type Habit } from '../features/habits'
+import { Badge, Button, Card, cn } from '@just-do-it/ui';
+import { formatGoalDeadlineLabel, useGoals, type Goal } from '../features/goals';
+import { HABIT_DAY_COUNT, useHabits, type Habit } from '../features/habits';
 import {
   TaskMetadata,
   selectFilteredTasks,
@@ -41,77 +41,60 @@ import {
   useToggleTaskCompletion,
   type Task,
   type TaskFilters,
-} from '../features/tasks'
+} from '../features/tasks';
 
-const weekStartsOn = 1 as const
-const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const
+const weekStartsOn = 1 as const;
+const weekdayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 const allTaskFilters: TaskFilters = {
   priority: 'all',
   category: 'all',
-}
+};
 
-type AgendaMode = 'day' | 'week'
-type AgendaItemKind = 'task' | 'habit' | 'goal'
-type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning'
+type AgendaMode = 'day' | 'week';
+type AgendaItemKind = 'task' | 'habit' | 'goal';
+type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
 
 type DayIndicators = {
-  tasks: number
-  habits: number
-  goals: number
-}
+  tasks: number;
+  habits: number;
+  goals: number;
+};
 
 type GoalTarget = {
-  id: string
-  title: string
-  description: string
-  progress: number
-  remainingLabel: string
-  targetDate: Date
-}
+  id: string;
+  title: string;
+  progress: number;
+  targetDate: Date;
+};
 
 type AgendaItem = {
-  id: string
-  kind: AgendaItemKind
-  title: string
-  description: string
-  badge: string
-  date: Date
-  tone: BadgeTone
-}
+  id: string;
+  kind: AgendaItemKind;
+  title: string;
+  description: string;
+  badge: string;
+  date: Date;
+  tone: BadgeTone;
+};
 
 const agendaKindOrder: Record<AgendaItemKind, number> = {
   task: 0,
   goal: 1,
   habit: 2,
-}
+};
 
 const agendaIcons: Record<AgendaItemKind, LucideIcon> = {
   task: CalendarClock,
   goal: GoalIcon,
   habit: Flame,
-}
-
-const monthIndexByName = new Map<string, number>([
-  ['january', 0],
-  ['february', 1],
-  ['march', 2],
-  ['april', 3],
-  ['may', 4],
-  ['june', 5],
-  ['july', 6],
-  ['august', 7],
-  ['september', 8],
-  ['october', 9],
-  ['november', 10],
-  ['december', 11],
-])
+};
 
 function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`
+  return `${count} ${count === 1 ? singular : plural}`;
 }
 
 function toIsoDateKey(date: Date): string {
-  return format(date, 'yyyy-MM-dd')
+  return format(date, 'yyyy-MM-dd');
 }
 
 function createEmptyDayIndicators(): DayIndicators {
@@ -119,97 +102,74 @@ function createEmptyDayIndicators(): DayIndicators {
     tasks: 0,
     habits: 0,
     goals: 0,
-  }
+  };
 }
 
 function createMonthSelection(currentSelection: Date, nextMonth: Date): Date {
-  const nextDayOfMonth = Math.min(getDate(currentSelection), getDaysInMonth(nextMonth))
+  const nextDayOfMonth = Math.min(getDate(currentSelection), getDaysInMonth(nextMonth));
 
-  return startOfDay(new Date(getYear(nextMonth), getMonth(nextMonth), nextDayOfMonth))
+  return startOfDay(new Date(getYear(nextMonth), getMonth(nextMonth), nextDayOfMonth));
 }
 
 function createTaskMap(tasks: readonly Task[]): Map<string, Task[]> {
-  const tasksByDate = new Map<string, Task[]>()
+  const tasksByDate = new Map<string, Task[]>();
 
   for (const task of tasks) {
-    if (!task.dueDate) continue
+    if (!task.dueDate) continue;
 
-    const currentTasks = tasksByDate.get(task.dueDate)
+    const currentTasks = tasksByDate.get(task.dueDate);
 
     if (currentTasks) {
-      currentTasks.push(task)
-      continue
+      currentTasks.push(task);
+      continue;
     }
 
-    tasksByDate.set(task.dueDate, [task])
+    tasksByDate.set(task.dueDate, [task]);
   }
 
-  return tasksByDate
+  return tasksByDate;
 }
 
 function createHabitActivityMap(habits: readonly Habit[], anchorDate: Date): Map<string, string[]> {
-  const habitActivityByDate = new Map<string, string[]>()
+  const habitActivityByDate = new Map<string, string[]>();
 
   for (const habit of habits) {
     for (let dayIndex = 0; dayIndex < habit.days.length; dayIndex += 1) {
-      if (!habit.days[dayIndex]) continue
+      if (!habit.days[dayIndex]) continue;
 
-      const day = addDays(anchorDate, dayIndex - (HABIT_DAY_COUNT - 1))
-      const dateKey = toIsoDateKey(day)
-      const currentActivity = habitActivityByDate.get(dateKey)
+      const day = addDays(anchorDate, dayIndex - (HABIT_DAY_COUNT - 1));
+      const dateKey = toIsoDateKey(day);
+      const currentActivity = habitActivityByDate.get(dateKey);
 
       if (currentActivity) {
-        currentActivity.push(habit.label)
-        continue
+        currentActivity.push(habit.label);
+        continue;
       }
 
-      habitActivityByDate.set(dateKey, [habit.label])
+      habitActivityByDate.set(dateKey, [habit.label]);
     }
   }
 
-  return habitActivityByDate
+  return habitActivityByDate;
 }
 
-function inferGoalTargetDate(goal: Goal, anchorDate: Date): Date {
-  const normalizedPeriod = goal.period.toLowerCase()
-
-  for (const [monthName, monthIndex] of monthIndexByName) {
-    if (!normalizedPeriod.includes(monthName)) continue
-
-    const year =
-      monthIndex < anchorDate.getMonth() ? anchorDate.getFullYear() + 1 : anchorDate.getFullYear()
-
-    return endOfMonth(new Date(year, monthIndex, 1))
-  }
-
-  const remainingDaysMatch = goal.remainingLabel.match(/(\d+)\s+day/u)
-
-  if (remainingDaysMatch?.[1]) {
-    return startOfDay(addDays(anchorDate, Number.parseInt(remainingDaysMatch[1], 10)))
-  }
-
-  return endOfMonth(anchorDate)
-}
-
-function createGoalTargets(goals: readonly Goal[], anchorDate: Date): GoalTarget[] {
+function createGoalTargets(goals: readonly Goal[]): GoalTarget[] {
   return [...goals]
     .map((goal) => ({
       id: goal.id,
       title: goal.title,
-      description: goal.description,
       progress: goal.progress,
-      remainingLabel: goal.remainingLabel,
-      targetDate: inferGoalTargetDate(goal, anchorDate),
+      targetDate: startOfDay(parseISO(goal.targetDate)),
     }))
-    .sort((leftTarget, rightTarget) => compareAsc(leftTarget.targetDate, rightTarget.targetDate))
+    .sort((leftTarget, rightTarget) => compareAsc(leftTarget.targetDate, rightTarget.targetDate));
 }
 
 function getTaskAgendaTone(task: Task): BadgeTone {
-  if (task.status === 'completed') return 'success'
-  if (task.priority === 'urgent' || task.priority === 'high') return 'warning'
-  if (task.status === 'in_progress') return 'accent'
+  if (task.status === 'completed') return 'success';
+  if (task.priority === 'urgent' || task.priority === 'high') return 'warning';
+  if (task.status === 'in_progress') return 'accent';
 
-  return 'neutral'
+  return 'neutral';
 }
 
 function createAgendaItems(
@@ -217,10 +177,10 @@ function createAgendaItems(
   habitActivityByDate: Map<string, string[]>,
   goalTargets: readonly GoalTarget[],
 ): AgendaItem[] {
-  const agendaItems: AgendaItem[] = []
+  const agendaItems: AgendaItem[] = [];
 
   for (const task of tasks) {
-    if (!task.dueDate) continue
+    if (!task.dueDate) continue;
 
     agendaItems.push({
       id: `task-${task.id}`,
@@ -237,7 +197,7 @@ function createAgendaItems(
             : 'Due task',
       date: parseISO(task.dueDate),
       tone: getTaskAgendaTone(task),
-    })
+    });
   }
 
   for (const [dateKey, labels] of habitActivityByDate) {
@@ -249,7 +209,7 @@ function createAgendaItems(
       badge: 'Habit activity',
       date: parseISO(dateKey),
       tone: 'success',
-    })
+    });
   }
 
   for (const goalTarget of goalTargets) {
@@ -257,24 +217,24 @@ function createAgendaItems(
       id: `goal-${goalTarget.id}`,
       kind: 'goal',
       title: goalTarget.title,
-      description: `${goalTarget.progress}% complete · ${goalTarget.remainingLabel}`,
+      description: `${goalTarget.progress}% complete · ${formatGoalDeadlineLabel(toIsoDateKey(goalTarget.targetDate))}`,
       badge: 'Goal target',
       date: goalTarget.targetDate,
       tone: 'accent',
-    })
+    });
   }
 
   return agendaItems.sort((leftItem, rightItem) => {
-    const dateComparison = compareAsc(leftItem.date, rightItem.date)
+    const dateComparison = compareAsc(leftItem.date, rightItem.date);
 
-    if (dateComparison !== 0) return dateComparison
+    if (dateComparison !== 0) return dateComparison;
 
-    const kindComparison = agendaKindOrder[leftItem.kind] - agendaKindOrder[rightItem.kind]
+    const kindComparison = agendaKindOrder[leftItem.kind] - agendaKindOrder[rightItem.kind];
 
-    if (kindComparison !== 0) return kindComparison
+    if (kindComparison !== 0) return kindComparison;
 
-    return leftItem.title.localeCompare(rightItem.title)
-  })
+    return leftItem.title.localeCompare(rightItem.title);
+  });
 }
 
 function createCalendarIndicators(
@@ -282,76 +242,79 @@ function createCalendarIndicators(
   habitActivityByDate: Map<string, string[]>,
   goalTargets: readonly GoalTarget[],
 ): Map<string, DayIndicators> {
-  const indicatorsByDate = new Map<string, DayIndicators>()
+  const indicatorsByDate = new Map<string, DayIndicators>();
 
   for (const [dateKey, dayTasks] of tasksByDate) {
     indicatorsByDate.set(dateKey, {
       ...createEmptyDayIndicators(),
       tasks: dayTasks.length,
-    })
+    });
   }
 
   for (const [dateKey, labels] of habitActivityByDate) {
-    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators()
+    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators();
 
     indicatorsByDate.set(dateKey, {
       ...currentIndicators,
       habits: labels.length,
-    })
+    });
   }
 
   for (const goalTarget of goalTargets) {
-    const dateKey = toIsoDateKey(goalTarget.targetDate)
-    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators()
+    const dateKey = toIsoDateKey(goalTarget.targetDate);
+    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators();
 
     indicatorsByDate.set(dateKey, {
       ...currentIndicators,
       goals: currentIndicators.goals + 1,
-    })
+    });
   }
 
-  return indicatorsByDate
+  return indicatorsByDate;
 }
 
 function getIndicatorsForDate(
   indicatorsByDate: Map<string, DayIndicators>,
   date: Date,
 ): DayIndicators {
-  return indicatorsByDate.get(toIsoDateKey(date)) ?? createEmptyDayIndicators()
+  return indicatorsByDate.get(toIsoDateKey(date)) ?? createEmptyDayIndicators();
 }
 
-function countHabitCheckInsInMonth(habitActivityByDate: Map<string, string[]>, month: Date): number {
-  let total = 0
+function countHabitCheckInsInMonth(
+  habitActivityByDate: Map<string, string[]>,
+  month: Date,
+): number {
+  let total = 0;
 
   for (const [dateKey, labels] of habitActivityByDate) {
-    if (!isSameMonth(parseISO(dateKey), month)) continue
+    if (!isSameMonth(parseISO(dateKey), month)) continue;
 
-    total += labels.length
+    total += labels.length;
   }
 
-  return total
+  return total;
 }
 
 function getDayButtonLabel(date: Date, indicators: DayIndicators): string {
-  const parts = [format(date, 'EEEE, MMMM d, yyyy')]
+  const parts = [format(date, 'EEEE, MMMM d, yyyy')];
 
   if (indicators.tasks > 0) {
-    parts.push(pluralize(indicators.tasks, 'due task'))
+    parts.push(pluralize(indicators.tasks, 'due task'));
   }
 
   if (indicators.habits > 0) {
-    parts.push(pluralize(indicators.habits, 'habit check-in'))
+    parts.push(pluralize(indicators.habits, 'habit check-in'));
   }
 
   if (indicators.goals > 0) {
-    parts.push(pluralize(indicators.goals, 'goal target'))
+    parts.push(pluralize(indicators.goals, 'goal target'));
   }
 
   if (parts.length === 1) {
-    parts.push('No scheduled items')
+    parts.push('No scheduled items');
   }
 
-  return parts.join('. ')
+  return parts.join('. ');
 }
 
 function CalendarEmptyState({
@@ -359,9 +322,9 @@ function CalendarEmptyState({
   icon: Icon,
   title,
 }: {
-  description: string
-  icon: LucideIcon
-  title: string
+  description: string;
+  icon: LucideIcon;
+  title: string;
 }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6 text-center">
@@ -371,7 +334,7 @@ function CalendarEmptyState({
       <h3 className="mt-4 text-lg font-bold">{title}</h3>
       <p className="mt-2 text-sm text-[var(--muted-foreground)]">{description}</p>
     </div>
-  )
+  );
 }
 
 function IndicatorChip({
@@ -380,10 +343,10 @@ function IndicatorChip({
   shortLabel,
   toneClassName,
 }: {
-  count: number
-  label: string
-  shortLabel: string
-  toneClassName: string
+  count: number;
+  label: string;
+  shortLabel: string;
+  toneClassName: string;
 }) {
   return (
     <span
@@ -398,7 +361,7 @@ function IndicatorChip({
         {count} {label}
       </span>
     </span>
-  )
+  );
 }
 
 function AgendaToggleButton({
@@ -406,9 +369,9 @@ function AgendaToggleButton({
   label,
   onClick,
 }: {
-  active: boolean
-  label: string
-  onClick: () => void
+  active: boolean;
+  label: string;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -424,11 +387,11 @@ function AgendaToggleButton({
     >
       {label}
     </button>
-  )
+  );
 }
 
 function AgendaItemCard({ item }: { item: AgendaItem }) {
-  const Icon = agendaIcons[item.kind]
+  const Icon = agendaIcons[item.kind];
 
   return (
     <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
@@ -448,31 +411,31 @@ function AgendaItemCard({ item }: { item: AgendaItem }) {
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export function CalendarPage() {
-  const today = useMemo(() => startOfDay(new Date()), [])
-  const tasks = useTasks()
-  const habits = useHabits()
-  const goals = useGoals()
-  const toggleTaskCompletion = useToggleTaskCompletion()
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const tasks = useTasks();
+  const habits = useHabits();
+  const goals = useGoals();
+  const toggleTaskCompletion = useToggleTaskCompletion();
 
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(today))
-  const [selectedDate, setSelectedDate] = useState(today)
-  const [agendaMode, setAgendaMode] = useState<AgendaMode>('day')
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(today));
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [agendaMode, setAgendaMode] = useState<AgendaMode>('day');
 
-  const tasksByDate = useMemo(() => createTaskMap(tasks), [tasks])
-  const habitActivityByDate = useMemo(() => createHabitActivityMap(habits, today), [habits, today])
-  const goalTargets = useMemo(() => createGoalTargets(goals, today), [goals, today])
+  const tasksByDate = useMemo(() => createTaskMap(tasks), [tasks]);
+  const habitActivityByDate = useMemo(() => createHabitActivityMap(habits, today), [habits, today]);
+  const goalTargets = useMemo(() => createGoalTargets(goals), [goals]);
   const indicatorsByDate = useMemo(
     () => createCalendarIndicators(tasksByDate, habitActivityByDate, goalTargets),
     [goalTargets, habitActivityByDate, tasksByDate],
-  )
+  );
   const agendaItems = useMemo(
     () => createAgendaItems(tasks, habitActivityByDate, goalTargets),
     [goalTargets, habitActivityByDate, tasks],
-  )
+  );
   const calendarDays = useMemo(
     () =>
       eachDayOfInterval({
@@ -480,54 +443,55 @@ export function CalendarPage() {
         end: endOfWeek(endOfMonth(visibleMonth), { weekStartsOn }),
       }),
     [visibleMonth],
-  )
+  );
 
-  const selectedDateKey = toIsoDateKey(selectedDate)
-  const selectedDateIndicators = getIndicatorsForDate(indicatorsByDate, selectedDate)
-  const selectedDayHabitLabels = habitActivityByDate.get(selectedDateKey) ?? []
+  const selectedDateKey = toIsoDateKey(selectedDate);
+  const selectedDateIndicators = getIndicatorsForDate(indicatorsByDate, selectedDate);
+  const selectedDayHabitLabels = habitActivityByDate.get(selectedDateKey) ?? [];
   const selectedDayGoalTargets = goalTargets.filter((goalTarget) =>
     isSameDay(goalTarget.targetDate, selectedDate),
-  )
+  );
   const selectedDayTasks = useMemo(
     () => selectFilteredTasks(tasksByDate.get(selectedDateKey) ?? [], allTaskFilters),
     [selectedDateKey, tasksByDate],
-  )
+  );
   const selectedDayCompletedTaskCount = selectedDayTasks.filter(
     (task) => task.status === 'completed',
-  ).length
+  ).length;
   const selectedDayEventCount =
-    selectedDateIndicators.tasks + selectedDateIndicators.habits + selectedDateIndicators.goals
+    selectedDateIndicators.tasks + selectedDateIndicators.habits + selectedDateIndicators.goals;
 
   const visibleMonthTaskCount = useMemo(
     () =>
-      tasks.filter((task) => task.dueDate && isSameMonth(parseISO(task.dueDate), visibleMonth)).length,
+      tasks.filter((task) => task.dueDate && isSameMonth(parseISO(task.dueDate), visibleMonth))
+        .length,
     [tasks, visibleMonth],
-  )
+  );
   const visibleMonthHabitCount = useMemo(
     () => countHabitCheckInsInMonth(habitActivityByDate, visibleMonth),
     [habitActivityByDate, visibleMonth],
-  )
+  );
   const visibleMonthGoalCount = useMemo(
     () =>
       goalTargets.filter((goalTarget) => isSameMonth(goalTarget.targetDate, visibleMonth)).length,
     [goalTargets, visibleMonth],
-  )
+  );
   const visibleMonthEventCount =
-    visibleMonthTaskCount + visibleMonthHabitCount + visibleMonthGoalCount
+    visibleMonthTaskCount + visibleMonthHabitCount + visibleMonthGoalCount;
 
   const agendaRange = useMemo(() => {
     if (agendaMode === 'day') {
       return {
         start: selectedDate,
         end: selectedDate,
-      }
+      };
     }
 
     return {
       start: startOfWeek(selectedDate, { weekStartsOn }),
       end: endOfWeek(selectedDate, { weekStartsOn }),
-    }
-  }, [agendaMode, selectedDate])
+    };
+  }, [agendaMode, selectedDate]);
 
   const filteredAgendaItems = useMemo(
     () =>
@@ -538,7 +502,7 @@ export function CalendarPage() {
         }),
       ),
     [agendaItems, agendaRange],
-  )
+  );
 
   const weeklyAgendaGroups = useMemo(
     () =>
@@ -552,26 +516,26 @@ export function CalendarPage() {
         }))
         .filter((group) => group.items.length > 0),
     [agendaRange, filteredAgendaItems],
-  )
+  );
 
   function selectDay(day: Date) {
-    const nextDay = startOfDay(day)
-    setSelectedDate(nextDay)
+    const nextDay = startOfDay(day);
+    setSelectedDate(nextDay);
 
     if (!isSameMonth(nextDay, visibleMonth)) {
-      setVisibleMonth(startOfMonth(nextDay))
+      setVisibleMonth(startOfMonth(nextDay));
     }
   }
 
   function changeMonth(offset: number) {
-    const nextMonth = addMonths(visibleMonth, offset)
-    setVisibleMonth(nextMonth)
-    setSelectedDate((currentSelection) => createMonthSelection(currentSelection, nextMonth))
+    const nextMonth = addMonths(visibleMonth, offset);
+    setVisibleMonth(nextMonth);
+    setSelectedDate((currentSelection) => createMonthSelection(currentSelection, nextMonth));
   }
 
   function resetToToday() {
-    setVisibleMonth(startOfMonth(today))
-    setSelectedDate(today)
+    setVisibleMonth(startOfMonth(today));
+    setSelectedDate(today);
   }
 
   return (
@@ -699,10 +663,10 @@ export function CalendarPage() {
 
             <div className="mt-4 grid grid-cols-7 gap-2">
               {calendarDays.map((day) => {
-                const isSelected = isSameDay(day, selectedDate)
-                const isCurrentMonth = isSameMonth(day, visibleMonth)
-                const isCurrentDay = isSameDay(day, today)
-                const indicators = getIndicatorsForDate(indicatorsByDate, day)
+                const isSelected = isSameDay(day, selectedDate);
+                const isCurrentMonth = isSameMonth(day, visibleMonth);
+                const isCurrentDay = isSameDay(day, today);
+                const indicators = getIndicatorsForDate(indicatorsByDate, day);
 
                 return (
                   <button
@@ -766,7 +730,7 @@ export function CalendarPage() {
                       ) : null}
                     </div>
                   </button>
-                )
+                );
               })}
             </div>
           </Card>
@@ -783,7 +747,8 @@ export function CalendarPage() {
               </div>
               <Badge
                 tone={
-                  selectedDayTasks.length > 0 && selectedDayCompletedTaskCount === selectedDayTasks.length
+                  selectedDayTasks.length > 0 &&
+                  selectedDayCompletedTaskCount === selectedDayTasks.length
                     ? 'success'
                     : selectedDayTasks.length > 0
                       ? 'accent'
@@ -897,7 +862,8 @@ export function CalendarPage() {
                           <span className="font-semibold text-[var(--foreground)]">
                             {goalTarget.title}
                           </span>{' '}
-                          · {goalTarget.progress}% complete
+                          · {goalTarget.progress}% complete ·{' '}
+                          {formatGoalDeadlineLabel(toIsoDateKey(goalTarget.targetDate))}
                         </li>
                       ))}
                     </ul>
@@ -986,5 +952,5 @@ export function CalendarPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
