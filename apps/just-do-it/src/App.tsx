@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { AppLayout } from './layouts/app-layout';
+import { BooksPage } from './routes/books-page';
 import { CalendarPage } from './routes/calendar-page';
 import { GoalsPage } from './routes/goals-page';
 import { PlaceholderPage } from './routes/placeholder-page';
@@ -17,7 +18,7 @@ export default function App() {
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/habits" element={<PlaceholderPage title="Habits" />} />
-        <Route path="/books" element={<PlaceholderPage title="Books" />} />
+        <Route path="/books" element={<BooksPage />} />
         <Route path="/lists" element={<PlaceholderPage title="Lists" />} />
         <Route path="/lists/:listId" element={<PlaceholderPage title="List" />} />
         <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
