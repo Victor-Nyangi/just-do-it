@@ -157,7 +157,7 @@ export function TodayPage() {
             </div>
           </Card>
 
-          <Card className="bg-gradient-to-br from-[var(--primary-subtle)] to-[var(--surface)]">
+          <Card variant="accent">
             <div className="flex items-start justify-between">
               <div>
                 <Badge tone="accent">August goal</Badge>
