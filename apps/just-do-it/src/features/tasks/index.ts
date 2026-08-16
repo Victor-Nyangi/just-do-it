@@ -17,10 +17,12 @@ export {
   selectFilteredTasks,
   selectRecurringTaskCount,
   selectScheduledTaskCount,
+  selectTodayTaskSections,
   selectVisibleTodayTasks,
 } from './task-selectors'
 export { useCreateTask, useDeleteTask, useOpenTaskCount, useTasks, useTodayTasks, useToggleTaskCompletion, useUpdateTask, useCompletedTaskCount } from './hooks'
 export { useTaskStore } from './task-store'
+export type { TodayTaskSection, TodayTaskSectionKey } from './task-selectors'
 export type { Task, TaskEditorValues, TaskFilters, TaskInput } from './types'
 export {
   TASK_CATEGORY_VALUES,
