@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from 'react'
 
 import { cn } from '../lib/cn'
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'warning' | 'ghost'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: ButtonVariant
@@ -13,6 +13,10 @@ const variants: Record<ButtonVariant, string> = {
     'bg-[var(--primary)] text-[var(--primary-foreground)] shadow-sm hover:bg-[var(--primary-hover)]',
   secondary:
     'border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] hover:bg-[var(--surface-muted)]',
+  accent:
+    'bg-[var(--accent)] text-[var(--accent-foreground)] shadow-sm hover:bg-[var(--accent-hover)]',
+  warning:
+    'bg-[var(--warning-strong)] text-[var(--warning-foreground)] shadow-sm hover:brightness-95',
   ghost: 'text-[var(--muted-foreground)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]',
 }
 
