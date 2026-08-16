@@ -4,6 +4,10 @@ export function useBooks() {
   return useBookStore((state) => state.books)
 }
 
+export function useCreateBook() {
+  return useBookStore((state) => state.createBook)
+}
+
 export function useUpdateBook() {
   return useBookStore((state) => state.updateBook)
 }
