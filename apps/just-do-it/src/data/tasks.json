@@ -2,25 +2,79 @@
   {
     "id": "read-20-pages",
     "title": "Read 20 pages",
+    "description": "Keep the evening reading streak going before bed.",
+    "status": "todo",
+    "priority": "medium",
     "category": "Reading",
-    "complete": false
+    "dueDate": "2026-08-16",
+    "recurrence": "daily",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-10T18:00:00.000Z",
+    "updatedAt": "2026-08-14T19:30:00.000Z"
   },
   {
     "id": "go-for-a-run",
     "title": "Go for a run",
+    "description": "Aim for a steady 5 km recovery run after work.",
+    "status": "in_progress",
+    "priority": "high",
     "category": "Workout",
-    "complete": false
+    "dueDate": "2026-08-16",
+    "recurrence": "weekly",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-09T06:30:00.000Z",
+    "updatedAt": "2026-08-16T08:15:00.000Z"
   },
   {
     "id": "finish-portfolio-landing-page",
     "title": "Finish portfolio landing page",
+    "description": "Ship the hero polish and mobile spacing tweaks for the launch checklist.",
+    "status": "todo",
+    "priority": "urgent",
     "category": "Personal",
-    "complete": false
+    "dueDate": "2026-08-14",
+    "recurrence": "none",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-07T10:00:00.000Z",
+    "updatedAt": "2026-08-15T21:00:00.000Z"
   },
   {
     "id": "buy-groceries",
     "title": "Buy groceries",
+    "description": "Restock fruit, yogurt, oats, and sparkling water.",
+    "status": "completed",
+    "priority": "medium",
     "category": "Errand",
-    "complete": true
+    "dueDate": "2026-08-15",
+    "completedAt": "2026-08-15T17:45:00.000Z",
+    "recurrence": "weekly",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-11T12:00:00.000Z",
+    "updatedAt": "2026-08-15T17:45:00.000Z"
+  },
+  {
+    "id": "paint-miniatures",
+    "title": "Paint miniatures",
+    "description": "Block in the base colors for the next tabletop squad.",
+    "status": "todo",
+    "priority": "low",
+    "category": "Hobby",
+    "recurrence": "monthly",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-05T14:20:00.000Z",
+    "updatedAt": "2026-08-12T14:20:00.000Z"
+  },
+  {
+    "id": "replace-bike-light",
+    "title": "Replace bike light battery",
+    "description": "Swap the front light battery before next week’s early ride.",
+    "status": "todo",
+    "priority": "high",
+    "category": "Other",
+    "dueDate": "2026-08-20",
+    "recurrence": "none",
+    "recurrenceInterval": 1,
+    "createdAt": "2026-08-13T07:45:00.000Z",
+    "updatedAt": "2026-08-13T07:45:00.000Z"
   }
 ]

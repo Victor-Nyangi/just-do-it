@@ -1,28 +1,34 @@
 import { ArrowUpRight, Check, Circle, Plus, Sparkles } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { format } from 'date-fns'
+import { useState } from 'react'
 
-import { Badge, Button, Card, cn, Input } from '@just-do-it/ui'
-import { dashboardData, type DashboardTask } from '../data/dashboard'
+import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
+import { dashboardData } from '../data/dashboard'
+import { TaskMetadata, toTaskInput, useCreateTask, useOpenTaskCount, useTodayTasks, useToggleTaskCompletion } from '../features/tasks'
 
 export function TodayPage() {
-  const [tasks, setTasks] = useState(() => dashboardData.tasks)
+  const tasks = useTodayTasks()
+  const openTaskCount = useOpenTaskCount()
+  const createTask = useCreateTask()
+  const toggleTaskCompletion = useToggleTaskCompletion()
   const [newTask, setNewTask] = useState('')
-  const incompleteCount = useMemo(() => tasks.filter((task) => !task.complete).length, [tasks])
-
-  function toggleTask(id: string) {
-    setTasks((current) =>
-      current.map((task) => (task.id === id ? { ...task, complete: !task.complete } : task)),
-    )
-  }
 
   function addTask() {
     const title = newTask.trim()
     if (!title) return
 
-    setTasks((current) => [
-      ...current,
-      { id: crypto.randomUUID(), title, category: 'Personal', complete: false } satisfies DashboardTask,
-    ])
+    createTask(
+      toTaskInput({
+        title,
+        description: '',
+        status: 'todo',
+        priority: 'medium',
+        category: 'Personal',
+        dueDate: '',
+        recurrence: 'none',
+        recurrenceInterval: 1,
+      }),
+    )
     setNewTask('')
   }
 
@@ -30,20 +36,17 @@ export function TodayPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
       <section className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
         <div>
-          <Badge tone="accent">Sunday, August 16</Badge>
+          <Badge tone="accent">{format(new Date(), 'EEEE, MMMM d')}</Badge>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
             Good afternoon, Victor
           </h1>
           <p className="mt-2 text-[var(--muted-foreground)]">
-            {incompleteCount === 0
-              ? 'Everything is complete. Enjoy the rest of your day.'
-              : `${incompleteCount} thing${incompleteCount === 1 ? '' : 's'} to focus on today.`}
+            {tasks.length === 0
+              ? 'No active overdue, due-today, or undated tasks. Enjoy the extra margin.'
+              : `${tasks.length} focus task${tasks.length === 1 ? '' : 's'} in today’s lane.`}
           </p>
         </div>
-        <Button>
-          <Plus aria-hidden="true" className="mr-2 size-4" />
-          Add task
-        </Button>
+        <Badge>{openTaskCount} open overall</Badge>
       </section>
 
       <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
@@ -53,40 +56,65 @@ export function TodayPage() {
               <div>
                 <h2 className="text-lg font-bold">Today</h2>
                 <p className="text-sm text-[var(--muted-foreground)]">
-                  Make steady progress on what matters.
+                  Active tasks due today, overdue, or still flexible.
                 </p>
               </div>
-              <Badge>{incompleteCount} open</Badge>
+              <Badge>{tasks.length} in view</Badge>
             </div>
-            <div className="space-y-1">
-              {tasks.map((task) => (
-                <button
-                  className="flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors hover:bg-[var(--surface-muted)]"
-                  key={task.id}
-                  onClick={() => toggleTask(task.id)}
-                >
-                  <span
-                    className={cn(
-                      'flex size-5 shrink-0 items-center justify-center rounded-full border',
-                      task.complete
-                        ? 'border-[var(--primary)] bg-[var(--primary)] text-white'
-                        : 'border-[var(--muted-foreground)]',
-                    )}
+            {tasks.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--border)] p-5 text-sm text-[var(--muted-foreground)]">
+                You’re caught up on today’s visible tasks. Add a quick win below or check the Tasks page for future items.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {tasks.map((task) => (
+                  <div
+                    className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4"
+                    key={task.id}
                   >
-                    {task.complete && <Check aria-hidden="true" className="size-3" />}
-                  </span>
-                  <span
-                    className={cn(
-                      'flex-1 text-sm font-medium',
-                      task.complete && 'text-[var(--muted-foreground)] line-through',
-                    )}
-                  >
-                    {task.title}
-                  </span>
-                  <Badge>{task.category}</Badge>
-                </button>
-              ))}
-            </div>
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-3">
+                        <button
+                          className="flex items-start gap-3 text-left"
+                          onClick={() => toggleTaskCompletion(task.id)}
+                          type="button"
+                        >
+                          <span
+                            className={cn(
+                              'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
+                              task.status === 'completed'
+                                ? 'border-[var(--primary)] bg-[var(--primary)] text-white'
+                                : 'border-[var(--muted-foreground)]',
+                            )}
+                          >
+                            {task.status === 'completed' ? (
+                              <Check aria-hidden="true" className="size-3" />
+                            ) : null}
+                          </span>
+                          <span>
+                            <span className="block text-sm font-medium">{task.title}</span>
+                            {task.description ? (
+                              <span className="mt-1 block text-sm text-[var(--muted-foreground)]">
+                                {task.description}
+                              </span>
+                            ) : null}
+                          </span>
+                        </button>
+                        <TaskMetadata showDueDate showRecurrence={false} task={task} />
+                      </div>
+                      <Button
+                        className="sm:self-start"
+                        onClick={() => toggleTaskCompletion(task.id)}
+                        variant="secondary"
+                      >
+                        <Check aria-hidden="true" className="mr-2 size-4" />
+                        Complete
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card>
@@ -96,6 +124,7 @@ export function TodayPage() {
             </div>
             <div className="flex gap-2">
               <Input
+                aria-label="Quick add task"
                 className="flex-1"
                 onChange={(event) => setNewTask(event.target.value)}
                 onKeyDown={(event) => {
@@ -104,7 +133,10 @@ export function TodayPage() {
                 placeholder="What do you want to get done?"
                 value={newTask}
               />
-              <Button onClick={addTask}>Add</Button>
+              <Button onClick={addTask}>
+                <Plus aria-hidden="true" className="mr-2 size-4" />
+                Add
+              </Button>
             </div>
           </Card>
         </div>

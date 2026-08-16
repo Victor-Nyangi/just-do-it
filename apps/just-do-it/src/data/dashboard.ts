@@ -1,17 +1,10 @@
 import { z } from 'zod'
 
 import booksFixture from './books.json'
+import { validatedTaskFixture } from '../features/tasks/task-data'
 import goalsFixture from './goals.json'
 import habitsFixture from './habits.json'
 import listsFixture from './lists.json'
-import tasksFixture from './tasks.json'
-
-const taskSchema = z.object({
-  id: z.string(),
-  title: z.string().min(1),
-  category: z.enum(['Personal', 'Reading', 'Workout', 'Hobby', 'Errand', 'Other']),
-  complete: z.boolean(),
-})
 
 const habitSchema = z.object({
   id: z.string(),
@@ -47,10 +40,8 @@ const listSchema = z.object({
   ),
 })
 
-export type DashboardTask = z.infer<typeof taskSchema>
-
 export const dashboardData = {
-  tasks: z.array(taskSchema).parse(tasksFixture),
+  tasks: validatedTaskFixture,
   habits: z.array(habitSchema).parse(habitsFixture),
   goal: z.array(goalSchema).min(1).parse(goalsFixture)[0],
 }
