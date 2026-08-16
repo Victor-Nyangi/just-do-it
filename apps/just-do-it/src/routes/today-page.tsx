@@ -1,27 +1,79 @@
-import { ArrowUpRight, Check, Circle, Plus, Sparkles } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, subDays } from 'date-fns'
+import { CheckCheck, Flame, Goal, ListTodo, Plus, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
 import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
-import { usePrimaryGoal } from '../features/goals'
-import { selectHabitCompletionCount, useHabits } from '../features/habits'
+import { useGoals } from '../features/goals'
+import { HABIT_DAY_COUNT, selectHabitCompletionCount, useHabits, useToggleHabitCompletion } from '../features/habits'
 import {
   TaskMetadata,
+  selectTodayTaskSections,
   toTaskInput,
   useCreateTask,
   useOpenTaskCount,
-  useTodayTasks,
+  useTasks,
   useToggleTaskCompletion,
+  type TodayTaskSectionKey,
 } from '../features/tasks'
 
+const todayHabitIndex = HABIT_DAY_COUNT - 1
+
+const sectionCopy: Record<
+  TodayTaskSectionKey,
+  {
+    description: string
+    emptyLabel: string
+    title: string
+    tone: 'accent' | 'neutral' | 'warning'
+  }
+> = {
+  overdue: {
+    title: 'Overdue',
+    description: 'Tackle these first to clear carried work.',
+    emptyLabel: 'Nothing is overdue.',
+    tone: 'warning',
+  },
+  today: {
+    title: 'Due today',
+    description: 'Scheduled for today and ready for focus.',
+    emptyLabel: 'Nothing is due today.',
+    tone: 'accent',
+  },
+  unscheduled: {
+    title: 'Flexible',
+    description: 'Useful wins that can fit around the day.',
+    emptyLabel: 'No flexible tasks waiting.',
+    tone: 'neutral',
+  },
+}
+
+function getGoalTone(progress: number): 'accent' | 'neutral' | 'success' {
+  if (progress >= 100) return 'success'
+  if (progress > 0) return 'accent'
+  return 'neutral'
+}
+
 export function TodayPage() {
-  const tasks = useTodayTasks()
+  const now = new Date()
+  const tasks = useTasks()
+  const todaySections = selectTodayTaskSections(tasks, now)
   const habits = useHabits()
-  const goal = usePrimaryGoal()
+  const goals = useGoals()
   const openTaskCount = useOpenTaskCount()
   const createTask = useCreateTask()
   const toggleTaskCompletion = useToggleTaskCompletion()
+  const toggleHabitCompletion = useToggleHabitCompletion()
   const [newTask, setNewTask] = useState('')
+
+  const overdueCount = todaySections[0]?.tasks.length ?? 0
+  const todayCount = todaySections[1]?.tasks.length ?? 0
+  const unscheduledCount = todaySections[2]?.tasks.length ?? 0
+  const actionableTaskCount = overdueCount + todayCount + unscheduledCount
+  const checkedHabitsTodayCount = habits.filter((habit) => habit.days[todayHabitIndex]).length
+  const recentHabitDates = Array.from({ length: HABIT_DAY_COUNT }, (_, index) =>
+    subDays(now, HABIT_DAY_COUNT - index - 1),
+  )
+  const primaryGoal = goals[0] ?? null
 
   function addTask() {
     const title = newTask.trim()
@@ -44,85 +96,170 @@ export function TodayPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
-      <section className="mb-10 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+      <section className="mb-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
         <div>
-          <Badge tone="accent">{format(new Date(), 'EEEE, MMMM d')}</Badge>
+          <Badge tone="accent">Today dashboard</Badge>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-            Good afternoon, Victor
+            {format(now, 'EEEE, MMMM d')}
           </h1>
-          <p className="mt-2 text-[var(--muted-foreground)]">
-            {tasks.length === 0
-              ? 'No active overdue, due-today, or undated tasks. Enjoy the extra margin.'
-              : `${tasks.length} focus task${tasks.length === 1 ? '' : 's'} in today’s lane.`}
+          <p className="mt-2 max-w-2xl text-[var(--muted-foreground)]">
+            {actionableTaskCount === 0
+              ? 'No actionable tasks remain across overdue, due-today, or flexible work.'
+              : `${actionableTaskCount} actionable task${actionableTaskCount === 1 ? '' : 's'} to guide the day.`}
           </p>
         </div>
-        <Badge>{openTaskCount} open overall</Badge>
+        <Badge tone={openTaskCount > actionableTaskCount ? 'neutral' : 'accent'}>
+          {openTaskCount} open overall
+        </Badge>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <Card className="space-y-3" variant="subtle">
+          <div className="flex items-center gap-3">
+            <ListTodo aria-hidden="true" className="size-5 text-[var(--warning)]" />
+            <div>
+              <p className="text-sm text-[var(--muted-foreground)]">Needs attention first</p>
+              <p className="text-2xl font-bold">{overdueCount}</p>
+            </div>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {overdueCount === 0 ? 'No carry-over tasks.' : `${todayCount} due today and ${unscheduledCount} flexible next.`}
+          </p>
+        </Card>
+
+        <Card className="space-y-3" variant="subtle">
+          <div className="flex items-center gap-3">
+            <Flame aria-hidden="true" className="size-5 text-[var(--accent)]" />
+            <div>
+              <p className="text-sm text-[var(--muted-foreground)]">Habit check-ins</p>
+              <p className="text-2xl font-bold">
+                {checkedHabitsTodayCount}/{habits.length}
+              </p>
+            </div>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {habits.length === 0
+              ? 'No habits tracked yet.'
+              : `${habits.length - checkedHabitsTodayCount} habit${habits.length - checkedHabitsTodayCount === 1 ? '' : 's'} still open for today.`}
+          </p>
+        </Card>
+
+        <Card className="space-y-3" variant="subtle">
+          <div className="flex items-center gap-3">
+            <Goal aria-hidden="true" className="size-5 text-[var(--primary)]" />
+            <div>
+              <p className="text-sm text-[var(--muted-foreground)]">Primary goal progress</p>
+              <p className="text-2xl font-bold">{primaryGoal ? `${primaryGoal.progress}%` : '—'}</p>
+            </div>
+          </div>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            {primaryGoal ? primaryGoal.remainingLabel : 'No goals in view yet.'}
+          </p>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-[1.55fr_1fr]">
         <div className="space-y-6">
           <Card>
-            <div className="mb-5 flex items-center justify-between">
+            <div className="mb-5 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-bold">Today</h2>
                 <p className="text-sm text-[var(--muted-foreground)]">
-                  Active tasks due today, overdue, or still flexible.
+                  Clear lanes for what needs attention right now.
                 </p>
               </div>
-              <Badge>{tasks.length} in view</Badge>
+              <Badge tone={actionableTaskCount === 0 ? 'success' : 'accent'}>
+                {actionableTaskCount} actionable
+              </Badge>
             </div>
-            {tasks.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--border)] p-5 text-sm text-[var(--muted-foreground)]">
-                You’re caught up on today’s visible tasks. Add a quick win below or check the Tasks page for future items.
+
+            {actionableTaskCount === 0 ? (
+              <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6 text-center">
+                <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--success-subtle)] text-[var(--success)]">
+                  <CheckCheck aria-hidden="true" className="size-6" />
+                </div>
+                <h3 className="mt-4 text-lg font-bold">No actionable tasks remain</h3>
+                <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+                  You&apos;re clear on overdue, due-today, and unscheduled work. Add a new focus item below or visit Tasks for upcoming plans.
+                </p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {tasks.map((task) => (
-                  <div
-                    className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4"
-                    key={task.id}
-                  >
-                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="space-y-3">
-                        <button
-                          className="flex items-start gap-3 text-left"
-                          onClick={() => toggleTaskCompletion(task.id)}
-                          type="button"
-                        >
-                          <span
-                            className={cn(
-                              'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border',
-                              task.status === 'completed'
-                                ? 'border-[var(--primary)] bg-[var(--primary)] text-white'
-                                : 'border-[var(--muted-foreground)]',
-                            )}
-                          >
-                            {task.status === 'completed' ? (
-                              <Check aria-hidden="true" className="size-3" />
-                            ) : null}
-                          </span>
-                          <span>
-                            <span className="block text-sm font-medium">{task.title}</span>
-                            {task.description ? (
-                              <span className="mt-1 block text-sm text-[var(--muted-foreground)]">
-                                {task.description}
-                              </span>
-                            ) : null}
-                          </span>
-                        </button>
-                        <TaskMetadata showDueDate showRecurrence={false} task={task} />
+              <div className="space-y-6">
+                {todaySections.map((section) => {
+                  const copy = sectionCopy[section.key]
+
+                  return (
+                    <section key={section.key}>
+                      <div className="mb-3 flex items-start justify-between gap-3">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="text-sm font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
+                              {copy.title}
+                            </h3>
+                            <Badge tone={copy.tone}>{section.tasks.length}</Badge>
+                          </div>
+                          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                            {section.tasks.length === 0 ? copy.emptyLabel : copy.description}
+                          </p>
+                        </div>
                       </div>
-                      <Button
-                        className="sm:self-start"
-                        onClick={() => toggleTaskCompletion(task.id)}
-                        variant="secondary"
-                      >
-                        <Check aria-hidden="true" className="mr-2 size-4" />
-                        Complete
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+
+                      {section.tasks.length > 0 ? (
+                        <ul className="space-y-3">
+                          {section.tasks.map((task) => {
+                            return (
+                              <li key={task.id}>
+                                <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+                                  <div className="flex items-start gap-3">
+                                    <button
+                                      aria-label={`Complete ${task.title}`}
+                                      className={cn(
+                                        'mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
+                                        task.status === 'in_progress'
+                                          ? 'border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]'
+                                          : 'border-[var(--border)] bg-[var(--surface)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]',
+                                      )}
+                                      onClick={() => toggleTaskCompletion(task.id)}
+                                      type="button"
+                                    >
+                                      {task.status === 'in_progress' ? (
+                                        <span className="size-2 rounded-full bg-current" />
+                                      ) : null}
+                                    </button>
+
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                        <div>
+                                          <h4 className="text-sm font-semibold">{task.title}</h4>
+                                          {task.description ? (
+                                            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                                              {task.description}
+                                            </p>
+                                          ) : null}
+                                        </div>
+                                        <Badge tone={task.status === 'in_progress' ? 'accent' : 'neutral'}>
+                                          {task.status === 'in_progress' ? 'In progress' : 'Ready'}
+                                        </Badge>
+                                      </div>
+
+                                      <div className="mt-3">
+                                        <TaskMetadata
+                                          showDueDate={section.key !== 'unscheduled'}
+                                          showRecurrence={task.recurrence !== 'none'}
+                                          task={task}
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      ) : null}
+                    </section>
+                  )
+                })}
               </div>
             )}
           </Card>
@@ -130,89 +267,177 @@ export function TodayPage() {
           <Card>
             <div className="mb-4 flex items-center gap-2">
               <Sparkles aria-hidden="true" className="size-4 text-[var(--primary)]" />
-              <h2 className="font-bold">Quick add</h2>
+              <div>
+                <h2 className="font-bold">Quick add</h2>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Capture a new task into the shared task store without leaving today.
+                </p>
+              </div>
             </div>
-            <div className="flex gap-2">
+
+            <form
+              className="flex flex-col gap-3 sm:flex-row"
+              onSubmit={(event) => {
+                event.preventDefault()
+                addTask()
+              }}
+            >
+              <label className="sr-only" htmlFor="today-quick-add">
+                Quick add task
+              </label>
               <Input
-                aria-label="Quick add task"
+                aria-describedby="today-quick-add-help"
                 className="flex-1"
+                id="today-quick-add"
                 onChange={(event) => setNewTask(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') addTask()
-                }}
                 placeholder="What do you want to get done?"
                 value={newTask}
               />
-              <Button onClick={addTask}>
+              <Button aria-label="Add task to today" type="submit">
                 <Plus aria-hidden="true" className="mr-2 size-4" />
-                Add
+                Add task
               </Button>
-            </div>
+            </form>
+
+            <p className="mt-3 text-sm text-[var(--muted-foreground)]" id="today-quick-add-help">
+              New items land as flexible tasks and stay available on the Tasks page too.
+            </p>
           </Card>
         </div>
 
         <div className="space-y-6">
           <Card>
-            <h2 className="mb-5 text-lg font-bold">Habits</h2>
-            <div className="space-y-5">
-              {habits.map((habit) => (
-                <div key={habit.id}>
-                  <div className="mb-2 flex items-center justify-between">
-                    <span className="text-sm font-medium">{habit.label}</span>
-                    <span className="text-xs text-[var(--muted-foreground)]">
-                      {selectHabitCompletionCount(habit)}/5 this week
-                    </span>
-                  </div>
-                  <div className="flex gap-2">
-                    {habit.days.map((complete, index) => (
-                      <span
-                        aria-label={`Day ${index + 1}: ${complete ? 'complete' : 'incomplete'}`}
-                        className={cn(
-                          'size-7 rounded-full',
-                          complete ? 'bg-[var(--primary)]' : 'bg-[var(--surface-muted)]',
-                        )}
-                        key={index}
-                      />
-                    ))}
-                  </div>
-                </div>
-              ))}
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Habit check-in</h2>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Toggle today&apos;s status without creating separate local state.
+                </p>
+              </div>
+              <Badge tone={checkedHabitsTodayCount === habits.length && habits.length > 0 ? 'success' : 'accent'}>
+                {checkedHabitsTodayCount}/{habits.length} today
+              </Badge>
             </div>
+
+            {habits.length === 0 ? (
+              <p className="text-sm text-[var(--muted-foreground)]">No habits are being tracked yet.</p>
+            ) : (
+              <ul className="space-y-4">
+                {habits.map((habit) => {
+                  const completedToday = habit.days[todayHabitIndex]
+
+                  return (
+                    <li key={habit.id}>
+                      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-semibold">{habit.label}</h3>
+                              <Badge tone={completedToday ? 'success' : 'neutral'}>
+                                {completedToday ? 'Checked in' : 'Open'}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                              {selectHabitCompletionCount(habit)}/{HABIT_DAY_COUNT} recent check-ins
+                            </p>
+                          </div>
+
+                          <Button
+                            aria-label={
+                              completedToday
+                                ? `Mark ${habit.label} incomplete for today`
+                                : `Mark ${habit.label} complete for today`
+                            }
+                            aria-pressed={completedToday}
+                            className="sm:self-start"
+                            onClick={() => toggleHabitCompletion(habit.id, todayHabitIndex)}
+                            variant={completedToday ? 'accent' : 'secondary'}
+                          >
+                            {completedToday ? 'Undo today' : 'Check in'}
+                          </Button>
+                        </div>
+
+                        <div aria-hidden="true" className="mt-4 flex items-center gap-2">
+                          {habit.days.map((complete, index) => (
+                            <div className="flex flex-col items-center gap-1" key={`${habit.id}-${index}`}>
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
+                                {format(recentHabitDates[index], 'EEEEE')}
+                              </span>
+                              <span
+                                className={cn(
+                                  'size-7 rounded-full border',
+                                  complete
+                                    ? 'border-[var(--primary)] bg-[var(--primary)]'
+                                    : 'border-[var(--border)] bg-[var(--surface)]',
+                                  index === todayHabitIndex ? 'ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-[var(--surface-muted)]' : '',
+                                )}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
           </Card>
 
-          {goal ? (
-            <Card variant="accent">
-              <div className="flex items-start justify-between">
-                <div>
-                  <Badge tone="accent">{goal.period} goal</Badge>
-                  <h2 className="mt-3 font-bold">{goal.title}</h2>
-                  <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    {goal.description}
-                  </p>
-                </div>
-                <ArrowUpRight aria-hidden="true" className="size-5 text-[var(--primary)]" />
+          <Card variant="accent">
+            <div className="mb-5 flex items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-bold">Goal progress</h2>
+                <p className="text-sm text-[var(--muted-foreground)]">
+                  Keep the bigger picture visible while you work the day.
+                </p>
               </div>
-              <div className="mt-6 h-2 overflow-hidden rounded-full bg-white/70">
-                <div
-                  className="h-full rounded-full bg-[var(--primary)]"
-                  style={{ width: `${goal.progress}%` }}
-                />
-              </div>
-              <div className="mt-2 flex justify-between text-xs text-[var(--muted-foreground)]">
-                <span>{goal.progress}% complete</span>
-                <span>{goal.remainingLabel}</span>
-              </div>
-            </Card>
-          ) : null}
-
-          <div className="rounded-xl border border-dashed border-[var(--border)] p-5">
-            <div className="flex items-center gap-3">
-              <Circle aria-hidden="true" className="size-5 text-[var(--muted-foreground)]" />
-              <p className="text-sm text-[var(--muted-foreground)]">
-                Progress, not perfection. Pick the next small step.
-              </p>
+              <Badge tone={primaryGoal ? getGoalTone(primaryGoal.progress) : 'neutral'}>
+                {primaryGoal ? primaryGoal.period : 'No goal'}
+              </Badge>
             </div>
-          </div>
+
+            {goals.length === 0 ? (
+              <p className="text-sm text-[var(--muted-foreground)]">No goals are active right now.</p>
+            ) : (
+              <ul className="space-y-4">
+                {goals.map((goal) => (
+                  <li key={goal.id}>
+                    <div className="rounded-xl border border-white/50 bg-white/60 p-4 backdrop-blur dark:border-white/10 dark:bg-black/10">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <h3 className="text-sm font-semibold">{goal.title}</h3>
+                          <p className="mt-1 text-sm text-[var(--muted-foreground)]">
+                            {goal.description}
+                          </p>
+                        </div>
+                        <Badge tone={getGoalTone(goal.progress)}>{goal.progress}%</Badge>
+                      </div>
+
+                      <div className="mt-4">
+                        <div
+                          aria-label={`${goal.title} progress`}
+                          aria-valuemax={100}
+                          aria-valuemin={0}
+                          aria-valuenow={goal.progress}
+                          className="h-2 overflow-hidden rounded-full bg-white/70 dark:bg-white/10"
+                          role="progressbar"
+                        >
+                          <div
+                            className="h-full rounded-full bg-[var(--primary)]"
+                            style={{ width: `${goal.progress}%` }}
+                          />
+                        </div>
+                        <div className="mt-2 flex items-center justify-between gap-3 text-xs text-[var(--muted-foreground)]">
+                          <span>{goal.status.replaceAll('_', ' ')}</span>
+                          <span>{goal.remainingLabel}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </Card>
         </div>
       </div>
     </div>

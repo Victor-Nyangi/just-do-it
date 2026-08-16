@@ -2,6 +2,13 @@ import { compareAsc, isBefore, isToday, parseISO, startOfDay } from 'date-fns'
 
 import type { Task, TaskFilters, TaskPriority } from './types'
 
+export type TodayTaskSectionKey = 'overdue' | 'today' | 'unscheduled'
+
+export type TodayTaskSection = {
+  key: TodayTaskSectionKey
+  tasks: Task[]
+}
+
 const statusOrder = {
   in_progress: 0,
   todo: 1,
@@ -48,15 +55,38 @@ function matchesFilters(task: Task, filters: TaskFilters): boolean {
   return matchesPriority && matchesCategory
 }
 
-function getTodayGroup(task: Task, now: Date): number {
-  if (!task.dueDate) return 2
+function getTodaySectionKey(task: Task, now: Date): TodayTaskSectionKey | null {
+  if (task.status === 'completed') return null
+  if (!task.dueDate) return 'unscheduled'
 
   const dueDate = parseISO(task.dueDate)
 
-  if (isBefore(dueDate, startOfDay(now))) return 0
-  if (isToday(dueDate)) return 1
+  if (isBefore(dueDate, startOfDay(now))) return 'overdue'
+  if (isToday(dueDate)) return 'today'
 
-  return 3
+  return null
+}
+
+function sortTodaySectionTasks(tasks: readonly Task[]): Task[] {
+  return [...tasks].sort((leftTask, rightTask) => {
+    const statusDifference = statusOrder[leftTask.status] - statusOrder[rightTask.status]
+    if (statusDifference !== 0) return statusDifference
+
+    const priorityDifference = priorityOrder[leftTask.priority] - priorityOrder[rightTask.priority]
+    if (priorityDifference !== 0) return priorityDifference
+
+    const leftDueDate = getTaskDateValue(leftTask)
+    const rightDueDate = getTaskDateValue(rightTask)
+
+    if (leftDueDate && rightDueDate) {
+      const dueDateDifference = compareAsc(leftDueDate, rightDueDate)
+      if (dueDateDifference !== 0) return dueDateDifference
+    } else if (leftDueDate || rightDueDate) {
+      return leftDueDate ? -1 : 1
+    }
+
+    return leftTask.title.localeCompare(rightTask.title)
+  })
 }
 
 export function selectFilteredTasks(tasks: readonly Task[], filters: TaskFilters): Task[] {
@@ -71,29 +101,30 @@ export function selectCompletedTaskCount(tasks: readonly Task[]): number {
   return tasks.filter((task) => task.status === 'completed').length
 }
 
+export function selectTodayTaskSections(tasks: readonly Task[], now = new Date()): TodayTaskSection[] {
+  const groupedTasks: Record<TodayTaskSectionKey, Task[]> = {
+    overdue: [],
+    today: [],
+    unscheduled: [],
+  }
+
+  for (const task of tasks) {
+    const sectionKey = getTodaySectionKey(task, now)
+
+    if (!sectionKey) continue
+
+    groupedTasks[sectionKey].push(task)
+  }
+
+  return [
+    { key: 'overdue', tasks: sortTodaySectionTasks(groupedTasks.overdue) },
+    { key: 'today', tasks: sortTodaySectionTasks(groupedTasks.today) },
+    { key: 'unscheduled', tasks: sortTodaySectionTasks(groupedTasks.unscheduled) },
+  ]
+}
+
 export function selectVisibleTodayTasks(tasks: readonly Task[], now = new Date()): Task[] {
-  return [...tasks]
-    .filter((task) => task.status !== 'completed')
-    .filter((task) => {
-      if (!task.dueDate) return true
-
-      const dueDate = parseISO(task.dueDate)
-      return isToday(dueDate) || isBefore(dueDate, startOfDay(now))
-    })
-    .sort((leftTask, rightTask) => {
-      const todayGroupDifference = getTodayGroup(leftTask, now) - getTodayGroup(rightTask, now)
-      if (todayGroupDifference !== 0) return todayGroupDifference
-
-      const priorityDifference = priorityOrder[leftTask.priority] - priorityOrder[rightTask.priority]
-      if (priorityDifference !== 0) return priorityDifference
-
-      if (leftTask.dueDate && rightTask.dueDate) {
-        const dueDateDifference = compareAsc(parseISO(leftTask.dueDate), parseISO(rightTask.dueDate))
-        if (dueDateDifference !== 0) return dueDateDifference
-      }
-
-      return leftTask.title.localeCompare(rightTask.title)
-    })
+  return selectTodayTaskSections(tasks, now).flatMap((section) => section.tasks)
 }
 
 export function selectScheduledTaskCount(tasks: readonly Task[]): number {
