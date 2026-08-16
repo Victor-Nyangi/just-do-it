@@ -15,8 +15,7 @@ import {
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
-import { Button } from '../components/ui/button'
-import { cn } from '../lib/cn'
+import { Button, cn } from '@just-do-it/ui'
 
 const navigation = [
   { label: 'Today', to: '/today', icon: LayoutDashboard },

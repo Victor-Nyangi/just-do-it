@@ -1,4 +1,4 @@
-import { Card } from '../components/ui/card'
+import { Card } from '@just-do-it/ui'
 
 export function PlaceholderPage({ title }: { title: string }) {
   return (
