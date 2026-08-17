@@ -14,4 +14,3 @@ pnpm dev
 ```
 
 Use `pnpm build`, `pnpm lint`, and `pnpm typecheck` to validate the workspace.
-

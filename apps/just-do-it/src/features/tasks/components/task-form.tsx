@@ -1,39 +1,37 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent } from 'react';
 
-import { Button, Input } from '@just-do-it/ui'
+import { Button, Input } from '@just-do-it/ui';
 import {
   TASK_CATEGORY_VALUES,
   TASK_PRIORITY_VALUES,
   TASK_RECURRENCE_VALUES,
   TASK_STATUS_VALUES,
   type TaskEditorValues,
-} from '../types'
+} from '../types';
 
 type TaskFormProps = {
-  initialValues: TaskEditorValues
-  mode: 'create' | 'edit'
-  onCancel?: () => void
-  onSubmit: (values: TaskEditorValues) => void
-}
+  initialValues: TaskEditorValues;
+  mode: 'create' | 'edit';
+  onCancel?: () => void;
+  onSubmit: (values: TaskEditorValues) => void;
+};
 
 const controlClassName =
-  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]'
+  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
 function formatOptionLabel(value: string): string {
-  return value
-    .replace(/_/gu, ' ')
-    .replace(/\b\w/gu, (character) => character.toUpperCase())
+  return value.replace(/_/gu, ' ').replace(/\b\w/gu, (character) => character.toUpperCase());
 }
 
 export function TaskForm({ initialValues, mode, onCancel, onSubmit }: TaskFormProps) {
-  const [values, setValues] = useState(initialValues)
+  const [values, setValues] = useState(initialValues);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!values.title.trim()) return
+    if (!values.title.trim()) return;
 
-    onSubmit(values)
+    onSubmit(values);
   }
 
   return (
@@ -143,7 +141,9 @@ export function TaskForm({ initialValues, mode, onCancel, onSubmit }: TaskFormPr
           </label>
           <Input
             id="task-due-date"
-            onChange={(event) => setValues((current) => ({ ...current, dueDate: event.target.value }))}
+            onChange={(event) =>
+              setValues((current) => ({ ...current, dueDate: event.target.value }))
+            }
             type="date"
             value={values.dueDate}
           />
@@ -205,5 +205,5 @@ export function TaskForm({ initialValues, mode, onCancel, onSubmit }: TaskFormPr
         ) : null}
       </div>
     </form>
-  )
+  );
 }

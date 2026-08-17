@@ -1,12 +1,12 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ButtonHTMLAttributes } from 'react';
 
-import { cn } from '../lib/cn'
+import { cn } from '../lib/cn';
 
-type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'warning' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'accent' | 'warning' | 'ghost';
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: ButtonVariant
-}
+  variant?: ButtonVariant;
+};
 
 const variants: Record<ButtonVariant, string> = {
   primary:
@@ -17,8 +17,9 @@ const variants: Record<ButtonVariant, string> = {
     'bg-[var(--accent)] text-[var(--accent-foreground)] shadow-sm hover:bg-[var(--accent-hover)]',
   warning:
     'bg-[var(--warning-strong)] text-[var(--warning-foreground)] shadow-sm hover:brightness-95',
-  ghost: 'text-[var(--muted-foreground)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]',
-}
+  ghost:
+    'text-[var(--muted-foreground)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]',
+};
 
 export function Button({ className, variant = 'primary', type = 'button', ...props }: ButtonProps) {
   return (
@@ -31,5 +32,5 @@ export function Button({ className, variant = 'primary', type = 'button', ...pro
       type={type}
       {...props}
     />
-  )
+  );
 }

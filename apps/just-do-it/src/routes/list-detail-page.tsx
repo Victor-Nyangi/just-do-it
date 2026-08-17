@@ -7,11 +7,11 @@ import {
   FileText,
   Plus,
   Trash2,
-} from 'lucide-react'
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useParams } from 'react-router-dom'
+} from 'lucide-react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Link, useParams } from 'react-router-dom';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
+import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
 import {
   useCreateListItem,
   useDeleteListItem,
@@ -19,17 +19,17 @@ import {
   useReorderListItems,
   useToggleListItem,
   useUpdateList,
-} from '../features/lists'
+} from '../features/lists';
 
 const controlClassName =
-  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]'
+  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
 const linkButtonClassName =
-  'inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2'
+  'inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2';
 
 function normalizeOptionalNote(value: string): string | undefined {
-  const normalizedValue = value.trim()
-  return normalizedValue ? normalizedValue : undefined
+  const normalizedValue = value.trim();
+  return normalizedValue ? normalizedValue : undefined;
 }
 
 function ListItemsEmptyState() {
@@ -43,7 +43,7 @@ function ListItemsEmptyState() {
         Add the first item above to turn this into a working, session-local checklist.
       </p>
     </div>
-  )
+  );
 }
 
 function ListNotFoundState() {
@@ -59,72 +59,72 @@ function ListNotFoundState() {
         </Link>
       </Card>
     </div>
-  )
+  );
 }
 
 export function ListDetailPage() {
-  const { listId = '' } = useParams()
-  const list = useList(listId)
-  const updateList = useUpdateList()
-  const createListItem = useCreateListItem()
-  const toggleListItem = useToggleListItem()
-  const reorderListItems = useReorderListItems()
-  const deleteListItem = useDeleteListItem()
+  const { listId = '' } = useParams();
+  const list = useList(listId);
+  const updateList = useUpdateList();
+  const createListItem = useCreateListItem();
+  const toggleListItem = useToggleListItem();
+  const reorderListItems = useReorderListItems();
+  const deleteListItem = useDeleteListItem();
 
-  const [draftName, setDraftName] = useState('')
-  const [draftItemTitle, setDraftItemTitle] = useState('')
-  const [draftNote, setDraftNote] = useState('')
+  const [draftName, setDraftName] = useState('');
+  const [draftItemTitle, setDraftItemTitle] = useState('');
+  const [draftNote, setDraftNote] = useState('');
 
   useEffect(() => {
-    if (!list) return
+    if (!list) return;
 
-    setDraftName(list.name)
-    setDraftNote(list.note ?? '')
-  }, [list])
+    setDraftName(list.name);
+    setDraftNote(list.note ?? '');
+  }, [list]);
 
   const completedItemCount = useMemo(
     () => list?.items.filter((item) => item.complete).length ?? 0,
     [list],
-  )
+  );
 
   if (!list) {
-    return <ListNotFoundState />
+    return <ListNotFoundState />;
   }
 
-  const activeListId = list.id
-  const normalizedName = draftName.trim()
-  const normalizedNote = normalizeOptionalNote(draftNote)
-  const hasNameChanged = normalizedName !== list.name
-  const hasNoteChanged = normalizedNote !== list.note
+  const activeListId = list.id;
+  const normalizedName = draftName.trim();
+  const normalizedNote = normalizeOptionalNote(draftNote);
+  const hasNameChanged = normalizedName !== list.name;
+  const hasNoteChanged = normalizedNote !== list.note;
 
   function handleRenameList(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!normalizedName || !hasNameChanged) return
+    if (!normalizedName || !hasNameChanged) return;
 
-    updateList(activeListId, { name: normalizedName })
+    updateList(activeListId, { name: normalizedName });
   }
 
   function handleAddItem(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const normalizedTitle = draftItemTitle.trim()
-    if (!normalizedTitle) return
+    const normalizedTitle = draftItemTitle.trim();
+    if (!normalizedTitle) return;
 
-    createListItem(activeListId, { title: normalizedTitle })
-    setDraftItemTitle('')
+    createListItem(activeListId, { title: normalizedTitle });
+    setDraftItemTitle('');
   }
 
   function handleSaveNote(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    if (!hasNoteChanged) return
+    if (!hasNoteChanged) return;
 
-    updateList(activeListId, { note: normalizedNote })
+    updateList(activeListId, { note: normalizedNote });
   }
 
   function moveItem(index: number, direction: -1 | 1) {
-    reorderListItems(activeListId, index, index + direction)
+    reorderListItems(activeListId, index, index + direction);
   }
 
   return (
@@ -353,8 +353,8 @@ export function ListDetailPage() {
                 <Button
                   disabled={!list.note && !draftNote}
                   onClick={() => {
-                    setDraftNote('')
-                    updateList(list.id, { note: undefined })
+                    setDraftNote('');
+                    updateList(list.id, { note: undefined });
                   }}
                   type="button"
                   variant="secondary"
@@ -367,5 +367,5 @@ export function ListDetailPage() {
         </aside>
       </div>
     </div>
-  )
+  );
 }

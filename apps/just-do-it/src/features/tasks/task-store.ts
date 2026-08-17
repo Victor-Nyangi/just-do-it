@@ -1,23 +1,20 @@
-import { create } from 'zustand'
+import { create } from 'zustand';
 
-import { getInitialTasks, taskSchema } from './task-data'
-import type { Task, TaskInput, TaskStatus } from './types'
+import { getInitialTasks, taskSchema } from './task-data';
+import type { Task, TaskInput, TaskStatus } from './types';
 
 type TaskStoreState = {
-  tasks: Task[]
-  createTask: (input: TaskInput) => void
-  updateTask: (taskId: string, input: TaskInput) => void
-  toggleTaskCompletion: (taskId: string) => void
-  deleteTask: (taskId: string) => void
-}
+  tasks: Task[];
+  createTask: (input: TaskInput) => void;
+  updateTask: (taskId: string, input: TaskInput) => void;
+  toggleTaskCompletion: (taskId: string) => void;
+  deleteTask: (taskId: string) => void;
+};
 
 function buildTaskRecord(taskId: string, input: TaskInput, existingTask?: Task): Task {
-  const now = new Date().toISOString()
-  const nextStatus = input.status
-  const completedAt =
-    nextStatus === 'completed'
-      ? existingTask?.completedAt ?? now
-      : undefined
+  const now = new Date().toISOString();
+  const nextStatus = input.status;
+  const completedAt = nextStatus === 'completed' ? (existingTask?.completedAt ?? now) : undefined;
 
   return taskSchema.parse({
     id: existingTask?.id ?? taskId,
@@ -32,11 +29,11 @@ function buildTaskRecord(taskId: string, input: TaskInput, existingTask?: Task):
     recurrenceInterval: input.recurrenceInterval,
     createdAt: existingTask?.createdAt ?? now,
     updatedAt: now,
-  })
+  });
 }
 
 function getNextStatusAfterToggle(status: TaskStatus): TaskStatus {
-  return status === 'completed' ? 'todo' : 'completed'
+  return status === 'completed' ? 'todo' : 'completed';
 }
 
 export const useTaskStore = create<TaskStoreState>()((set) => ({
@@ -44,19 +41,19 @@ export const useTaskStore = create<TaskStoreState>()((set) => ({
   createTask: (input) => {
     set((state) => ({
       tasks: [...state.tasks, buildTaskRecord(crypto.randomUUID(), input)],
-    }))
+    }));
   },
   updateTask: (taskId, input) => {
     set((state) => ({
       tasks: state.tasks.map((task) =>
         task.id === taskId ? buildTaskRecord(taskId, input, task) : task,
       ),
-    }))
+    }));
   },
   toggleTaskCompletion: (taskId) => {
     set((state) => ({
       tasks: state.tasks.map((task) => {
-        if (task.id !== taskId) return task
+        if (task.id !== taskId) return task;
 
         return buildTaskRecord(
           task.id,
@@ -71,13 +68,13 @@ export const useTaskStore = create<TaskStoreState>()((set) => ({
             recurrenceInterval: task.recurrenceInterval,
           },
           task,
-        )
+        );
       }),
-    }))
+    }));
   },
   deleteTask: (taskId) => {
     set((state) => ({
       tasks: state.tasks.filter((task) => task.id !== taskId),
-    }))
+    }));
   },
-}))
+}));

@@ -1,5 +1,5 @@
-import type { Habit } from './types'
+import type { Habit } from './types';
 
 export function selectHabitCompletionCount(habit: Habit): number {
-  return habit.days.filter(Boolean).length
+  return habit.days.filter(Boolean).length;
 }

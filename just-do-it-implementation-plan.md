@@ -23,23 +23,23 @@ The original plan carried **two conflicting phase numberings** — a "Phase 1–
 
 ## 2. Architecture as built
 
-| Concern | Choice | Status |
-| --- | --- | --- |
-| Monorepo | Turborepo + pnpm workspaces | Built |
-| Application | React 19 + Vite 8 + TypeScript | Built |
-| Routing | React Router 7 | Built |
-| Styling | Tailwind CSS 4 (CSS-first config, no `tailwind.config`) | Built |
-| Components | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan |
-| Local state | Zustand, one store per feature | Built |
-| Validation | Zod, at import **and** on every mutation | Built |
-| Dates | date-fns | Built |
-| Icons | Lucide | Built |
-| Linting | **oxlint** (app only) — ESLint was not adopted | Built, deviates |
-| Formatting | Prettier at the root | Configured, drifted (§6) |
-| Server state | TanStack Query | Deferred to Phase 15 |
-| Database / auth | Supabase or equivalent | Deferred to Phase 15 |
-| Deployment | Vercel | Not started (Phase 14) |
-| Tests | — | **None exist** (Phase 13) |
+| Concern         | Choice                                                    | Status                             |
+| --------------- | --------------------------------------------------------- | ---------------------------------- |
+| Monorepo        | Turborepo + pnpm workspaces                               | Built                              |
+| Application     | React 19 + Vite 8 + TypeScript                            | Built                              |
+| Routing         | React Router 7                                            | Built                              |
+| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                              |
+| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan |
+| Local state     | Zustand, one store per feature                            | Built                              |
+| Validation      | Zod, at import **and** on every mutation                  | Built                              |
+| Dates           | date-fns                                                  | Built                              |
+| Icons           | Lucide                                                    | Built                              |
+| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                    |
+| Formatting      | Prettier at the root                                      | Configured, drifted (§6)           |
+| Server state    | TanStack Query                                            | Deferred to Phase 15               |
+| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15               |
+| Deployment      | Vercel                                                    | Not started (Phase 14)             |
+| Tests           | —                                                         | **None exist** (Phase 13)          |
 
 ### Data flow
 
@@ -88,26 +88,26 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 
 ## 3. Phase status
 
-| # | Phase | Status | Notes |
-| --- | --- | --- | --- |
-| 1 | Monorepo foundation | **Done** | No shared config packages; oxlint replaced ESLint |
-| 2 | Application foundation | **Done** | shadcn/ui and TanStack Query intentionally skipped |
-| 3 | Shared design system | **Done** | 4 primitives, not the 10 originally listed |
-| 4 | Static data foundation | **Done** | 5 fixtures, Zod-validated |
-| 5 | Initial data model | **Done, with deviations** | Habits diverge materially — §5 |
-| 6 | Feature architecture | **Done** | Canonical; all 5 domains follow it |
-| 7 | Today dashboard | **Done** | Sections, habit strip, goal progress, quick add |
-| 8 | Calendar | **Done** | Month grid, day select, day/week agenda, all indicators |
-| 9 | Goals | **Done** | Create, edit, progress, status |
-| 10 | Books | **Done** | 3 statuses, ratings, notes |
-| 11 | Lists | **Done — uncommitted** | Working tree only; per-item notes missing |
-| 12 | Quick add & command surface | **Partial** | Plain quick add ships; no parser, no palette |
-| 13 | Habits as a first-class domain | **Not started** | Route is a placeholder; model is a 5-slot array |
-| 14 | Product polish & deploy | **Not started** | No Vercel config, no PWA, no `/settings` |
-| 15 | Testing & quality gates | **Not started** | Zero tests in the repo |
-| 16 | Hosted persistence | **Deferred** | Blocked on a managed backend |
+| #   | Phase                          | Status                    | Notes                                                   |
+| --- | ------------------------------ | ------------------------- | ------------------------------------------------------- |
+| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint       |
+| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped      |
+| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed              |
+| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                               |
+| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                          |
+| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                      |
+| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add         |
+| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators |
+| 9   | Goals                          | **Done**                  | Create, edit, progress, status                          |
+| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                              |
+| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing               |
+| 12  | Quick add & command surface    | **Partial**               | Plain quick add ships; no parser, no palette            |
+| 13  | Habits as a first-class domain | **Not started**           | Route is a placeholder; model is a 5-slot array         |
+| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                |
+| 15  | Testing & quality gates        | **Not started**           | Zero tests in the repo                                  |
+| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                            |
 
-**Where the project actually is:** the entire fixture-backed product surface is built. What remains is not more domains — it is *finishing* two half-built ones (habits, quick add), then hardening (tests, deploy, polish).
+**Where the project actually is:** the entire fixture-backed product surface is built. What remains is not more domains — it is _finishing_ two half-built ones (habits, quick add), then hardening (tests, deploy, polish).
 
 ---
 
@@ -135,7 +135,7 @@ App shell, sidebar navigation with 7 destinations, sticky header, responsive lay
 
 `@just-do-it/ui` exports `Button` (5 variants), `Card` (4), `Badge` (4), `Input`, and `cn`.
 
-Theming is **CSS custom properties, not Tailwind theme colors**: `packages/ui/src/styles.css` defines the palette on `:root` and overrides it under `:root[data-theme='dark']`. Components reference tokens as arbitrary values (`bg-[var(--primary)]`). Adding a colour means adding a token to *both* blocks — never a raw hex, never a Tailwind palette class.
+Theming is **CSS custom properties, not Tailwind theme colors**: `packages/ui/src/styles.css` defines the palette on `:root` and overrides it under `:root[data-theme='dark']`. Components reference tokens as arbitrary values (`bg-[var(--primary)]`). Adding a colour means adding a token to _both_ blocks — never a raw hex, never a Tailwind palette class.
 
 Palette: light "Botanical Noir" (linen, charcoal, moss, lilac), dark "Midnight Orchid" (void black, graphite, emerald, orchid). Sora for headings, Manrope for body. Semantics are load-bearing: green = primary/success, purple = accent action, yellow = warning only.
 
@@ -149,8 +149,8 @@ Fixtures for all five domains under `src/data/`, each parsed by a Zod schema at 
 
 Two things the original plan asked for and did not get:
 
-- **Loading and error-state patterns.** Not applicable while everything is synchronous; genuinely needed at Phase 16. Empty states *do* exist across pages.
-- No data-source *interface* abstraction was introduced. Stores call `getInitialX()` directly. Swapping to a server means rewriting `-data.ts` and the store seed — an acceptable, contained blast radius.
+- **Loading and error-state patterns.** Not applicable while everything is synchronous; genuinely needed at Phase 16. Empty states _do_ exist across pages.
+- No data-source _interface_ abstraction was introduced. Stores call `getInitialX()` directly. Swapping to a server means rewriting `-data.ts` and the store seed — an acceptable, contained blast radius.
 
 ### Phase 5 — Initial data model ✅ (with deviations)
 
@@ -184,7 +184,7 @@ Create list, rename, list-level note, add item, toggle item, reorder item (up/do
 
 ⚠️ **This work exists only in the working tree.** `feat/static-lists` is still at the Books commit; `App.tsx`, three `features/lists/*` files are modified and both route files are untracked. **Commit before anything else.**
 
-Gap: the plan specified **per-item** notes (`list_items.notes`). What shipped is a single note per *list*.
+Gap: the plan specified **per-item** notes (`list_items.notes`). What shipped is a single note per _list_.
 
 ---
 

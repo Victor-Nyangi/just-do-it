@@ -1,29 +1,29 @@
-import { Badge, Button, cn } from '@just-do-it/ui'
-import { TASK_CATEGORY_VALUES, TASK_PRIORITY_VALUES, type TaskFilters } from '../types'
+import { Badge, Button, cn } from '@just-do-it/ui';
+import { TASK_CATEGORY_VALUES, TASK_PRIORITY_VALUES, type TaskFilters } from '../types';
 
 type TaskFiltersProps = {
-  filters: TaskFilters
-  hasFiltersApplied: boolean
-  showDueDates: boolean
-  showRecurrence: boolean
-  onCategoryChange: (category: TaskFilters['category']) => void
-  onClearFilters: () => void
-  onPriorityChange: (priority: TaskFilters['priority']) => void
-  onToggleDueDates: () => void
-  onToggleRecurrence: () => void
-}
+  filters: TaskFilters;
+  hasFiltersApplied: boolean;
+  showDueDates: boolean;
+  showRecurrence: boolean;
+  onCategoryChange: (category: TaskFilters['category']) => void;
+  onClearFilters: () => void;
+  onPriorityChange: (priority: TaskFilters['priority']) => void;
+  onToggleDueDates: () => void;
+  onToggleRecurrence: () => void;
+};
 
 const controlClassName =
-  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]'
+  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
 function VisibilityToggle({
   active,
   label,
   onClick,
 }: {
-  active: boolean
-  label: string
-  onClick: () => void
+  active: boolean;
+  label: string;
+  onClick: () => void;
 }) {
   return (
     <button
@@ -39,7 +39,7 @@ function VisibilityToggle({
     >
       {label}
     </button>
-  )
+  );
 }
 
 export function TaskFiltersPanel({
@@ -119,5 +119,5 @@ export function TaskFiltersPanel({
         ) : null}
       </div>
     </div>
-  )
+  );
 }

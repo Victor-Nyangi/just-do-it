@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **Just Do It** — a personal productivity POC (tasks, habits, goals, books, lists, calendar) that doubles as a proof of concept for a heterogeneous frontend monorepo. Unlike the surrounding `In Progress/` workspace (whose CLAUDE.md states nothing there is a monorepo), **this directory is a real pnpm + Turborepo monorepo** with its own git repo. Run commands from this root, not from the parent.
 
-`just-do-it-implementation-plan.md` is the authoritative roadmap — phases, the intended data model, and 12 architectural principles. Read the relevant phase before adding a domain. Sections that describe the *future* (Supabase, TanStack Query, shadcn/ui CLI, `packages/config`, `packages/utils`) are **not yet implemented and intentionally deferred**; don't wire them in because the plan mentions them.
+`just-do-it-implementation-plan.md` is the authoritative roadmap — phases, the intended data model, and 12 architectural principles. Read the relevant phase before adding a domain. Sections that describe the _future_ (Supabase, TanStack Query, shadcn/ui CLI, `packages/config`, `packages/utils`) are **not yet implemented and intentionally deferred**; don't wire them in because the plan mentions them.
 
 ## Commands
 
@@ -49,7 +49,7 @@ Zod is not just an import-time guard: stores re-`parse()` through `buildXRecord(
 
 All edits are session-local by design; nothing persists across a reload (except the theme). Don't add localStorage persistence or a fetch layer without being asked.
 
-`src/data/dashboard.ts` is the only cross-domain aggregation point, and it imports *from the feature barrels* — never the reverse. Features must not import each other's internals; route files compose across features.
+`src/data/dashboard.ts` is the only cross-domain aggregation point, and it imports _from the feature barrels_ — never the reverse. Features must not import each other's internals; route files compose across features.
 
 ### Feature modules
 
@@ -67,7 +67,7 @@ Routing is flat in `App.tsx` under a single `AppLayout` outlet. `/habits` and `/
 
 `packages/ui` (`@just-do-it/ui`) exports four primitives — `Button`, `Card`, `Badge`, `Input` — plus `cn` (clsx + tailwind-merge). Consumed as raw TypeScript source via the `exports` map.
 
-Theming is **CSS custom properties, not Tailwind theme colors**. `packages/ui/src/styles.css` defines the full semantic palette on `:root` and overrides it under `:root[data-theme='dark']`; components reference them as arbitrary values (`bg-[var(--primary)]`, `text-[var(--muted-foreground)]`). Add a new color by adding a token to *both* blocks — never hard-code a hex or a Tailwind palette class in a component.
+Theming is **CSS custom properties, not Tailwind theme colors**. `packages/ui/src/styles.css` defines the full semantic palette on `:root` and overrides it under `:root[data-theme='dark']`; components reference them as arbitrary values (`bg-[var(--primary)]`, `text-[var(--muted-foreground)]`). Add a new color by adding a token to _both_ blocks — never hard-code a hex or a Tailwind palette class in a component.
 
 Semantics carry meaning and shouldn't be swapped for aesthetics: green = primary/success, purple = accent action, yellow = warning/time-sensitive only.
 

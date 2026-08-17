@@ -1,19 +1,19 @@
-import { CheckCircle2, PencilLine, RotateCcw, Trash2 } from 'lucide-react'
+import { CheckCircle2, PencilLine, RotateCcw, Trash2 } from 'lucide-react';
 
-import { Button, Card } from '@just-do-it/ui'
-import { TaskMetadata } from './task-metadata'
-import type { Task } from '../types'
+import { Button, Card } from '@just-do-it/ui';
+import { TaskMetadata } from './task-metadata';
+import type { Task } from '../types';
 
 type TaskListProps = {
-  hasFiltersApplied: boolean
-  onClearFilters: () => void
-  onDelete: (taskId: string) => void
-  onEdit: (task: Task) => void
-  onToggleComplete: (taskId: string) => void
-  showDueDates: boolean
-  showRecurrence: boolean
-  tasks: Task[]
-}
+  hasFiltersApplied: boolean;
+  onClearFilters: () => void;
+  onDelete: (taskId: string) => void;
+  onEdit: (task: Task) => void;
+  onToggleComplete: (taskId: string) => void;
+  showDueDates: boolean;
+  showRecurrence: boolean;
+  tasks: Task[];
+};
 
 export function TaskList({
   hasFiltersApplied,
@@ -40,7 +40,7 @@ export function TaskList({
           </Button>
         ) : null}
       </div>
-    )
+    );
   }
 
   return (
@@ -73,7 +73,9 @@ export function TaskList({
                 Edit
               </Button>
               <Button
-                aria-label={task.status === 'completed' ? `Reopen ${task.title}` : `Complete ${task.title}`}
+                aria-label={
+                  task.status === 'completed' ? `Reopen ${task.title}` : `Complete ${task.title}`
+                }
                 className="h-9 px-3 text-xs"
                 onClick={() => onToggleComplete(task.id)}
                 variant={task.status === 'completed' ? 'accent' : 'primary'}
@@ -99,5 +101,5 @@ export function TaskList({
         </Card>
       ))}
     </div>
-  )
+  );
 }

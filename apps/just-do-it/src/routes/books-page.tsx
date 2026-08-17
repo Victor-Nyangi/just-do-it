@@ -1,7 +1,7 @@
-import { BookOpen, CheckCircle2, LibraryBig, Plus, Sparkles, Star } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
+import { BookOpen, CheckCircle2, LibraryBig, Plus, Sparkles, Star } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui'
+import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
 import {
   useBooks,
   useCreateBook,
@@ -10,33 +10,37 @@ import {
   useUpdateBookStatus,
   type Book,
   type BookStatus,
-} from '../features/books'
+} from '../features/books';
 
 const controlClassName =
-  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]'
+  'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]';
 
-const visibleBookStatuses = ['reading', 'want_to_read', 'finished'] as const satisfies readonly BookStatus[]
-const ratingValues = [1, 2, 3, 4, 5] as const
+const visibleBookStatuses = [
+  'reading',
+  'want_to_read',
+  'finished',
+] as const satisfies readonly BookStatus[];
+const ratingValues = [1, 2, 3, 4, 5] as const;
 
-type VisibleBookStatus = (typeof visibleBookStatuses)[number]
+type VisibleBookStatus = (typeof visibleBookStatuses)[number];
 
 type BookComposerValues = {
-  title: string
-  author: string
-  status: VisibleBookStatus
-  rating: string
-  note: string
-}
+  title: string;
+  author: string;
+  status: VisibleBookStatus;
+  rating: string;
+  note: string;
+};
 
 type BookSectionConfig = {
-  title: string
-  description: string
-  emptyTitle: string
-  emptyDescription: string
-  status: VisibleBookStatus
-}
+  title: string;
+  description: string;
+  emptyTitle: string;
+  emptyDescription: string;
+  status: VisibleBookStatus;
+};
 
-type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning'
+type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
 
 const bookSections: readonly BookSectionConfig[] = [
   {
@@ -60,7 +64,7 @@ const bookSections: readonly BookSectionConfig[] = [
     emptyTitle: 'No finished books yet',
     emptyDescription: 'Move a book here when you finish it to keep a satisfying session trail.',
   },
-] as const
+] as const;
 
 function createDefaultBookValues(): BookComposerValues {
   return {
@@ -69,12 +73,12 @@ function createDefaultBookValues(): BookComposerValues {
     status: 'want_to_read',
     rating: '',
     note: '',
-  }
+  };
 }
 
 function normalizeDraftNote(note: string): string | undefined {
-  const value = note.trim()
-  return value ? value : undefined
+  const value = note.trim();
+  return value ? value : undefined;
 }
 
 function formatBookStatusLabel(status: VisibleBookStatus): string {
@@ -82,11 +86,11 @@ function formatBookStatusLabel(status: VisibleBookStatus): string {
     ? 'Currently reading'
     : status === 'want_to_read'
       ? 'Want to read'
-      : 'Finished'
+      : 'Finished';
 }
 
 function sortBooks(books: readonly Book[]): Book[] {
-  return [...books].sort((leftBook, rightBook) => leftBook.title.localeCompare(rightBook.title))
+  return [...books].sort((leftBook, rightBook) => leftBook.title.localeCompare(rightBook.title));
 }
 
 function BookStatusButton({
@@ -94,16 +98,16 @@ function BookStatusButton({
   onClick,
   status,
 }: {
-  active: boolean
-  onClick: () => void
-  status: VisibleBookStatus
+  active: boolean;
+  onClick: () => void;
+  status: VisibleBookStatus;
 }) {
   const activeClassName =
     status === 'reading'
       ? 'border-[var(--accent)] bg-[var(--accent-subtle)] text-[var(--accent)]'
       : status === 'finished'
         ? 'border-[var(--success)] bg-[var(--success-subtle)] text-[var(--success)]'
-        : 'border-[var(--primary)] bg-[var(--primary-subtle)] text-[var(--primary)]'
+        : 'border-[var(--primary)] bg-[var(--primary-subtle)] text-[var(--primary)]';
 
   return (
     <button
@@ -119,7 +123,7 @@ function BookStatusButton({
     >
       {formatBookStatusLabel(status)}
     </button>
-  )
+  );
 }
 
 function BooksEmptyState({
@@ -127,9 +131,9 @@ function BooksEmptyState({
   onAddBook,
   title,
 }: {
-  description: string
-  onAddBook: () => void
-  title: string
+  description: string;
+  onAddBook: () => void;
+  title: string;
 }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6 text-center">
@@ -143,7 +147,7 @@ function BooksEmptyState({
         Add a book
       </Button>
     </div>
-  )
+  );
 }
 
 function BookCard({
@@ -152,26 +156,34 @@ function BookCard({
   onRatingChange,
   onNoteChange,
 }: {
-  book: Book
-  onStatusChange: (bookId: string, status: VisibleBookStatus) => void
-  onRatingChange: (bookId: string, rating?: number) => void
-  onNoteChange: (bookId: string, note?: string) => void
+  book: Book;
+  onStatusChange: (bookId: string, status: VisibleBookStatus) => void;
+  onRatingChange: (bookId: string, rating?: number) => void;
+  onNoteChange: (bookId: string, note?: string) => void;
 }) {
-  const [draftNote, setDraftNote] = useState(book.note ?? '')
+  const [draftNote, setDraftNote] = useState(book.note ?? '');
 
   useEffect(() => {
-    setDraftNote(book.note ?? '')
-  }, [book.id, book.note])
+    setDraftNote(book.note ?? '');
+  }, [book.id, book.note]);
 
-  const normalizedDraftNote = normalizeDraftNote(draftNote)
-  const hasNoteChanged = normalizedDraftNote !== book.note
+  const normalizedDraftNote = normalizeDraftNote(draftNote);
+  const hasNoteChanged = normalizedDraftNote !== book.note;
 
   return (
     <article>
       <Card className="space-y-5" variant={book.status === 'finished' ? 'subtle' : 'default'}>
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-2">
-            <Badge tone={book.status === 'finished' ? 'success' : book.status === 'reading' ? 'accent' : 'neutral'}>
+            <Badge
+              tone={
+                book.status === 'finished'
+                  ? 'success'
+                  : book.status === 'reading'
+                    ? 'accent'
+                    : 'neutral'
+              }
+            >
               {formatBookStatusLabel(book.status)}
             </Badge>
             <div>
@@ -184,7 +196,9 @@ function BookCard({
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[var(--muted-foreground)]">
               Current rating
             </p>
-            <p className="mt-1 text-lg font-bold">{book.rating ? `${book.rating}/5` : 'Not rated'}</p>
+            <p className="mt-1 text-lg font-bold">
+              {book.rating ? `${book.rating}/5` : 'Not rated'}
+            </p>
             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
               {book.note ? 'Notes saved for this book.' : 'Add a note to remember why it matters.'}
             </p>
@@ -199,7 +213,11 @@ function BookCard({
                 Switch sections without leaving the page.
               </p>
             </div>
-            <div className="flex flex-wrap gap-2" role="group" aria-label={`Change ${book.title} status`}>
+            <div
+              className="flex flex-wrap gap-2"
+              role="group"
+              aria-label={`Change ${book.title} status`}
+            >
               {visibleBookStatuses.map((status) => (
                 <BookStatusButton
                   active={book.status === status}
@@ -215,7 +233,7 @@ function BookCard({
             <legend className="text-sm font-medium">Rating</legend>
             <div className="flex flex-wrap items-center gap-2">
               {ratingValues.map((rating) => {
-                const active = book.rating === rating
+                const active = book.rating === rating;
 
                 return (
                   <button
@@ -230,10 +248,13 @@ function BookCard({
                     onClick={() => onRatingChange(book.id, active ? undefined : rating)}
                     type="button"
                   >
-                    <Star aria-hidden="true" className={cn('mr-1 size-4', active && 'fill-current')} />
+                    <Star
+                      aria-hidden="true"
+                      className={cn('mr-1 size-4', active && 'fill-current')}
+                    />
                     {rating}
                   </button>
-                )
+                );
               })}
               <Button
                 onClick={() => onRatingChange(book.id, undefined)}
@@ -269,8 +290,8 @@ function BookCard({
             <Button
               disabled={!book.note && !normalizedDraftNote}
               onClick={() => {
-                setDraftNote('')
-                onNoteChange(book.id, undefined)
+                setDraftNote('');
+                onNoteChange(book.id, undefined);
               }}
               type="button"
               variant="secondary"
@@ -281,7 +302,7 @@ function BookCard({
         </div>
       </Card>
     </article>
-  )
+  );
 }
 
 function BookSection({
@@ -292,19 +313,15 @@ function BookSection({
   onRatingChange,
   onStatusChange,
 }: {
-  books: readonly Book[]
-  config: BookSectionConfig
-  onAddBook: () => void
-  onNoteChange: (bookId: string, note?: string) => void
-  onRatingChange: (bookId: string, rating?: number) => void
-  onStatusChange: (bookId: string, status: VisibleBookStatus) => void
+  books: readonly Book[];
+  config: BookSectionConfig;
+  onAddBook: () => void;
+  onNoteChange: (bookId: string, note?: string) => void;
+  onRatingChange: (bookId: string, rating?: number) => void;
+  onStatusChange: (bookId: string, status: VisibleBookStatus) => void;
 }) {
   const badgeTone: BadgeTone =
-    config.status === 'finished'
-      ? 'success'
-      : config.status === 'reading'
-        ? 'accent'
-        : 'neutral'
+    config.status === 'finished' ? 'success' : config.status === 'reading' ? 'accent' : 'neutral';
 
   return (
     <section aria-labelledby={`books-section-${config.status}`}>
@@ -343,57 +360,57 @@ function BookSection({
         )}
       </Card>
     </section>
-  )
+  );
 }
 
 export function BooksPage() {
-  const books = useBooks()
-  const createBook = useCreateBook()
-  const updateBookNote = useUpdateBookNote()
-  const updateBookRating = useUpdateBookRating()
-  const updateBookStatus = useUpdateBookStatus()
-  const composerRef = useRef<HTMLDivElement | null>(null)
+  const books = useBooks();
+  const createBook = useCreateBook();
+  const updateBookNote = useUpdateBookNote();
+  const updateBookRating = useUpdateBookRating();
+  const updateBookStatus = useUpdateBookStatus();
+  const composerRef = useRef<HTMLDivElement | null>(null);
 
-  const [formValues, setFormValues] = useState<BookComposerValues>(() => createDefaultBookValues())
+  const [formValues, setFormValues] = useState<BookComposerValues>(() => createDefaultBookValues());
 
-  const sortedBooks = useMemo(() => sortBooks(books), [books])
+  const sortedBooks = useMemo(() => sortBooks(books), [books]);
   const readingBooks = useMemo(
     () => sortedBooks.filter((book) => book.status === 'reading'),
     [sortedBooks],
-  )
+  );
   const wantToReadBooks = useMemo(
     () => sortedBooks.filter((book) => book.status === 'want_to_read'),
     [sortedBooks],
-  )
+  );
   const finishedBooks = useMemo(
     () => sortedBooks.filter((book) => book.status === 'finished'),
     [sortedBooks],
-  )
+  );
   const ratedBookCount = useMemo(
     () => sortedBooks.filter((book) => book.rating !== undefined).length,
     [sortedBooks],
-  )
+  );
   const notedBookCount = useMemo(
     () => sortedBooks.filter((book) => book.note !== undefined).length,
     [sortedBooks],
-  )
+  );
 
   function focusComposer() {
-    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    composerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function resetForm() {
-    setFormValues(createDefaultBookValues())
+    setFormValues(createDefaultBookValues());
   }
 
   function handleCreateBook(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (!formValues.title.trim() || !formValues.author.trim()) {
-      return
+      return;
     }
 
-    const parsedRating = Number.parseInt(formValues.rating, 10)
+    const parsedRating = Number.parseInt(formValues.rating, 10);
 
     createBook({
       title: formValues.title,
@@ -401,8 +418,8 @@ export function BooksPage() {
       status: formValues.status,
       rating: Number.isNaN(parsedRating) ? undefined : parsedRating,
       note: formValues.note,
-    })
-    resetForm()
+    });
+    resetForm();
   }
 
   return (
@@ -412,7 +429,8 @@ export function BooksPage() {
           <Badge tone="accent">Phase 10 · Books</Badge>
           <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Books</h1>
           <p className="mt-2 max-w-2xl text-[var(--muted-foreground)]">
-            Keep the reading stack tidy with session-local sections for what is active, queued, and done.
+            Keep the reading stack tidy with session-local sections for what is active, queued, and
+            done.
           </p>
         </div>
         <Button onClick={focusComposer}>
@@ -497,7 +515,8 @@ export function BooksPage() {
                   <Badge tone="neutral">Book composer</Badge>
                   <h2 className="mt-3 text-lg font-bold">Add a book</h2>
                   <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                    Create a new session-local entry with an initial status, rating, and optional note.
+                    Create a new session-local entry with an initial status, rating, and optional
+                    note.
                   </p>
                 </div>
                 <Sparkles aria-hidden="true" className="size-5 text-[var(--muted-foreground)]" />
@@ -537,7 +556,11 @@ export function BooksPage() {
                 <div className="grid gap-4 sm:grid-cols-[1.15fr_0.85fr]">
                   <div className="space-y-2">
                     <p className="text-sm font-medium">Initial status</p>
-                    <div className="flex flex-wrap gap-2" role="group" aria-label="Choose book status">
+                    <div
+                      className="flex flex-wrap gap-2"
+                      role="group"
+                      aria-label="Choose book status"
+                    >
                       {visibleBookStatuses.map((status) => (
                         <BookStatusButton
                           active={formValues.status === status}
@@ -596,11 +619,12 @@ export function BooksPage() {
           <Card variant="accent">
             <h2 className="text-lg font-bold">Session-local shelf</h2>
             <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-              This page uses the in-memory books store for quick local editing. Refreshing restores the validated fixture set.
+              This page uses the in-memory books store for quick local editing. Refreshing restores
+              the validated fixture set.
             </p>
           </Card>
         </div>
       </div>
     </div>
-  )
+  );
 }

@@ -1,6 +1,6 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
-import tasksFixture from '../../data/tasks.json'
+import tasksFixture from '../../data/tasks.json';
 import {
   TASK_CATEGORY_VALUES,
   TASK_PRIORITY_VALUES,
@@ -9,10 +9,10 @@ import {
   type Task,
   type TaskEditorValues,
   type TaskInput,
-} from './types'
+} from './types';
 
-const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u, 'Expected ISO date')
-const isoDateTimeSchema = z.string().datetime({ offset: true })
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/u, 'Expected ISO date');
+const isoDateTimeSchema = z.string().datetime({ offset: true });
 
 export const taskSchema = z.object({
   id: z.string().min(1),
@@ -27,9 +27,9 @@ export const taskSchema = z.object({
   recurrenceInterval: z.number().int().positive(),
   createdAt: isoDateTimeSchema,
   updatedAt: isoDateTimeSchema,
-})
+});
 
-export const taskListSchema = z.array(taskSchema)
+export const taskListSchema = z.array(taskSchema);
 
 export const defaultTaskEditorValues: TaskEditorValues = {
   title: '',
@@ -40,16 +40,16 @@ export const defaultTaskEditorValues: TaskEditorValues = {
   dueDate: '',
   recurrence: 'none',
   recurrenceInterval: 1,
-}
+};
 
-const validatedTaskFixture = taskListSchema.parse(tasksFixture)
+const validatedTaskFixture = taskListSchema.parse(tasksFixture);
 
 export function getInitialTasks(): Task[] {
-  return validatedTaskFixture.map((task) => ({ ...task }))
+  return validatedTaskFixture.map((task) => ({ ...task }));
 }
 
 export function cloneTask(task: Task): Task {
-  return { ...task }
+  return { ...task };
 }
 
 export function toTaskEditorValues(task: Task): TaskEditorValues {
@@ -62,13 +62,13 @@ export function toTaskEditorValues(task: Task): TaskEditorValues {
     dueDate: task.dueDate ?? '',
     recurrence: task.recurrence,
     recurrenceInterval: task.recurrenceInterval,
-  }
+  };
 }
 
 export function toTaskInput(values: TaskEditorValues): TaskInput {
-  const title = values.title.trim()
-  const description = values.description.trim()
-  const dueDate = values.dueDate.trim()
+  const title = values.title.trim();
+  const description = values.description.trim();
+  const dueDate = values.dueDate.trim();
 
   return {
     title,
@@ -79,7 +79,7 @@ export function toTaskInput(values: TaskEditorValues): TaskInput {
     dueDate: dueDate || undefined,
     recurrence: values.recurrence,
     recurrenceInterval: values.recurrence === 'none' ? 1 : Math.max(1, values.recurrenceInterval),
-  }
+  };
 }
 
-export { validatedTaskFixture }
+export { validatedTaskFixture };

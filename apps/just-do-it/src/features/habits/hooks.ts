@@ -1,13 +1,13 @@
-import { useHabitStore } from './habit-store'
+import { useHabitStore } from './habit-store';
 
 export function useHabits() {
-  return useHabitStore((state) => state.habits)
+  return useHabitStore((state) => state.habits);
 }
 
 export function useSetHabitCompletion() {
-  return useHabitStore((state) => state.setHabitCompletion)
+  return useHabitStore((state) => state.setHabitCompletion);
 }
 
 export function useToggleHabitCompletion() {
-  return useHabitStore((state) => state.toggleHabitCompletion)
+  return useHabitStore((state) => state.toggleHabitCompletion);
 }

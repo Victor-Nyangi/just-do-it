@@ -1,4 +1,4 @@
-import { Card } from '@just-do-it/ui'
+import { Card } from '@just-do-it/ui';
 
 export function PlaceholderPage({ title }: { title: string }) {
   return (
@@ -11,5 +11,5 @@ export function PlaceholderPage({ title }: { title: string }) {
         </p>
       </Card>
     </div>
-  )
+  );
 }

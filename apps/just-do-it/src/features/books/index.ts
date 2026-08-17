@@ -5,7 +5,7 @@ export {
   getInitialBooks,
   validatedBookData,
   validatedBookFixture,
-} from './book-data'
+} from './book-data';
 export {
   useBooks,
   useCreateBook,
@@ -13,7 +13,7 @@ export {
   useUpdateBookNote,
   useUpdateBookRating,
   useUpdateBookStatus,
-} from './hooks'
-export { useBookStore } from './book-store'
-export type { Book, BookInput, BookStatus, BookUpdateInput } from './types'
-export { BOOK_STATUS_VALUES } from './types'
+} from './hooks';
+export { useBookStore } from './book-store';
+export type { Book, BookInput, BookStatus, BookUpdateInput } from './types';
+export { BOOK_STATUS_VALUES } from './types';

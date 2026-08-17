@@ -1,15 +1,15 @@
-import { CheckCircle2, List, Plus, Sparkles } from 'lucide-react'
-import { useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { CheckCircle2, List, Plus, Sparkles } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 
-import { Badge, Button, Card, Input } from '@just-do-it/ui'
-import { useCreateList, useLists, type List as ListRecord } from '../features/lists'
+import { Badge, Button, Card, Input } from '@just-do-it/ui';
+import { useCreateList, useLists, type List as ListRecord } from '../features/lists';
 
 const linkButtonClassName =
-  'inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2'
+  'inline-flex h-10 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--surface)] px-4 text-sm font-semibold text-[var(--foreground)] transition-colors hover:bg-[var(--surface-muted)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2';
 
 function formatItemCount(count: number): string {
-  return `${count} item${count === 1 ? '' : 's'}`
+  return `${count} item${count === 1 ? '' : 's'}`;
 }
 
 function ListsEmptyState({ onCreateList }: { onCreateList: () => void }) {
@@ -27,16 +27,16 @@ function ListsEmptyState({ onCreateList }: { onCreateList: () => void }) {
         Create list
       </Button>
     </div>
-  )
+  );
 }
 
 function ListCard({ list }: { list: ListRecord }) {
-  const completedItemCount = list.items.filter((item) => item.complete).length
+  const completedItemCount = list.items.filter((item) => item.complete).length;
   const notePreview = list.note
     ? list.note.length > 120
       ? `${list.note.slice(0, 117)}...`
       : list.note
-    : 'No notes yet. Open the list to add context for this session.'
+    : 'No notes yet. Open the list to add context for this session.';
 
   return (
     <article>
@@ -65,42 +65,39 @@ function ListCard({ list }: { list: ListRecord }) {
         </div>
       </Card>
     </article>
-  )
+  );
 }
 
 export function ListsPage() {
-  const lists = useLists()
-  const createList = useCreateList()
-  const navigate = useNavigate()
-  const [listName, setListName] = useState('')
+  const lists = useLists();
+  const createList = useCreateList();
+  const navigate = useNavigate();
+  const [listName, setListName] = useState('');
 
   const totalItemCount = useMemo(
     () => lists.reduce((count, list) => count + list.items.length, 0),
     [lists],
-  )
+  );
   const completedItemCount = useMemo(
     () =>
-      lists.reduce(
-        (count, list) => count + list.items.filter((item) => item.complete).length,
-        0,
-      ),
+      lists.reduce((count, list) => count + list.items.filter((item) => item.complete).length, 0),
     [lists],
-  )
+  );
 
   function focusComposer() {
-    document.getElementById('list-name')?.focus()
+    document.getElementById('list-name')?.focus();
   }
 
   function handleCreateList(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
-    const normalizedName = listName.trim()
-    if (!normalizedName) return
+    const normalizedName = listName.trim();
+    if (!normalizedName) return;
 
-    const listId = createList({ name: normalizedName })
+    const listId = createList({ name: normalizedName });
 
-    setListName('')
-    navigate(`/lists/${listId}`)
+    setListName('');
+    navigate(`/lists/${listId}`);
   }
 
   return (
@@ -210,5 +207,5 @@ export function ListsPage() {
         </aside>
       </div>
     </div>
-  )
+  );
 }

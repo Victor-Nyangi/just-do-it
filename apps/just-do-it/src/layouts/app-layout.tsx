@@ -11,11 +11,11 @@ import {
   Moon,
   Settings,
   Sun,
-} from 'lucide-react'
-import { useEffect, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { NavLink, Outlet } from 'react-router-dom';
 
-import { Button, cn } from '@just-do-it/ui'
+import { Button, cn } from '@just-do-it/ui';
 
 const navigation = [
   { label: 'Today', to: '/today', icon: LayoutDashboard },
@@ -25,7 +25,7 @@ const navigation = [
   { label: 'Habits', to: '/habits', icon: Flame },
   { label: 'Books', to: '/books', icon: BookOpen },
   { label: 'Lists', to: '/lists', icon: List },
-]
+];
 
 function navigationLinkClass(isActive: boolean) {
   return cn(
@@ -33,17 +33,17 @@ function navigationLinkClass(isActive: boolean) {
     isActive
       ? 'bg-[var(--primary-subtle)] text-[var(--primary)]'
       : 'text-[var(--muted-foreground)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]',
-  )
+  );
 }
 
 export function AppLayout() {
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark')
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('theme') === 'dark');
 
   useEffect(() => {
-    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light'
-    localStorage.setItem('theme', darkMode ? 'dark' : 'light')
-  }, [darkMode])
+    document.documentElement.dataset.theme = darkMode ? 'dark' : 'light';
+    localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+  }, [darkMode]);
 
   const sidebar = (
     <aside className="flex h-full w-72 flex-col border-r border-[var(--border)] bg-[var(--surface)] p-4">
@@ -77,7 +77,7 @@ export function AppLayout() {
         </a>
       </div>
     </aside>
-  )
+  );
 
   return (
     <div className="min-h-screen bg-[var(--background)]">
@@ -123,5 +123,5 @@ export function AppLayout() {
         <Outlet />
       </main>
     </div>
-  )
+  );
 }

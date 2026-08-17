@@ -1,7 +1,7 @@
-export { TaskFiltersPanel } from './components/task-filters'
-export { TaskForm } from './components/task-form'
-export { TaskList } from './components/task-list'
-export { TaskMetadata } from './components/task-metadata'
+export { TaskFiltersPanel } from './components/task-filters';
+export { TaskForm } from './components/task-form';
+export { TaskList } from './components/task-list';
+export { TaskMetadata } from './components/task-metadata';
 export {
   defaultTaskEditorValues,
   getInitialTasks,
@@ -10,7 +10,7 @@ export {
   toTaskEditorValues,
   toTaskInput,
   validatedTaskFixture,
-} from './task-data'
+} from './task-data';
 export {
   selectActiveTaskCount,
   selectCompletedTaskCount,
@@ -19,14 +19,23 @@ export {
   selectScheduledTaskCount,
   selectTodayTaskSections,
   selectVisibleTodayTasks,
-} from './task-selectors'
-export { useCreateTask, useDeleteTask, useOpenTaskCount, useTasks, useTodayTasks, useToggleTaskCompletion, useUpdateTask, useCompletedTaskCount } from './hooks'
-export { useTaskStore } from './task-store'
-export type { TodayTaskSection, TodayTaskSectionKey } from './task-selectors'
-export type { Task, TaskEditorValues, TaskFilters, TaskInput } from './types'
+} from './task-selectors';
+export {
+  useCreateTask,
+  useDeleteTask,
+  useOpenTaskCount,
+  useTasks,
+  useTodayTasks,
+  useToggleTaskCompletion,
+  useUpdateTask,
+  useCompletedTaskCount,
+} from './hooks';
+export { useTaskStore } from './task-store';
+export type { TodayTaskSection, TodayTaskSectionKey } from './task-selectors';
+export type { Task, TaskEditorValues, TaskFilters, TaskInput } from './types';
 export {
   TASK_CATEGORY_VALUES,
   TASK_PRIORITY_VALUES,
   TASK_RECURRENCE_VALUES,
   TASK_STATUS_VALUES,
-} from './types'
+} from './types';
