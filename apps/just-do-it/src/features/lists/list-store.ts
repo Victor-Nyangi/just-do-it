@@ -5,7 +5,7 @@ import type { List, ListInput, ListItem, ListItemInput, ListItemUpdateInput, Lis
 
 type ListStoreState = {
   lists: List[]
-  createList: (input: ListInput) => void
+  createList: (input: ListInput) => string
   updateList: (listId: string, input: ListUpdateInput) => void
   reorderLists: (fromIndex: number, toIndex: number) => void
   deleteList: (listId: string) => void
@@ -36,6 +36,7 @@ function buildListRecord(listId: string, input: ListUpdateInput, existingList?: 
   return listSchema.parse({
     id: existingList?.id ?? listId,
     name: input.name ?? existingList?.name,
+    note: input.note ?? existingList?.note,
     items: existingList ? existingList.items.map(cloneListItem) : [],
   })
 }
@@ -58,9 +59,13 @@ function replaceListItems(list: List, items: ListItem[]): List {
 export const useListStore = create<ListStoreState>()((set) => ({
   lists: getInitialLists(),
   createList: (input) => {
+    const listId = crypto.randomUUID()
+
     set((state) => ({
-      lists: [...state.lists, buildListRecord(crypto.randomUUID(), input)],
+      lists: [...state.lists, buildListRecord(listId, input)],
     }))
+
+    return listId
   },
   updateList: (listId, input) => {
     set((state) => ({

@@ -4,6 +4,8 @@ import { AppLayout } from './layouts/app-layout';
 import { BooksPage } from './routes/books-page';
 import { CalendarPage } from './routes/calendar-page';
 import { GoalsPage } from './routes/goals-page';
+import { ListDetailPage } from './routes/list-detail-page';
+import { ListsPage } from './routes/lists-page';
 import { PlaceholderPage } from './routes/placeholder-page';
 import { TasksPage } from './routes/tasks-page';
 import { TodayPage } from './routes/today-page';
@@ -19,8 +21,8 @@ export default function App() {
         <Route path="/goals" element={<GoalsPage />} />
         <Route path="/habits" element={<PlaceholderPage title="Habits" />} />
         <Route path="/books" element={<BooksPage />} />
-        <Route path="/lists" element={<PlaceholderPage title="Lists" />} />
-        <Route path="/lists/:listId" element={<PlaceholderPage title="List" />} />
+        <Route path="/lists" element={<ListsPage />} />
+        <Route path="/lists/:listId" element={<ListDetailPage />} />
         <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
       </Route>
       <Route path="*" element={<Navigate replace to="/today" />} />

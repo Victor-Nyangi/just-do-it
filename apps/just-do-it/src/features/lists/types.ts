@@ -8,13 +8,15 @@ export type List = {
   id: string
   name: string
   items: ListItem[]
+  note?: string
 }
 
 export type ListInput = {
   name: string
+  note?: string
 }
 
-export type ListUpdateInput = Partial<Pick<List, 'name'>>
+export type ListUpdateInput = Partial<Pick<List, 'name' | 'note'>>
 
 export type ListItemInput = {
   title: string

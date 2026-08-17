@@ -3,6 +3,13 @@ import { z } from 'zod'
 import listsFixture from '../../data/lists.json'
 import type { List, ListItem } from './types'
 
+function normalizeOptionalText(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined
+
+  const normalizedValue = value.trim()
+  return normalizedValue ? normalizedValue : undefined
+}
+
 export const listItemSchema = z.object({
   id: z.string().min(1),
   title: z.string().trim().min(1),
@@ -12,6 +19,7 @@ export const listItemSchema = z.object({
 export const listSchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1),
+  note: z.preprocess(normalizeOptionalText, z.string().optional()),
   items: z.array(listItemSchema),
 })
 
