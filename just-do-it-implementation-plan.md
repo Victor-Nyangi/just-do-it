@@ -257,10 +257,10 @@ Missing versus plan: `lists.icon`, `list_items.notes`, `list_items.position` (or
 
 Carry these into whichever phase touches them; none block progress today.
 
-- **Uncommitted Phase 11 work.** Highest priority — one `git add` away from being lost.
+- ~~**Uncommitted Phase 11 work.**~~ Resolved in `b2287b9` — the Lists workspace is committed, and the four `TS18047` errors it was carrying are fixed.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Nothing enforces it yet, so it can drift again until Phase 15 adds a CI check.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
-- **`pnpm typecheck` silently checks nothing in the app.** `tsc --noEmit` resolves the solution-style `tsconfig.json` (`"files": []` plus `references`), and `--noEmit` does not follow references — so it passes unconditionally. Only `pnpm build` (`tsc -b`) catches type errors. Fix by pointing the script at `tsconfig.app.json`, or by using `tsc -b --noEmit`. Until then the turbo `typecheck` task is decorative.
+- ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
 - **No tests at all.** A green `build` / `typecheck` verifies nothing about behaviour.
 - **`calendar-page.tsx` ~950 lines, `books-page.tsx` ~600, `goals-page.tsx` ~555.** Domain UI living in route files. Extract per domain when touched.
 - **`/habits` and `/settings` render `PlaceholderPage`.** Both are live nav destinations that lead nowhere.
