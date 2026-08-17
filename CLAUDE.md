@@ -17,7 +17,7 @@ pnpm install
 pnpm dev          # turbo dev -> vite dev server for apps/just-do-it
 pnpm build        # tsc -b && vite build
 pnpm lint         # oxlint (app only — see below)
-pnpm typecheck    # tsc --noEmit — but see below, this does NOT check the app
+pnpm typecheck    # tsc -b --noEmit --force (app), tsc --noEmit (ui)
 pnpm format       # prettier --write .
 pnpm format:check
 ```
@@ -26,7 +26,7 @@ Per-package: `pnpm --filter @just-do-it/app dev`, `pnpm --filter @just-do-it/app
 
 Things to know before trusting a green run:
 
-- **`pnpm typecheck` does not typecheck the app.** The app's script is `tsc --noEmit`, which resolves `apps/just-do-it/tsconfig.json` — a solution-style file with `"files": []` and only `references`. `--noEmit` ignores references, so it checks zero files and always passes. Real type errors surface only from `pnpm build` (`tsc -b`, which does follow references). **Always run `pnpm build` to verify types**; treat a green `typecheck` as meaningless for the app.
+- **`pnpm typecheck` really checks the app now — it did not until `chore/typecheck-script`.** The app's script used to be `tsc --noEmit`, which resolves the solution-style `apps/just-do-it/tsconfig.json` (`"files": []` plus `references`); `--noEmit` does not follow references, so it checked zero files and passed unconditionally. It is now `tsc -b --noEmit --force`, which follows the references and re-checks every run rather than trusting a stale `.tsbuildinfo`. If you touch that script, verify the change by planting a deliberate type error and confirming a non-zero exit — a green run alone proves nothing.
 - **There is no test runner anywhere in this repo.** No vitest, no jest, no `pnpm test`. A passing `build` is not verification of behavior — say so rather than claiming a change is tested.
 - **`packages/ui` has no real lint or build.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`; `@just-do-it/ui#build` declares no outputs because the app consumes `src/index.ts` directly (no compile step, no `dist`). Oxlint only ever runs over `apps/just-do-it`.
 - **Formatting is uniform and must stay that way.** The whole tree was normalized to Prettier's configured style in `09bd4c9` — semicolons, single quotes, trailing commas, 100 columns. `pnpm format:check` passes; keep it passing. It is not wired into CI or a pre-commit hook yet, so run `pnpm format` before committing. `.prettierignore` excludes `pnpm-lock.yaml`; `dist` and `node_modules` are covered by `.gitignore`, which Prettier honours by default.
