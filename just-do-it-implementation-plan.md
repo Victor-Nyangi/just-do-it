@@ -258,7 +258,7 @@ Missing versus plan: `lists.icon`, `list_items.notes`, `list_items.position` (or
 Carry these into whichever phase touches them; none block progress today.
 
 - **Uncommitted Phase 11 work.** Highest priority — one `git add` away from being lost.
-- **Prettier has drifted.** `pnpm format:check` fails on ~48 files; the tree mixes semicolon and no-semicolon style (newer routes use them, older feature modules do not). Running `pnpm format` rewrites most of the repo, so do it as a single isolated commit, not folded into feature work.
+- ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Nothing enforces it yet, so it can drift again until Phase 15 adds a CI check.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - **`pnpm typecheck` silently checks nothing in the app.** `tsc --noEmit` resolves the solution-style `tsconfig.json` (`"files": []` plus `references`), and `--noEmit` does not follow references — so it passes unconditionally. Only `pnpm build` (`tsc -b`) catches type errors. Fix by pointing the script at `tsconfig.app.json`, or by using `tsc -b --noEmit`. Until then the turbo `typecheck` task is decorative.
 - **No tests at all.** A green `build` / `typecheck` verifies nothing about behaviour.
@@ -305,7 +305,7 @@ Do this before Phase 16 — migrating a positional array into a completions tabl
 - [ ] Vercel project, root directory `apps/just-do-it`, Turbo-aware build
 - [ ] SPA rewrite rule so deep links like `/lists/:listId` resolve
 - [ ] PWA consideration — offline is a real fit for a fixture-backed app
-- [ ] Resolve the Prettier drift in one dedicated commit
+- [x] Resolve the Prettier drift in one dedicated commit — done in `09bd4c9`
 
 ### Phase 15 — Testing & quality gates
 
@@ -316,7 +316,7 @@ Not in the original plan. Added because the repo currently has no way to verify 
 - [ ] Store tests for the mutation → Zod round-trip
 - [ ] Fixture-validity tests, so a malformed fixture fails CI rather than app boot
 - [ ] React Testing Library for Today and Tasks
-- [ ] GitHub Actions running `lint`, `typecheck`, `test`, `build`
+- [ ] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
 - [ ] Extend oxlint to `packages/ui`
 
 ### Phase 16 — Hosted persistence (deferred)
