@@ -69,6 +69,25 @@ describe('useHabitStore', () => {
     expect(updatedHabit?.target).toBe(5);
   });
 
+  it('normalizes target to 1 when a habit is switched to daily', () => {
+    expect(() =>
+      useHabitStore.getState().updateHabit('workout', { frequency: 'daily' }),
+    ).not.toThrow();
+
+    const updatedHabit = useHabitStore.getState().habits.find((habit) => habit.id === 'workout');
+    expect(updatedHabit?.frequency).toBe('daily');
+    expect(updatedHabit?.target).toBe(1);
+  });
+
+  it('preserves the original createdAt when a habit is updated', () => {
+    const originalHabit = useHabitStore.getState().habits.find((habit) => habit.id === 'workout');
+
+    useHabitStore.getState().updateHabit('workout', { label: 'Evening workout' });
+
+    const updatedHabit = useHabitStore.getState().habits.find((habit) => habit.id === 'workout');
+    expect(updatedHabit?.createdAt).toBe(originalHabit?.createdAt);
+  });
+
   it('removes a habit and cascades to its completions', () => {
     useHabitStore.getState().removeHabit('reading');
 
