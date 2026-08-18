@@ -33,6 +33,11 @@ function normalizeOptionalDescription(value: string): string | undefined {
   return normalizedValue ? normalizedValue : undefined;
 }
 
+function clampWeeklyTarget(rawValue: string): number {
+  const parsedValue = Number(rawValue) || 1;
+  return Math.min(7, Math.max(1, parsedValue));
+}
+
 function chunkIntoWeeks(
   days: readonly { date: Date; complete: boolean }[],
 ): { date: Date; complete: boolean }[][] {
@@ -288,8 +293,9 @@ export function HabitDetailPage() {
                   </label>
                   <Input
                     id="habit-detail-target"
+                    max={7}
                     min={1}
-                    onChange={(event) => setDraftTarget(Number(event.target.value) || 1)}
+                    onChange={(event) => setDraftTarget(clampWeeklyTarget(event.target.value))}
                     type="number"
                     value={draftTarget}
                   />
