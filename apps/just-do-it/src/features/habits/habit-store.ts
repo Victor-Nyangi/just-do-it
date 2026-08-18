@@ -1,46 +1,96 @@
 import { create } from 'zustand';
 
-import { getInitialHabits, habitSchema } from './habit-data';
-import { HABIT_DAY_COUNT, type Habit } from './types';
+import {
+  getInitialHabitCompletions,
+  getInitialHabits,
+  habitCompletionSchema,
+  habitSchema,
+} from './habit-data';
+import { toHabitDateKey } from './habit-selectors';
+import type { Habit, HabitCompletion, HabitInput, HabitUpdateInput } from './types';
 
 type HabitStoreState = {
   habits: Habit[];
-  setHabitCompletion: (habitId: string, dayIndex: number, complete: boolean) => void;
-  toggleHabitCompletion: (habitId: string, dayIndex: number) => void;
+  completions: HabitCompletion[];
+  toggleHabitCompletionOn: (habitId: string, dateKey: string) => void;
+  addHabit: (input: HabitInput) => string;
+  updateHabit: (habitId: string, input: HabitUpdateInput) => void;
+  removeHabit: (habitId: string) => void;
 };
 
-function isDayIndex(dayIndex: number): boolean {
-  return dayIndex >= 0 && dayIndex < HABIT_DAY_COUNT;
-}
-
-function buildHabitRecord(habit: Habit, dayIndex: number, complete: boolean): Habit {
-  const nextDays = [...habit.days];
-  nextDays[dayIndex] = complete;
+function buildHabitRecord(habitId: string, input: HabitUpdateInput, existingHabit?: Habit): Habit {
+  const frequency = input.frequency ?? existingHabit?.frequency ?? 'daily';
+  const requestedTarget = input.target ?? existingHabit?.target ?? 1;
 
   return habitSchema.parse({
-    ...habit,
-    days: nextDays,
+    id: existingHabit?.id ?? habitId,
+    label: input.label ?? existingHabit?.label,
+    description: input.description ?? existingHabit?.description,
+    frequency,
+    // The schema refuses a daily habit with any other target; normalize rather than throw.
+    target: frequency === 'daily' ? 1 : requestedTarget,
+    createdAt: existingHabit?.createdAt ?? toHabitDateKey(new Date()),
+    // Temporary: habitDaysSchema still requires five booleans until Task 4
+    // removes the field. A habit added in-session needs a valid placeholder.
+    days: existingHabit?.days ?? [false, false, false, false, false],
   });
+}
+
+function buildHabitCompletionRecord(
+  completionId: string,
+  habitId: string,
+  dateKey: string,
+): HabitCompletion {
+  return habitCompletionSchema.parse({ id: completionId, habitId, date: dateKey });
 }
 
 export const useHabitStore = create<HabitStoreState>()((set) => ({
   habits: getInitialHabits(),
-  setHabitCompletion: (habitId, dayIndex, complete) => {
-    if (!isDayIndex(dayIndex)) return;
+  completions: getInitialHabitCompletions(),
+  toggleHabitCompletionOn: (habitId, dateKey) => {
+    set((state) => {
+      if (!state.habits.some((habit) => habit.id === habitId)) return state;
+
+      const existingCompletion = state.completions.find(
+        (completion) => completion.habitId === habitId && completion.date === dateKey,
+      );
+
+      if (existingCompletion) {
+        return {
+          completions: state.completions.filter(
+            (completion) => completion.id !== existingCompletion.id,
+          ),
+        };
+      }
+
+      return {
+        completions: [
+          ...state.completions,
+          buildHabitCompletionRecord(crypto.randomUUID(), habitId, dateKey),
+        ],
+      };
+    });
+  },
+  addHabit: (input) => {
+    const habitId = crypto.randomUUID();
 
     set((state) => ({
+      habits: [...state.habits, buildHabitRecord(habitId, input)],
+    }));
+
+    return habitId;
+  },
+  updateHabit: (habitId, input) => {
+    set((state) => ({
       habits: state.habits.map((habit) =>
-        habit.id === habitId ? buildHabitRecord(habit, dayIndex, complete) : habit,
+        habit.id === habitId ? buildHabitRecord(habitId, input, habit) : habit,
       ),
     }));
   },
-  toggleHabitCompletion: (habitId, dayIndex) => {
-    if (!isDayIndex(dayIndex)) return;
-
+  removeHabit: (habitId) => {
     set((state) => ({
-      habits: state.habits.map((habit) =>
-        habit.id === habitId ? buildHabitRecord(habit, dayIndex, !habit.days[dayIndex]) : habit,
-      ),
+      habits: state.habits.filter((habit) => habit.id !== habitId),
+      completions: state.completions.filter((completion) => completion.habitId !== habitId),
     }));
   },
 }));

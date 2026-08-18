@@ -1,12 +1,16 @@
-import { format, subDays } from 'date-fns';
+import { format } from 'date-fns';
 import { CheckCheck, Flame, Goal, ListTodo, Plus, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
 import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
 import { formatGoalDeadlineLabel, formatGoalStatusLabel, useGoals } from '../features/goals';
 import {
-  HABIT_DAY_COUNT,
-  selectHabitCompletionCount,
+  isHabitCompletedOn,
+  selectCurrentStreak,
+  selectPeriodProgress,
+  selectRecentCompletionDays,
+  toHabitDateKey,
+  useHabitCompletions,
   useHabits,
   useToggleHabitCompletion,
 } from '../features/habits';
@@ -20,8 +24,6 @@ import {
   useToggleTaskCompletion,
   type TodayTaskSectionKey,
 } from '../features/tasks';
-
-const todayHabitIndex = HABIT_DAY_COUNT - 1;
 
 const sectionCopy: Record<
   TodayTaskSectionKey,
@@ -74,10 +76,11 @@ export function TodayPage() {
   const todayCount = todaySections[1]?.tasks.length ?? 0;
   const unscheduledCount = todaySections[2]?.tasks.length ?? 0;
   const actionableTaskCount = overdueCount + todayCount + unscheduledCount;
-  const checkedHabitsTodayCount = habits.filter((habit) => habit.days[todayHabitIndex]).length;
-  const recentHabitDates = Array.from({ length: HABIT_DAY_COUNT }, (_, index) =>
-    subDays(now, HABIT_DAY_COUNT - index - 1),
-  );
+  const completions = useHabitCompletions();
+  const todayKey = toHabitDateKey(now);
+  const checkedHabitsTodayCount = habits.filter((habit) =>
+    isHabitCompletedOn(completions, habit.id, todayKey),
+  ).length;
   const primaryGoal = goals[0] ?? null;
 
   function addTask() {
@@ -346,7 +349,10 @@ export function TodayPage() {
             ) : (
               <ul className="space-y-4">
                 {habits.map((habit) => {
-                  const completedToday = habit.days[todayHabitIndex];
+                  const completedToday = isHabitCompletedOn(completions, habit.id, todayKey);
+                  const recentDays = selectRecentCompletionDays(completions, habit.id, 5, now);
+                  const currentStreak = selectCurrentStreak(habit, completions, now);
+                  const periodProgress = selectPeriodProgress(habit, completions, now);
 
                   return (
                     <li key={habit.id}>
@@ -360,7 +366,12 @@ export function TodayPage() {
                               </Badge>
                             </div>
                             <p className="mt-1 text-sm text-[var(--muted-foreground)]">
-                              {selectHabitCompletionCount(habit)}/{HABIT_DAY_COUNT} recent check-ins
+                              {currentStreak > 0
+                                ? `${currentStreak} ${habit.frequency === 'daily' ? 'day' : 'week'}${currentStreak === 1 ? '' : 's'} running`
+                                : 'No streak yet'}
+                              {' · '}
+                              {periodProgress.completed}/{periodProgress.target}{' '}
+                              {habit.frequency === 'daily' ? 'today' : 'this week'}
                             </p>
                           </div>
 
@@ -372,7 +383,7 @@ export function TodayPage() {
                             }
                             aria-pressed={completedToday}
                             className="sm:self-start"
-                            onClick={() => toggleHabitCompletion(habit.id, todayHabitIndex)}
+                            onClick={() => toggleHabitCompletion(habit.id, todayKey)}
                             variant={completedToday ? 'accent' : 'secondary'}
                           >
                             {completedToday ? 'Undo today' : 'Check in'}
@@ -380,21 +391,21 @@ export function TodayPage() {
                         </div>
 
                         <div aria-hidden="true" className="mt-4 flex items-center gap-2">
-                          {habit.days.map((complete, index) => (
+                          {recentDays.map((day) => (
                             <div
                               className="flex flex-col items-center gap-1"
-                              key={`${habit.id}-${index}`}
+                              key={toHabitDateKey(day.date)}
                             >
                               <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                                {format(recentHabitDates[index], 'EEEEE')}
+                                {format(day.date, 'EEEEE')}
                               </span>
                               <span
                                 className={cn(
                                   'size-7 rounded-full border',
-                                  complete
+                                  day.complete
                                     ? 'border-[var(--primary)] bg-[var(--primary)]'
                                     : 'border-[var(--border)] bg-[var(--surface)]',
-                                  index === todayHabitIndex
+                                  toHabitDateKey(day.date) === todayKey
                                     ? 'ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-[var(--surface-muted)]'
                                     : '',
                                 )}
