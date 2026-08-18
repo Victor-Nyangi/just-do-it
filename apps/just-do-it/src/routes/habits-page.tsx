@@ -24,6 +24,11 @@ function formatHabitFrequencyLabel(habit: Habit): string {
   return habit.frequency === 'daily' ? 'Daily' : `${habit.target}× per week`;
 }
 
+function clampWeeklyTarget(rawValue: string): number {
+  const parsedValue = Number(rawValue) || 1;
+  return Math.min(7, Math.max(1, parsedValue));
+}
+
 function HabitsEmptyState({ onCreateHabit }: { onCreateHabit: () => void }) {
   return (
     <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6 text-center">
@@ -250,8 +255,9 @@ export function HabitsPage() {
                   </label>
                   <Input
                     id="habit-target"
+                    max={7}
                     min={1}
-                    onChange={(event) => setNewHabitTarget(Number(event.target.value) || 1)}
+                    onChange={(event) => setNewHabitTarget(clampWeeklyTarget(event.target.value))}
                     type="number"
                     value={newHabitTarget}
                   />

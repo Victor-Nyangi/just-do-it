@@ -94,6 +94,11 @@ function selectWeeklyStreak(
   target: number,
   now: Date,
 ): number {
+  // A non-positive target would make weekQualifies() always true below,
+  // looping forever. The schema's min(1) makes this unreachable for parsed
+  // data, but guard anyway — defence in depth is cheap here.
+  if (target < 1) return 0;
+
   const countsByWeek = countCompletionsByWeek(completionDates);
   const weekQualifies = (weekStart: Date): boolean =>
     (countsByWeek.get(toHabitDateKey(weekStart)) ?? 0) >= target;
