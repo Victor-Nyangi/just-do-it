@@ -1,17 +1,38 @@
 [
   {
-    "id": "workout",
-    "label": "Workout",
-    "days": [true, true, true, false, true]
-  },
-  {
     "id": "reading",
     "label": "Reading",
-    "days": [true, true, true, true, false]
+    "description": "Twenty pages before bed, every day.",
+    "frequency": "daily",
+    "target": 1,
+    "createdAt": "2026-05-25",
+    "days": [true, true, true, true, true]
   },
   {
     "id": "meditation",
     "label": "Meditation",
+    "description": "Ten quiet minutes before the day starts.",
+    "frequency": "daily",
+    "target": 1,
+    "createdAt": "2026-05-25",
     "days": [true, true, false, true, false]
+  },
+  {
+    "id": "workout",
+    "label": "Workout",
+    "description": "Four sessions a week, whichever days fit.",
+    "frequency": "weekly",
+    "target": 4,
+    "createdAt": "2026-05-25",
+    "days": [true, true, true, false, true]
+  },
+  {
+    "id": "language-practice",
+    "label": "Language practice",
+    "description": "Three focused sessions a week.",
+    "frequency": "weekly",
+    "target": 3,
+    "createdAt": "2026-05-25",
+    "days": [true, false, true, false, false]
   }
 ]
