@@ -8,7 +8,6 @@ const baseHabit = {
   frequency: 'weekly' as const,
   target: 4,
   createdAt: '2026-05-25',
-  days: [true, true, true, true, true],
 };
 
 describe('habitSchema', () => {

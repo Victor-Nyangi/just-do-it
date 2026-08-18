@@ -1,5 +1,3 @@
-export const HABIT_DAY_COUNT = 5;
-
 export const HABIT_FREQUENCY_VALUES = ['daily', 'weekly'] as const;
 
 export type HabitFrequency = (typeof HABIT_FREQUENCY_VALUES)[number];
@@ -11,7 +9,6 @@ export type Habit = {
   frequency: HabitFrequency;
   target: number;
   createdAt: string;
-  days: boolean[];
 };
 
 export type HabitCompletion = {

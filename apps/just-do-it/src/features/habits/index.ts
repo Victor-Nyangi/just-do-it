@@ -24,7 +24,6 @@ export {
   selectCompletionDatesForHabit,
   selectCompletionRate,
   selectCurrentStreak,
-  selectHabitCompletionCount,
   selectHabitCompletionsByDate,
   selectLongestStreak,
   selectPeriodProgress,
@@ -33,4 +32,4 @@ export {
 } from './habit-selectors';
 export { useHabitStore } from './habit-store';
 export type { Habit, HabitCompletion, HabitFrequency, HabitInput, HabitUpdateInput } from './types';
-export { HABIT_DAY_COUNT, HABIT_FREQUENCY_VALUES } from './types';
+export { HABIT_FREQUENCY_VALUES } from './types';
