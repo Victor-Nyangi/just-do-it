@@ -231,8 +231,3 @@ export function selectRecentCompletionDays(
     return { date, complete: completionDates.has(toHabitDateKey(date)) };
   });
 }
-
-// Temporary: still read by today-page.tsx until Task 3. Deleted in Task 4.
-export function selectHabitCompletionCount(habit: Habit): number {
-  return habit.days.filter(Boolean).length;
-}

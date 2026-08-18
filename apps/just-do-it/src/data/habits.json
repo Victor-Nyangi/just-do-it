@@ -5,8 +5,7 @@
     "description": "Twenty pages before bed, every day.",
     "frequency": "daily",
     "target": 1,
-    "createdAt": "2026-05-25",
-    "days": [true, true, true, true, true]
+    "createdAt": "2026-05-25"
   },
   {
     "id": "meditation",
@@ -14,8 +13,7 @@
     "description": "Ten quiet minutes before the day starts.",
     "frequency": "daily",
     "target": 1,
-    "createdAt": "2026-05-25",
-    "days": [true, true, false, true, false]
+    "createdAt": "2026-05-25"
   },
   {
     "id": "workout",
@@ -23,8 +21,7 @@
     "description": "Four sessions a week, whichever days fit.",
     "frequency": "weekly",
     "target": 4,
-    "createdAt": "2026-05-25",
-    "days": [true, true, true, false, true]
+    "createdAt": "2026-05-25"
   },
   {
     "id": "language-practice",
@@ -32,7 +29,6 @@
     "description": "Three focused sessions a week.",
     "frequency": "weekly",
     "target": 3,
-    "createdAt": "2026-05-25",
-    "days": [true, false, true, false, false]
+    "createdAt": "2026-05-25"
   }
 ]

@@ -20,7 +20,6 @@ const dailyHabit: Habit = {
   frequency: 'daily',
   target: 1,
   createdAt: '2026-01-01',
-  days: [],
 };
 
 const weeklyHabit: Habit = {
@@ -29,7 +28,6 @@ const weeklyHabit: Habit = {
   frequency: 'weekly',
   target: 4,
   createdAt: '2026-01-01',
-  days: [],
 };
 
 function completionsOn(habitId: string, dates: readonly string[]): HabitCompletion[] {

@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 import habitCompletionsFixture from '../../data/habit-completions.json';
 import habitsFixture from '../../data/habits.json';
-import { HABIT_DAY_COUNT, HABIT_FREQUENCY_VALUES, type Habit, type HabitCompletion } from './types';
+import { HABIT_FREQUENCY_VALUES, type Habit, type HabitCompletion } from './types';
 
 function normalizeOptionalText(value: unknown): string | undefined {
   if (typeof value !== 'string') return undefined;
@@ -10,8 +10,6 @@ function normalizeOptionalText(value: unknown): string | undefined {
   const normalizedValue = value.trim();
   return normalizedValue ? normalizedValue : undefined;
 }
-
-const habitDaysSchema = z.array(z.boolean()).length(HABIT_DAY_COUNT);
 
 const habitDateSchema = z
   .string()
@@ -25,7 +23,6 @@ export const habitSchema = z
     frequency: z.enum(HABIT_FREQUENCY_VALUES),
     target: z.number().int().min(1).max(7),
     createdAt: habitDateSchema,
-    days: habitDaysSchema,
   })
   .refine((habit) => habit.frequency !== 'daily' || habit.target === 1, {
     message: 'A daily habit must have a target of 1',
@@ -66,10 +63,7 @@ const validatedHabitCompletionFixture =
   habitCompletionCollectionSchema.parse(habitCompletionsFixture);
 
 export function cloneHabit(habit: Habit): Habit {
-  return {
-    ...habit,
-    days: [...habit.days],
-  };
+  return { ...habit };
 }
 
 export function cloneHabitCompletion(completion: HabitCompletion): HabitCompletion {

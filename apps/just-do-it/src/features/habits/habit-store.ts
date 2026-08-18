@@ -30,9 +30,6 @@ function buildHabitRecord(habitId: string, input: HabitUpdateInput, existingHabi
     // The schema refuses a daily habit with any other target; normalize rather than throw.
     target: frequency === 'daily' ? 1 : requestedTarget,
     createdAt: existingHabit?.createdAt ?? toHabitDateKey(new Date()),
-    // Temporary: habitDaysSchema still requires five booleans until Task 4
-    // removes the field. A habit added in-session needs a valid placeholder.
-    days: existingHabit?.days ?? [false, false, false, false, false],
   });
 }
 
