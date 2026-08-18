@@ -253,10 +253,22 @@ describe('selectCompletionRate', () => {
     expect(selectCompletionRate(weeklyHabit, completionsOn('workout', dates), now)).toBe(1);
   });
 
-  it('divides by one rather than zero for a habit created today', () => {
+  it('is zero for a habit created today with no completions yet', () => {
+    // This takes the completionDates.size === 0 early guard, not the
+    // division below — see the next test for the path that actually
+    // divides by an eligibleDays of one.
     const brandNewHabit: Habit = { ...dailyHabit, createdAt: '2026-08-18' };
 
     expect(selectCompletionRate(brandNewHabit, [], now)).toBe(0);
+  });
+
+  it('divides by one rather than zero for a habit created today', () => {
+    // createdAt === today means eligibleStart === today, so
+    // eligibleDays = differenceInCalendarDays(today, today) + 1 = 1. A
+    // single completion should therefore yield a rate of 1, not a
+    // divide-by-zero or a rate diluted by the full 30-day window.
+    const brandNewHabit: Habit = { ...dailyHabit, createdAt: '2026-08-18' };
+
     expect(selectCompletionRate(brandNewHabit, completionsOn('reading', ['2026-08-18']), now)).toBe(
       1,
     );
