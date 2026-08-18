@@ -1,3 +1,4 @@
+export { HabitDayGrid } from './components/habit-day-grid';
 export {
   cloneHabit,
   cloneHabitCompletion,

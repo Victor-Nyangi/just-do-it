@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
 import { formatGoalDeadlineLabel, formatGoalStatusLabel, useGoals } from '../features/goals';
 import {
+  HabitDayGrid,
   isHabitCompletedOn,
   selectCurrentStreak,
   selectPeriodProgress,
@@ -390,28 +391,8 @@ export function TodayPage() {
                           </Button>
                         </div>
 
-                        <div aria-hidden="true" className="mt-4 flex items-center gap-2">
-                          {recentDays.map((day) => (
-                            <div
-                              className="flex flex-col items-center gap-1"
-                              key={toHabitDateKey(day.date)}
-                            >
-                              <span className="text-[10px] font-semibold uppercase tracking-wide text-[var(--muted-foreground)]">
-                                {format(day.date, 'EEEEE')}
-                              </span>
-                              <span
-                                className={cn(
-                                  'size-7 rounded-full border',
-                                  day.complete
-                                    ? 'border-[var(--primary)] bg-[var(--primary)]'
-                                    : 'border-[var(--border)] bg-[var(--surface)]',
-                                  toHabitDateKey(day.date) === todayKey
-                                    ? 'ring-2 ring-[var(--ring)] ring-offset-2 ring-offset-[var(--surface-muted)]'
-                                    : '',
-                                )}
-                              />
-                            </div>
-                          ))}
+                        <div className="mt-4">
+                          <HabitDayGrid days={recentDays} highlightDateKey={todayKey} />
                         </div>
                       </div>
                     </li>
