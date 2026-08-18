@@ -120,7 +120,13 @@ describe('selectCurrentStreak — weekly', () => {
       '2026-08-10',
       '2026-08-11',
       '2026-08-12',
-      '2026-08-13', // week of 08-10: 4
+      // 2026-08-16 is a Sunday. Monday-first bucketing puts it in the same
+      // week as 08-10..08-12 (Mon 08-10 - Sun 08-16), completing that week
+      // to 4/4. A Sunday-first flip would instead start a new week on
+      // 08-16, leaving 08-10..08-12 at 3/4 (never qualifying) and
+      // collapsing this whole streak to 0 — do not swap this back for
+      // 08-13, it is what pins weekStartsOn: 1.
+      '2026-08-16', // week of 08-10: 4 (Monday-first only)
       '2026-08-17', // current week: 1, below target
     ]);
 
@@ -255,6 +261,29 @@ describe('selectCompletionRate', () => {
     expect(selectCompletionRate(brandNewHabit, [], now)).toBe(0);
     expect(selectCompletionRate(brandNewHabit, completionsOn('reading', ['2026-08-18']), now)).toBe(
       1,
+    );
+  });
+
+  it('reports a fractional rate for a partially completed window', () => {
+    // dailyHabit was created 2026-01-01, well before the 30-day window, so
+    // eligibleDays is the full 30. Completing every other day for 30 days
+    // (indices 0, 2, 4, ..., 28) yields 15 completed days.
+    // Expected rate = 15 / 30 = 0.5.
+    const dates = Array.from({ length: 15 }, (_, index) =>
+      toHabitDateKey(new Date(2026, 7, 18 - index * 2)),
+    );
+
+    expect(selectCompletionRate(dailyHabit, completionsOn('reading', dates), now)).toBe(0.5);
+  });
+
+  it('honors an explicit windowDays instead of the 30-day default', () => {
+    // windowDays = 10 -> window is 2026-08-09..2026-08-18 inclusive, 10
+    // eligible days (createdAt is far before the window). Three completions
+    // land inside it. Expected rate = 3 / 10 = 0.3.
+    const dates = ['2026-08-09', '2026-08-13', '2026-08-18'];
+
+    expect(selectCompletionRate(dailyHabit, completionsOn('reading', dates), now, 10)).toBeCloseTo(
+      0.3,
     );
   });
 });
