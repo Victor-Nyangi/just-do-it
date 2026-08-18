@@ -1,5 +1,4 @@
 import {
-  addDays,
   addMonths,
   compareAsc,
   eachDayOfInterval,
@@ -33,7 +32,13 @@ import { useMemo, useState } from 'react';
 
 import { Badge, Button, Card, cn } from '@just-do-it/ui';
 import { formatGoalDeadlineLabel, useGoals, type Goal } from '../features/goals';
-import { HABIT_DAY_COUNT, useHabits, type Habit } from '../features/habits';
+import {
+  selectHabitCompletionsByDate,
+  useHabitCompletions,
+  useHabits,
+  type Habit,
+  type HabitCompletion,
+} from '../features/habits';
 import {
   TaskMetadata,
   selectFilteredTasks,
@@ -130,23 +135,20 @@ function createTaskMap(tasks: readonly Task[]): Map<string, Task[]> {
   return tasksByDate;
 }
 
-function createHabitActivityMap(habits: readonly Habit[], anchorDate: Date): Map<string, string[]> {
+function createHabitActivityMap(
+  habits: readonly Habit[],
+  completions: readonly HabitCompletion[],
+): Map<string, string[]> {
+  const labelsByHabitId = new Map(habits.map((habit) => [habit.id, habit.label]));
   const habitActivityByDate = new Map<string, string[]>();
 
-  for (const habit of habits) {
-    for (let dayIndex = 0; dayIndex < habit.days.length; dayIndex += 1) {
-      if (!habit.days[dayIndex]) continue;
+  for (const [dateKey, habitIds] of selectHabitCompletionsByDate(completions)) {
+    const labels = habitIds
+      .map((habitId) => labelsByHabitId.get(habitId))
+      .filter((label): label is string => Boolean(label));
 
-      const day = addDays(anchorDate, dayIndex - (HABIT_DAY_COUNT - 1));
-      const dateKey = toIsoDateKey(day);
-      const currentActivity = habitActivityByDate.get(dateKey);
-
-      if (currentActivity) {
-        currentActivity.push(habit.label);
-        continue;
-      }
-
-      habitActivityByDate.set(dateKey, [habit.label]);
+    if (labels.length > 0) {
+      habitActivityByDate.set(dateKey, labels);
     }
   }
 
@@ -418,6 +420,7 @@ export function CalendarPage() {
   const today = useMemo(() => startOfDay(new Date()), []);
   const tasks = useTasks();
   const habits = useHabits();
+  const completions = useHabitCompletions();
   const goals = useGoals();
   const toggleTaskCompletion = useToggleTaskCompletion();
 
@@ -426,7 +429,10 @@ export function CalendarPage() {
   const [agendaMode, setAgendaMode] = useState<AgendaMode>('day');
 
   const tasksByDate = useMemo(() => createTaskMap(tasks), [tasks]);
-  const habitActivityByDate = useMemo(() => createHabitActivityMap(habits, today), [habits, today]);
+  const habitActivityByDate = useMemo(
+    () => createHabitActivityMap(habits, completions),
+    [completions, habits],
+  );
   const goalTargets = useMemo(() => createGoalTargets(goals), [goals]);
   const indicatorsByDate = useMemo(
     () => createCalendarIndicators(tasksByDate, habitActivityByDate, goalTargets),

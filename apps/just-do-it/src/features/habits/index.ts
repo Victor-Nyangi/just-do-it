@@ -10,7 +10,15 @@ export {
   validatedHabitCompletionFixture,
   validatedHabitFixture,
 } from './habit-data';
-export { useHabits, useSetHabitCompletion, useToggleHabitCompletion } from './hooks';
+export {
+  useAddHabit,
+  useHabitById,
+  useHabitCompletions,
+  useHabits,
+  useRemoveHabit,
+  useToggleHabitCompletion,
+  useUpdateHabit,
+} from './hooks';
 export {
   isHabitCompletedOn,
   selectCompletionDatesForHabit,
