@@ -62,7 +62,7 @@ All edits are session-local by design; nothing persists across a reload (except 
 - `features/tasks` and `features/habits` are the only domains with a `components/` subdirectory — habits earned it because `HabitDayGrid` has three genuine consumers (the Today strip, the habits-list cards, and the detail-page heatmap). Other domains keep their UI inline in the route file, which is why `routes/calendar-page.tsx` (~950 lines) and `books-page.tsx` (~600) are large. Extract into `features/<domain>/components/` only when a piece is genuinely reused like that — the plan's principle 10 is "do not prematurely extract".
 - The plan's sketch of `src/{components,lib,stores,types}/` was deliberately not built; stores and types live inside their feature.
 
-Routing is flat in `App.tsx` under a single `AppLayout` outlet, with one nested dynamic route (`/habits/:habitId`). `/settings` is still `<PlaceholderPage>`; `/habits` is not. Unknown paths redirect to `/today`.
+Routing is flat in `App.tsx` under a single `AppLayout` outlet, with nested dynamic routes for habit and list detail (`/habits/:habitId`, `/lists/:listId`). `/settings` is still `<PlaceholderPage>`; `/habits` is not. Unknown paths redirect to `/today`.
 
 ### Design system
 
