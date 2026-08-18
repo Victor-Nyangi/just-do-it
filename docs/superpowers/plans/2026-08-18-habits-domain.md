@@ -908,19 +908,14 @@ describe('selectCompletionRate', () => {
     expect(selectCompletionRate(recentHabit, completions, now)).toBe(1);
   });
 
-  it('never exceeds one when a weekly habit overshoots its target', () => {
-    const completions = completionsOn('workout', [
-      '2026-08-10',
-      '2026-08-11',
-      '2026-08-12',
-      '2026-08-13',
-      '2026-08-14',
-      '2026-08-15',
-      '2026-08-17',
-      '2026-08-18',
-    ]);
+  it('caps at one when a weekly habit overshoots its target', () => {
+    // 28 consecutive days against a target of 4/week over a 30-day window:
+    // the denominator is 4 x ceil(30/7) = 20, so the raw ratio is 1.4.
+    const dates = Array.from({ length: 28 }, (_, index) =>
+      toHabitDateKey(new Date(2026, 7, 18 - index)),
+    );
 
-    expect(selectCompletionRate(weeklyHabit, completions, now)).toBeLessThanOrEqual(1);
+    expect(selectCompletionRate(weeklyHabit, completionsOn('workout', dates), now)).toBe(1);
   });
 
   it('divides by one rather than zero for a habit created today', () => {
@@ -1564,6 +1559,7 @@ Replace the habits import block with:
 
 ```ts
 import {
+  isHabitCompletedOn,
   selectCurrentStreak,
   selectPeriodProgress,
   selectRecentCompletionDays,
@@ -1586,7 +1582,7 @@ const checkedHabitsTodayCount = habits.filter((habit) =>
 ).length;
 ```
 
-Add `isHabitCompletedOn` to the import list. Delete `recentHabitDates`.
+Delete `recentHabitDates`.
 
 Inside the habit `map` (line 348 onward), replace `const completedToday = habit.days[todayHabitIndex];` with:
 
