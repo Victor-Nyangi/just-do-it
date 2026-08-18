@@ -1,7 +1,7 @@
 # Just Do It: Implementation Plan
 
 **Repository:** <https://github.com/Victor-Nyangi/just-do-it>
-**Status as of 2026-08-17:** Phases 1–11 complete, Phase 12 partial. See [§3 Phase status](#3-phase-status).
+**Status as of 2026-08-18:** Phases 1–11 and 13 complete, Phase 12 partial. See [§3 Phase status](#3-phase-status).
 
 ---
 
@@ -23,23 +23,23 @@ The original plan carried **two conflicting phase numberings** — a "Phase 1–
 
 ## 2. Architecture as built
 
-| Concern         | Choice                                                    | Status                             |
-| --------------- | --------------------------------------------------------- | ---------------------------------- |
-| Monorepo        | Turborepo + pnpm workspaces                               | Built                              |
-| Application     | React 19 + Vite 8 + TypeScript                            | Built                              |
-| Routing         | React Router 7                                            | Built                              |
-| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                              |
-| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan |
-| Local state     | Zustand, one store per feature                            | Built                              |
-| Validation      | Zod, at import **and** on every mutation                  | Built                              |
-| Dates           | date-fns                                                  | Built                              |
-| Icons           | Lucide                                                    | Built                              |
-| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                    |
-| Formatting      | Prettier at the root                                      | Configured, drifted (§6)           |
-| Server state    | TanStack Query                                            | Deferred to Phase 15               |
-| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15               |
-| Deployment      | Vercel                                                    | Not started (Phase 14)             |
-| Tests           | —                                                         | **None exist** (Phase 13)          |
+| Concern         | Choice                                                    | Status                                                                                                          |
+| --------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Monorepo        | Turborepo + pnpm workspaces                               | Built                                                                                                           |
+| Application     | React 19 + Vite 8 + TypeScript                            | Built                                                                                                           |
+| Routing         | React Router 7                                            | Built                                                                                                           |
+| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                                                                                                           |
+| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan                                                                              |
+| Local state     | Zustand, one store per feature                            | Built                                                                                                           |
+| Validation      | Zod, at import **and** on every mutation                  | Built                                                                                                           |
+| Dates           | date-fns                                                  | Built                                                                                                           |
+| Icons           | Lucide                                                    | Built                                                                                                           |
+| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                                                                                                 |
+| Formatting      | Prettier at the root                                      | Configured, drifted (§6)                                                                                        |
+| Server state    | TanStack Query                                            | Deferred to Phase 15                                                                                            |
+| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15                                                                                            |
+| Deployment      | Vercel                                                    | Not started (Phase 14)                                                                                          |
+| Tests           | vitest                                                    | Covers habit selectors, schemas, and the store, plus one lists selector — routes and components remain untested |
 
 ### Data flow
 
@@ -88,26 +88,26 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 
 ## 3. Phase status
 
-| #   | Phase                          | Status                    | Notes                                                   |
-| --- | ------------------------------ | ------------------------- | ------------------------------------------------------- |
-| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint       |
-| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped      |
-| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed              |
-| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                               |
-| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                          |
-| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                      |
-| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add         |
-| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators |
-| 9   | Goals                          | **Done**                  | Create, edit, progress, status                          |
-| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                              |
-| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing               |
-| 12  | Quick add & command surface    | **Partial**               | Plain quick add ships; no parser, no palette            |
-| 13  | Habits as a first-class domain | **Not started**           | Route is a placeholder; model is a 5-slot array         |
-| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                |
-| 15  | Testing & quality gates        | **Not started**           | Zero tests in the repo                                  |
-| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                            |
+| #   | Phase                          | Status                    | Notes                                                                             |
+| --- | ------------------------------ | ------------------------- | --------------------------------------------------------------------------------- |
+| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint                                 |
+| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped                                |
+| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed                                        |
+| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                                                         |
+| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                                                    |
+| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                                                |
+| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add                                   |
+| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators                           |
+| 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                    |
+| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                        |
+| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                         |
+| 12  | Quick add & command surface    | **Partial**               | Plain quick add ships; no parser, no palette                                      |
+| 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes |
+| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                          |
+| 15  | Testing & quality gates        | **Not started**           | vitest covers habits and one lists selector; no CI gate, no broader coverage      |
+| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                      |
 
-**Where the project actually is:** the entire fixture-backed product surface is built. What remains is not more domains — it is _finishing_ two half-built ones (habits, quick add), then hardening (tests, deploy, polish).
+**Where the project actually is:** the entire fixture-backed product surface is built, habits included. What remains is not more domains — it is _finishing_ the one half-built one (quick add), then hardening (deploy, polish).
 
 ---
 
@@ -215,24 +215,16 @@ id · title · description · period · targetDate · progress · status
 ⚠️ `period` is a **free-form string**, not the planned `WEEK` | `MONTH` | `YEAR` enum. Tighten it to a `GOAL_PERIOD_VALUES` const array to match the rest of the codebase's pattern.
 No `createdAt` / `updatedAt`.
 
-### Habits — **materially diverges**
+### Habits — now matches the plan
 
 ```text
-id · label · days: boolean[]   // fixed length 5
+habits:      id · label · description? · frequency · target · createdAt
+completions: id · habitId · date   // 'yyyy-MM-dd' key, not a timestamp
 ```
 
-The plan called for a `habits` table (name, description, frequency, target) plus a separate `habit_completions` table keyed by timestamp — explicitly so that metrics like weekly workout counts are possible.
+`frequency`: `daily` | `weekly`. For daily habits `target` is always `1`; for weekly habits it is the number of qualifying completions per calendar week (Monday-first).
 
-What shipped is a fixed 5-slot boolean array with no dates attached. `HABIT_DAY_COUNT = 5` is a hard constant; the Zod schema enforces `.length(5)`.
-
-**Consequences, and why this is the top of the backlog:**
-
-- Habits cannot be shown for any window other than "the last 5 days".
-- Calendar habit activity is derived by mapping array slots onto dates relative to an anchor — it is positional, not real history.
-- Streaks, weekly targets, frequency, and completion history are all unreachable.
-- The array cannot survive a real backend without a migration.
-
-This is addressed by Phase 13.
+This replaces the fixed 5-slot `days: boolean[]` array from earlier phases with the two-table shape the original plan called for: a `habits` record plus a separate, dated `habit_completions` collection. Nine selectors in `features/habits/habit-selectors.ts` (`toHabitDateKey`, `isHabitCompletedOn`, `selectHabitCompletionsByDate`, `selectCompletionDatesForHabit`, `selectCurrentStreak`, `selectLongestStreak`, `selectCompletionRate`, `selectPeriodProgress`, `selectRecentCompletionDays`) derive streaks, completion rate, and period progress from real dates instead of array position. `/habits` and `/habits/:habitId` render the list and per-habit history; Today's habit strip and the calendar's habit activity both consume the same dated completions.
 
 ### Books — matches, trimmed
 
@@ -261,10 +253,12 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Nothing enforces it yet, so it can drift again until Phase 15 adds a CI check.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **No tests at all.** A green `build` / `typecheck` verifies nothing about behaviour.
+- **Test coverage is narrow.** vitest covers habit selectors, schemas, and the store, plus one lists selector — no route or component has a test, and a green `build` / `typecheck` verifies nothing about behaviour beyond types.
 - **`calendar-page.tsx` ~950 lines, `books-page.tsx` ~600, `goals-page.tsx` ~555.** Domain UI living in route files. Extract per domain when touched.
-- **`/habits` and `/settings` render `PlaceholderPage`.** Both are live nav destinations that lead nowhere.
+- **`/settings` renders `PlaceholderPage`.** It is a live nav destination that leads nowhere. (`/habits` is no longer in this state — Phase 13.)
 - **Phase branches are duplicated.** Each `feat/*` branch has a cherry-picked twin from the pre-rebase history. Prune the stale ones.
+- **Habit fixtures go stale.** `src/data/habit-completions.json` uses absolute dates like every other fixture in this repo, so it goes stale — in a few months the app will display a streak that ended long ago. Every fixture here already has this problem, but streaks make it read as a bug rather than as old data. Deliberately not solved with date-shifting, which would make the fixture stop being checked-in data.
+- **`src/data/dashboard.ts` is dead code.** Nothing in the app imports `dashboardData` or `staticData`, despite CLAUDE.md describing this file as "the only cross-domain aggregation point."
 
 ---
 
@@ -287,12 +281,12 @@ Build the parser as a pure, unit-testable function in `features/tasks/`. No AI �
 
 The single largest gap between the plan and the build.
 
-- [ ] Replace `days: boolean[]` with dated completions: `{ id, habitId, completedAt }`
-- [ ] Add `frequency` and `target` to the habit record; add `description`
-- [ ] Selectors for current streak, longest streak, completion rate, and progress against target
-- [ ] Build `/habits` — habit list, per-habit detail, history view
-- [ ] Rewrite the Today strip and calendar habit activity against real dates
-- [ ] Widen the fixture to cover enough history to make streaks meaningful
+- [x] Replace `days: boolean[]` with dated completions: `{ id, habitId, completedAt }`
+- [x] Add `frequency` and `target` to the habit record; add `description`
+- [x] Selectors for current streak, longest streak, completion rate, and progress against target
+- [x] Build `/habits` — habit list, per-habit detail, history view
+- [x] Rewrite the Today strip and calendar habit activity against real dates
+- [x] Widen the fixture to cover enough history to make streaks meaningful
 
 Do this before Phase 16 — migrating a positional array into a completions table after the backend lands is strictly harder.
 
