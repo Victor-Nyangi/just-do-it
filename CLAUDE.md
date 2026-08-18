@@ -48,6 +48,8 @@ src/data/<domain>.json      raw fixture, checked in
 
 Zod is not just an import-time guard: stores re-`parse()` through `buildXRecord()` on **every mutation**, so invalid state can't be written by feature code either. Preserve that when adding actions. Fixtures are parsed eagerly at import — a malformed JSON fixture throws at app boot, not at render.
 
+The single `<domain>.json` shown above is the common case, not a rule: `features/habits` has two top-level fixtures (`habits.json` and `habit-completions.json`), deliberately mirroring the two planned backend tables. A domain with more than one entity should parse and export more than one fixture from its `-data.ts`, the way habits does.
+
 All edits are session-local by design; nothing persists across a reload (except the theme). Don't add localStorage persistence or a fetch layer without being asked.
 
 `src/data/dashboard.ts` is the only cross-domain aggregation point, and it imports _from the feature barrels_ — never the reverse. Features must not import each other's internals; route files compose across features.

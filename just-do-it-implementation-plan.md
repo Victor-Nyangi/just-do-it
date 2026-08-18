@@ -53,6 +53,8 @@ src/data/<domain>.json        raw fixture, checked in
    ↓  routes/*.tsx            presentation
 ```
 
+A single `<domain>.json` is the common case, not a rule: habits is the first domain with two top-level fixtures (`habits.json` and `habit-completions.json`), deliberately mirroring the two planned backend tables. A `-data.ts` module may parse and re-export more than one fixture when the domain has more than one entity.
+
 ### Actual tree
 
 ```text
@@ -82,7 +84,7 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 - `types.ts` declares `const X_VALUES = [...] as const`; both the TypeScript union and the Zod enum derive from it, so they cannot drift.
 - `index.ts` is an explicit named-export barrel. Routes import from `'../features/<domain>'`, never a deeper path.
 - Selectors are pure functions over `readonly T[]` with injectable `now = new Date()`. Hooks compose them inside the store subscription.
-- Only `features/tasks` has a `components/` subdirectory. Other domains keep UI in the route file until reuse is real.
+- `features/tasks` and `features/habits` are the only domains with a `components/` subdirectory — habits earned it via three real consumers of `HabitDayGrid` (the Today strip, the habits-list cards, and the detail-page heatmap). Other domains keep UI in the route file until reuse is real.
 
 ---
 
