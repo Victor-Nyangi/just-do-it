@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A second push to the same branch cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: 1
+
+jobs:
+  verify:
+    name: Verify
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      # Reads the pnpm version from the root package.json "packageManager" field,
+      # so the pin lives in exactly one place. Must run before setup-node for
+      # the pnpm store cache to resolve.
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # --frozen-lockfile fails the run when the lockfile and package.json
+      # disagree, rather than silently reconciling them.
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Cheapest checks first so a failure surfaces without waiting on a build.
+      - name: Check formatting
+        run: pnpm format:check
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Overlaps typecheck's tsc -b, but additionally runs vite build, which
+      # catches bundler-level failures typechecking alone does not.
+      - name: Build
+        run: pnpm build
