@@ -47,7 +47,9 @@ function buildListRecord(listId: string, input: ListUpdateInput, existingList?: 
   return listSchema.parse({
     id: existingList?.id ?? listId,
     name: input.name ?? existingList?.name,
-    note: input.note ?? existingList?.note,
+    // `in` rather than `??` so an explicit undefined clears the note.
+    // With `??`, blanking the field sent undefined and restored the old text.
+    note: 'note' in input ? input.note : existingList?.note,
     items: existingList ? existingList.items.map(cloneListItem) : [],
   });
 }
