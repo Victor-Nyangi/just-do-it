@@ -86,7 +86,7 @@ export function AppLayout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             aria-label="Close navigation"
-            className="absolute inset-0 bg-slate-950/30"
+            className="absolute inset-0 bg-[var(--overlay)]"
             onClick={() => setMobileNavOpen(false)}
           />
           <div className="relative h-full">{sidebar}</div>
@@ -115,7 +115,7 @@ export function AppLayout() {
                 <Moon aria-hidden="true" className="size-5" />
               )}
             </Button>
-            <div className="flex size-9 items-center justify-center rounded-full bg-violet-200 text-sm font-bold text-violet-800">
+            <div className="flex size-9 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-sm font-bold text-[var(--accent)]">
               V
             </div>
           </div>

@@ -62,14 +62,16 @@ indie-mono-repo/
 ├── apps/
 │   └── just-do-it/
 │       └── src/
-│           ├── data/          tasks|habits|goals|books|lists.json + dashboard.ts
+│           ├── data/          tasks|habits|habit-completions|goals|books|lists.json + dashboard.ts
 │           ├── features/      books, goals, habits, lists, tasks
 │           ├── layouts/       app-layout.tsx
-│           ├── routes/        today, tasks, calendar, goals, books, lists, list-detail, placeholder
+│           ├── routes/        today, tasks, calendar, goals, books, lists, list-detail,
+│                           habits, habit-detail, placeholder
 │           ├── App.tsx
 │           └── main.tsx
 ├── packages/
 │   └── ui/                    Button, Card, Badge, Input, cn + semantic tokens
+├── .github/workflows/         ci.yml
 ├── turbo.json
 ├── pnpm-workspace.yaml
 └── CLAUDE.md

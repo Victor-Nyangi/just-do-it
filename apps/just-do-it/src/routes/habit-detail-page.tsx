@@ -76,18 +76,20 @@ export function HabitDetailPage() {
 
   if (!habit) {
     return (
-      <Card>
-        <h1 className="text-lg font-bold">Habit not found</h1>
-        <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-          This habit is no longer being tracked.
-        </p>
-        <Link
-          className="mt-4 inline-block text-sm font-semibold text-[var(--primary)]"
-          to="/habits"
-        >
-          Back to habits
-        </Link>
-      </Card>
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-8 sm:py-12">
+        <Card>
+          <h1 className="text-lg font-bold">Habit not found</h1>
+          <p className="mt-2 text-sm text-[var(--muted-foreground)]">
+            This habit is no longer being tracked.
+          </p>
+          <Link
+            className="mt-4 inline-block text-sm font-semibold text-[var(--primary)]"
+            to="/habits"
+          >
+            Back to habits
+          </Link>
+        </Card>
+      </div>
     );
   }
 
