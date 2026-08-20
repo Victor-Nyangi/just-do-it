@@ -22,6 +22,7 @@
   --danger: #b42318;
   --danger-subtle: #fef3f2;
   --ring: #7c3aed;
+  --overlay: rgb(30 33 31 / 0.32);
   --card-shadow: 0 1px 2px rgb(30 33 31 / 0.05), 0 8px 24px rgb(30 33 31 / 0.04);
 }
 
@@ -49,5 +50,6 @@
   --danger: #fda29b;
   --danger-subtle: #4a1d24;
   --ring: #9b7ede;
+  --overlay: rgb(0 0 0 / 0.6);
   --card-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 12px 30px rgb(0 0 0 / 0.18);
 }

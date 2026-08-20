@@ -88,6 +88,26 @@ describe('useHabitStore', () => {
     expect(updatedHabit?.createdAt).toBe(originalHabit?.createdAt);
   });
 
+  it('clears the description when an explicit undefined is passed', () => {
+    const before = useHabitStore.getState().habits.find((habit) => habit.id === 'reading');
+    expect(before?.description).toBeTruthy();
+
+    useHabitStore.getState().updateHabit('reading', { description: undefined });
+
+    const after = useHabitStore.getState().habits.find((habit) => habit.id === 'reading');
+    expect(after?.description).toBeUndefined();
+  });
+
+  it('keeps the description when the key is absent from a partial update', () => {
+    const before = useHabitStore.getState().habits.find((habit) => habit.id === 'reading');
+
+    useHabitStore.getState().updateHabit('reading', { label: 'Reading, renamed' });
+
+    const after = useHabitStore.getState().habits.find((habit) => habit.id === 'reading');
+    expect(after?.description).toBe(before?.description);
+    expect(after?.label).toBe('Reading, renamed');
+  });
+
   it('removes a habit and cascades to its completions', () => {
     useHabitStore.getState().removeHabit('reading');
 

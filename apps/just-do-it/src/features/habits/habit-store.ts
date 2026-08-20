@@ -25,7 +25,9 @@ function buildHabitRecord(habitId: string, input: HabitUpdateInput, existingHabi
   return habitSchema.parse({
     id: existingHabit?.id ?? habitId,
     label: input.label ?? existingHabit?.label,
-    description: input.description ?? existingHabit?.description,
+    // `in` rather than `??` so an explicit undefined clears the description.
+    // With `??`, blanking the field sent undefined and restored the old text.
+    description: 'description' in input ? input.description : existingHabit?.description,
     frequency,
     // The schema refuses a daily habit with any other target; normalize rather than throw.
     target: frequency === 'daily' ? 1 : requestedTarget,
