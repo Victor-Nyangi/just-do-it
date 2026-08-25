@@ -32,8 +32,11 @@ function buildBookRecord(
     ...existingBook,
     ...input,
     id: existingBook?.id ?? bookId,
-    note: input.note === undefined ? existingBook?.note : normalizeBookNote(input.note),
-    rating: input.rating === undefined ? existingBook?.rating : normalizeBookRating(input.rating),
+    // `in` rather than a presence check on the value, so an explicit undefined
+    // clears the field. Comparing against undefined made the rating "Clear"
+    // button and "Clear note" silently restore the previous value.
+    note: 'note' in input ? normalizeBookNote(input.note) : existingBook?.note,
+    rating: 'rating' in input ? normalizeBookRating(input.rating) : existingBook?.rating,
   });
 }
 
