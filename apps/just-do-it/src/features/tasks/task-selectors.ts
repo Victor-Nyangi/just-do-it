@@ -1,4 +1,4 @@
-import { compareAsc, isBefore, isToday, parseISO, startOfDay } from 'date-fns';
+import { compareAsc, isBefore, isSameDay, parseISO, startOfDay } from 'date-fns';
 
 import type { Task, TaskFilters, TaskPriority } from './types';
 
@@ -62,7 +62,7 @@ function getTodaySectionKey(task: Task, now: Date): TodayTaskSectionKey | null {
   const dueDate = parseISO(task.dueDate);
 
   if (isBefore(dueDate, startOfDay(now))) return 'overdue';
-  if (isToday(dueDate)) return 'today';
+  if (isSameDay(dueDate, now)) return 'today';
 
   return null;
 }
