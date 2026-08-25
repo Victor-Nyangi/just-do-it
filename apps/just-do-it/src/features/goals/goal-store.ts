@@ -28,15 +28,18 @@ function buildGoalRecord(
   let progress = normalizeGoalProgress(draft.progress ?? 0);
   let status = draft.status ?? 'active';
 
-  if (status === 'completed') {
-    progress = 100;
+  // On an update, a status the caller named outranks the one progress implies —
+  // otherwise a goal sitting at 100% could never be paused. On a create there is
+  // no prior status to tell an explicit choice apart from an inherited one, so
+  // progress decides there as well.
+  if (existingGoal && input.status !== undefined) {
+    if (status === 'completed') {
+      progress = 100;
+    }
   } else if (progress >= 100) {
     status = 'completed';
-  } else if (
-    existingGoal?.status === 'completed' &&
-    input.progress !== undefined &&
-    input.status === undefined
-  ) {
+  } else if (existingGoal?.status === 'completed') {
+    // Progress was pulled back below the line, so the goal is under way again.
     status = 'active';
   }
 
