@@ -92,24 +92,24 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 
 ## 3. Phase status
 
-| #   | Phase                          | Status                    | Notes                                                                                |
-| --- | ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------ |
-| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint                                    |
-| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped                                   |
-| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed                                           |
-| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                                                            |
-| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                                                       |
-| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                                                   |
-| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add                                      |
-| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators                              |
-| 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                       |
-| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                           |
-| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                            |
-| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette      |
-| 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes    |
-| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                             |
-| 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; vitest still only covers habits and one lists selector |
-| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                         |
+| #   | Phase                          | Status                    | Notes                                                                                                                                                     |
+| --- | ------------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint                                                                                                         |
+| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped                                                                                                        |
+| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed                                                                                                                |
+| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                                                                                                                                 |
+| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                                                                                                                            |
+| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                                                                                                                        |
+| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add                                                                                                           |
+| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators                                                                                                   |
+| 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                                                                                            |
+| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                                                                                                |
+| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                                                                                                 |
+| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette                                                                           |
+| 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes                                                                         |
+| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                                                                                                  |
+| 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; vitest covers habit selectors, schemas and store, one lists selector, and the quick-add parser — no route or component test |
+| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                                                                                              |
 
 **Where the project actually is:** the entire fixture-backed product surface is built, habits included. What remains is not more domains — it is _finishing_ the one half-built one (quick add), then hardening (deploy, polish).
 

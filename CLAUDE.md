@@ -57,7 +57,8 @@ All edits are session-local by design; nothing persists across a reload (except 
 `features/tasks/quick-add-parser.ts` is a pure text→data function (`parseQuickAdd(input, now)`),
 sitting beside the selectors rather than in the fixture pipeline. It takes an injectable `now`
 for the same reason selectors do, and applies no defaults — absent fields mean "not specified",
-and the calling route supplies `todo`/`medium`/`Personal`.
+and `QuickAddField` — the feature component that calls it, not the route — supplies
+`todo`/`medium`/`Personal`.
 
 ### Feature modules
 
