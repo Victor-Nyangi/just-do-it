@@ -1,3 +1,4 @@
+export { QuickAddField } from './components/quick-add-field';
 export { TaskFiltersPanel } from './components/task-filters';
 export { TaskForm } from './components/task-form';
 export { TaskList } from './components/task-list';
