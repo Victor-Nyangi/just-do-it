@@ -63,6 +63,19 @@ const ANY_MONTH =
   'january|february|march|april|may|june|july|august|september|october|november|december|' +
   'jan|feb|mar|apr|jun|jul|aug|sept|sep|oct|nov|dec';
 
+// `date-fns` does not know the four-letter `sept`: both `parse('sept 5', 'MMMM d')` and
+// `parse('sept 5', 'MMM d')` are Invalid, while `sep`, `aug` and `september` all resolve. So
+// `MMM` is no rescue here and is deliberately still absent — `MMMM` already accepts every
+// abbreviation `date-fns` recognises, and `MMM` would reject "August 20". `sept` stays in the
+// alternation so the token is matched and stripped, and is rewritten to `sep` for the parse.
+//
+// Cutting a matched sigil out of the middle of a date phrase also leaves a run of spaces, and
+// `parse('3  august', 'd MMMM')` is Invalid where `parse('3 august', 'd MMMM')` is not, so the
+// matched text's internal whitespace is collapsed before it reaches `parse`.
+function normalizeMonthDayText(text: string): string {
+  return collapseWhitespace(text).replace(/\bsept\b/giu, 'sep');
+}
+
 type TextSpan = { text: string; start: number; end: number };
 
 function findFirst(text: string, pattern: RegExp): TextSpan | null {
@@ -111,9 +124,9 @@ function matchDate(text: string, now: Date): Match<Date> | null {
 
   if (monthDaySpan) {
     // `MMMM` accepts the abbreviated month too, so these two cover all four
-    // spellings. `MMM d` would reject "August 20" and is deliberately absent.
+    // spellings. See `normalizeMonthDayText` for why `MMM` is not a fallback.
     for (const dateFormat of ['MMMM d', 'd MMMM']) {
-      const parsed = parse(monthDaySpan.text, dateFormat, now);
+      const parsed = parse(normalizeMonthDayText(monthDaySpan.text), dateFormat, now);
 
       if (isValid(parsed)) {
         const atStartOfDay = startOfDay(parsed);
@@ -151,15 +164,34 @@ function matchDate(text: string, now: Date): Match<Date> | null {
   return null;
 }
 
-// Spans are cut back-to-front so that removing one does not shift the indices
-// of the ones still to be removed.
+// Overlapping spans are merged before anything is cut, then the merged spans are
+// cut back-to-front so that removing one does not shift the indices of the ones
+// still to be removed. The merge is not defensive padding: slicing two spans that
+// overlap applies the second slice to already-shortened text and silently eats
+// real title characters, so disjointness must be guaranteed here rather than
+// assumed of the callers.
 function cutSpans(
   text: string,
   spans: ReadonlyArray<{ start: number; end: number } | null>,
 ): string {
-  return spans
+  const ascending = spans
     .filter((span) => span !== null)
-    .sort((leftSpan, rightSpan) => rightSpan.start - leftSpan.start)
+    .sort((leftSpan, rightSpan) => leftSpan.start - rightSpan.start);
+
+  const merged: Array<{ start: number; end: number }> = [];
+
+  for (const span of ascending) {
+    const previous = merged[merged.length - 1];
+
+    if (previous !== undefined && span.start <= previous.end) {
+      previous.end = Math.max(previous.end, span.end);
+    } else {
+      merged.push({ start: span.start, end: span.end });
+    }
+  }
+
+  return merged
+    .reverse()
     .reduce((remaining, span) => remaining.slice(0, span.start) + remaining.slice(span.end), text);
 }
 
@@ -167,25 +199,39 @@ function collapseWhitespace(text: string): string {
   return text.replace(/\s+/gu, ' ').trim();
 }
 
-// Every sigil token is blanked before dates are scanned, matched or not, and is
-// replaced by spaces of the same length so indices still line up with the
-// original input. Cutting only the *matched* sigils is not enough: `#Monday` is
-// not a category, so it survives into the date scan, and `\b` matches between
-// `#` and `M` — the weekday matcher would read a due date out of it.
+// The sigils still present once the matched ones have been cut are exactly the
+// unmatched ones, and they are blanked before dates are scanned. Leaving them in
+// is not an option: `#Monday` is not a category, so it survives into the date
+// scan, and `\b` matches between `#` and `M` — the weekday matcher would read a
+// due date out of it.
+//
+// The filler is a dot, one per character, so indices still line up with the text
+// handed in. It must be neither `\w` nor `\s`: with spaces, the matchers that
+// bridge whitespace (`next\s+<weekday>` and both month-day forms) could stretch a
+// date span *across* a masked sigil, and cutting that span would take title text
+// with it. A dot cannot be bridged by `\s+` and cannot start a `\b\w` run, so no
+// date span can span a masked sigil.
 function maskSigils(text: string): string {
-  return text.replace(/[#!]\w+/gu, (token) => ' '.repeat(token.length));
+  return text.replace(/[#!]\w+/gu, (token) => '.'.repeat(token.length));
 }
 
 export function parseQuickAdd(input: string, now = new Date()): QuickAddParseResult {
   const categoryMatch = matchSigil(input, '#', TASK_CATEGORY_VALUES);
   const priorityMatch = matchSigil(input, '!', TASK_PRIORITY_VALUES);
 
-  const dateMatch = matchDate(maskSigils(input), now);
+  // The matched sigils are cut before the date is looked for, so the date span's
+  // indices address this intermediate string and nothing else. Matching the date
+  // against the original input instead would produce a span that can overlap a
+  // sigil span, and cutting the two together would corrupt the title.
+  const withoutMatchedSigils = cutSpans(input, [categoryMatch, priorityMatch]);
+  const dateMatch = matchDate(maskSigils(withoutMatchedSigils), now);
 
+  // Absent fields are omitted rather than set to `undefined`, so `'dueDate' in
+  // result` answers the question it looks like it answers.
   return {
-    title: collapseWhitespace(cutSpans(input, [categoryMatch, priorityMatch, dateMatch])),
-    dueDate: dateMatch ? format(dateMatch.value, 'yyyy-MM-dd') : undefined,
-    category: categoryMatch?.value,
-    priority: priorityMatch?.value,
+    title: collapseWhitespace(cutSpans(withoutMatchedSigils, [dateMatch])),
+    ...(dateMatch !== null ? { dueDate: format(dateMatch.value, 'yyyy-MM-dd') } : {}),
+    ...(categoryMatch !== null ? { category: categoryMatch.value } : {}),
+    ...(priorityMatch !== null ? { priority: priorityMatch.value } : {}),
   };
 }
