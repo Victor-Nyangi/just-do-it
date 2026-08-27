@@ -1,8 +1,7 @@
 import { format } from 'date-fns';
-import { CheckCheck, Flame, Goal, ListTodo, Plus, Sparkles } from 'lucide-react';
-import { useState } from 'react';
+import { CheckCheck, Flame, Goal, ListTodo, Sparkles } from 'lucide-react';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
+import { Badge, Button, Card, cn } from '@just-do-it/ui';
 import { formatGoalDeadlineLabel, formatGoalStatusLabel, useGoals } from '../features/goals';
 import {
   HabitDayGrid,
@@ -16,10 +15,9 @@ import {
   useToggleHabitCompletion,
 } from '../features/habits';
 import {
+  QuickAddField,
   TaskMetadata,
   selectTodayTaskSections,
-  toTaskInput,
-  useCreateTask,
   useOpenTaskCount,
   useTasks,
   useToggleTaskCompletion,
@@ -68,10 +66,8 @@ export function TodayPage() {
   const habits = useHabits();
   const goals = useGoals();
   const openTaskCount = useOpenTaskCount();
-  const createTask = useCreateTask();
   const toggleTaskCompletion = useToggleTaskCompletion();
   const toggleHabitCompletion = useToggleHabitCompletion();
-  const [newTask, setNewTask] = useState('');
 
   const overdueCount = todaySections[0]?.tasks.length ?? 0;
   const todayCount = todaySections[1]?.tasks.length ?? 0;
@@ -83,25 +79,6 @@ export function TodayPage() {
     isHabitCompletedOn(completions, habit.id, todayKey),
   ).length;
   const primaryGoal = goals[0] ?? null;
-
-  function addTask() {
-    const title = newTask.trim();
-    if (!title) return;
-
-    createTask(
-      toTaskInput({
-        title,
-        description: '',
-        status: 'todo',
-        priority: 'medium',
-        category: 'Personal',
-        dueDate: '',
-        recurrence: 'none',
-        recurrenceInterval: 1,
-      }),
-    );
-    setNewTask('');
-  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-8 sm:py-12">
@@ -293,33 +270,7 @@ export function TodayPage() {
               </div>
             </div>
 
-            <form
-              className="flex flex-col gap-3 sm:flex-row"
-              onSubmit={(event) => {
-                event.preventDefault();
-                addTask();
-              }}
-            >
-              <label className="sr-only" htmlFor="today-quick-add">
-                Quick add task
-              </label>
-              <Input
-                aria-describedby="today-quick-add-help"
-                className="flex-1"
-                id="today-quick-add"
-                onChange={(event) => setNewTask(event.target.value)}
-                placeholder="What do you want to get done?"
-                value={newTask}
-              />
-              <Button aria-label="Add task to today" type="submit">
-                <Plus aria-hidden="true" className="mr-2 size-4" />
-                Add task
-              </Button>
-            </form>
-
-            <p className="mt-3 text-sm text-[var(--muted-foreground)]" id="today-quick-add-help">
-              New items land as flexible tasks and stay available on the Tasks page too.
-            </p>
+            <QuickAddField />
           </Card>
         </div>
 
