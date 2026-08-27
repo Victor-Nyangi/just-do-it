@@ -59,7 +59,7 @@ export function QuickAddField() {
         </Button>
       </form>
 
-      <div aria-live="polite" className="mt-3 text-sm" id="quick-add-field-preview">
+      <div className="mt-3 text-sm" id="quick-add-field-preview">
         {draft.trim().length === 0 ? (
           <p className="text-[var(--muted-foreground)]">
             Add a day, <code>#category</code> or <code>!priority</code> and they will be read out of
