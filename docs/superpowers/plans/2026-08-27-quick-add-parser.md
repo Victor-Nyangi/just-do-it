@@ -45,7 +45,7 @@ So only two month-day formats are needed: `MMMM d` and `d MMMM`. Do not add `MMM
 
 ---
 
-### Task 1: Parser module — title passthrough and sigils
+### Task 1: The parser module
 
 **Files:**
 
@@ -56,9 +56,9 @@ So only two month-day formats are needed: `MMMM d` and `d MMMM`. Do not add `MMM
 **Interfaces:**
 
 - Consumes: `TASK_CATEGORY_VALUES`, `TASK_PRIORITY_VALUES`, `TaskCategory`, `TaskPriority` from `./types`.
-- Produces: `parseQuickAdd(input: string, now?: Date): QuickAddParseResult` and the exported type `QuickAddParseResult = { title: string; dueDate?: string; category?: TaskCategory; priority?: TaskPriority }`. Task 2 adds date resolution to the same function. Tasks 4 and 5 consume both through the barrel.
+- Produces: `parseQuickAdd(input: string, now?: Date): QuickAddParseResult` and the exported type `QuickAddParseResult = { title: string; dueDate?: string; category?: TaskCategory; priority?: TaskPriority }`, both re-exported from `features/tasks/index.ts`. `dueDate` is either a valid ISO `yyyy-MM-dd` string or `undefined` — never an empty string, never a `Date`. Task 2 mutation-checks this suite; Task 3 consumes `parseQuickAdd` through the barrel.
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing test — plain text and sigils**
 
 Create `apps/just-do-it/src/features/tasks/quick-add-parser.test.ts`:
 
@@ -175,7 +175,7 @@ Run: `pnpm --filter @just-do-it/app exec vitest run src/features/tasks/quick-add
 
 Expected: FAIL — `Failed to resolve import "./quick-add-parser"`. The module does not exist yet.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [ ] **Step 3: Implement the sigil matching**
 
 Create `apps/just-do-it/src/features/tasks/quick-add-parser.ts`:
 
@@ -254,13 +254,20 @@ export function parseQuickAdd(input: string, now = new Date()): QuickAddParseRes
 }
 ```
 
-`now` is unused in this task and will be consumed in Task 2. Oxlint does not flag unused function parameters, so this passes lint as written — do not delete the parameter.
+`now` is not used yet — Step 8 consumes it. Keep the parameter: the spec's API is
+`parseQuickAdd(input, now)` and the tests already pass a second argument.
+
+**Do not run `pnpm typecheck` between here and Step 8.** `tsconfig.app.json` sets
+`noUnusedParameters: true`, so an unused `now` is `error TS6133: 'now' is declared but its value
+is never read`. Steps 4 and 9 run vitest only, which strips types without checking them. The full
+gate runs once, at Step 10, by which point `now` is used. This is exactly why the sigil and date
+work is one task and one commit rather than two.
 
 - [ ] **Step 4: Run the test to verify it passes**
 
 Run: `pnpm --filter @just-do-it/app exec vitest run src/features/tasks/quick-add-parser.test.ts`
 
-Expected: PASS — 16 tests.
+Expected: PASS — 16 tests. The date tests do not exist yet; they arrive in Step 6.
 
 - [ ] **Step 5: Export from the barrel**
 
@@ -276,40 +283,7 @@ and add the type to the existing type exports:
 export type { QuickAddParseResult } from './quick-add-parser';
 ```
 
-- [ ] **Step 6: Run the full gate**
-
-Run from the repo root:
-
-```sh
-pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build
-```
-
-Expected: all green; the test count rises from 132 to 148.
-
-- [ ] **Step 7: Commit**
-
-```bash
-git add apps/just-do-it/src/features/tasks/quick-add-parser.ts \
-        apps/just-do-it/src/features/tasks/quick-add-parser.test.ts \
-        apps/just-do-it/src/features/tasks/index.ts
-git commit -m "feat(tasks): parse category and priority sigils in quick add"
-```
-
----
-
-### Task 2: Parser module — date matchers
-
-**Files:**
-
-- Modify: `apps/just-do-it/src/features/tasks/quick-add-parser.ts`
-- Modify: `apps/just-do-it/src/features/tasks/quick-add-parser.test.ts`
-
-**Interfaces:**
-
-- Consumes: `parseQuickAdd` and `QuickAddParseResult` from Task 1, unchanged in signature.
-- Produces: the same `parseQuickAdd`, now populating `dueDate` as an ISO `yyyy-MM-dd` string. Tasks 4 and 5 rely on `dueDate` being either a valid `yyyy-MM-dd` string or `undefined` — never an empty string, never a `Date`.
-
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 6: Write the failing date tests**
 
 Append to `apps/just-do-it/src/features/tasks/quick-add-parser.test.ts`:
 
@@ -444,13 +418,13 @@ describe('parseQuickAdd — matcher precedence', () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [ ] **Step 7: Run the tests to verify the new ones fail**
 
 Run: `pnpm --filter @just-do-it/app exec vitest run src/features/tasks/quick-add-parser.test.ts`
 
 Expected: FAIL — every new date assertion reports `expected undefined to be '2026-08-28'` and similar. The 17 tests from Task 1 still pass.
 
-- [ ] **Step 3: Write the minimal implementation**
+- [ ] **Step 8: Implement the date matchers**
 
 In `apps/just-do-it/src/features/tasks/quick-add-parser.ts`, add the date-fns import at the top of the file, above the `./types` import:
 
@@ -599,13 +573,13 @@ export function parseQuickAdd(input: string, now = new Date()): QuickAddParseRes
 }
 ```
 
-- [ ] **Step 4: Run the test to verify it passes**
+- [ ] **Step 9: Run the tests to verify they pass**
 
 Run: `pnpm --filter @just-do-it/app exec vitest run src/features/tasks/quick-add-parser.test.ts`
 
-Expected: PASS — 40 tests.
+Expected: PASS — 40 tests (the 16 from Step 1 plus the 24 added in Step 6).
 
-- [ ] **Step 5: Run the full gate**
+- [ ] **Step 10: Run the full gate**
 
 ```sh
 pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build
@@ -613,17 +587,17 @@ pnpm format && pnpm lint && pnpm typecheck && pnpm test && pnpm build
 
 Expected: all green; the total test count is 172.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 11: Commit**
 
 ```bash
 git add apps/just-do-it/src/features/tasks/quick-add-parser.ts \
         apps/just-do-it/src/features/tasks/quick-add-parser.test.ts
-git commit -m "feat(tasks): parse due dates in quick add"
+git commit -m "feat(tasks): add the quick-add natural-language parser"
 ```
 
 ---
 
-### Task 3: Mutation-check the parser suite
+### Task 2: Mutation-check the parser suite
 
 Characterization tests written against working code pass on their first run, which proves nothing about whether they can fail. This task proves it. It is separate because a reviewer could reasonably accept Task 2's implementation while rejecting its tests as tautological.
 
@@ -633,7 +607,7 @@ Characterization tests written against working code pass on their first run, whi
 
 **Interfaces:**
 
-- Consumes: the parser and its suite from Task 2.
+- Consumes: the parser and its suite from Task 1.
 - Produces: no new API. Output is a confirmed-sensitive test suite.
 
 - [ ] **Step 1: Back up the parser**
@@ -695,7 +669,7 @@ If no mutation survived, there is nothing to commit. Say so and move on.
 
 ---
 
-### Task 4: The QuickAddField component, wired into Today
+### Task 3: The QuickAddField component, wired into Today
 
 **Files:**
 
@@ -705,8 +679,8 @@ If no mutation survived, there is nothing to commit. Say so and move on.
 
 **Interfaces:**
 
-- Consumes: `parseQuickAdd`, `QuickAddParseResult` (Tasks 1–2); `defaultTaskEditorValues`, `toTaskInput` from `./task-data`; `useCreateTask` from `./hooks`; `Button`, `Card`, `Input`, `cn` from `@just-do-it/ui`.
-- Produces: `QuickAddField`, a props-free component (`export function QuickAddField(): JSX.Element`). Task 5 renders the same component with no props.
+- Consumes: `parseQuickAdd`, `QuickAddParseResult` (Task 1); `defaultTaskEditorValues`, `toTaskInput` from `./task-data`; `useCreateTask` from `./hooks`; `Button`, `Card`, `Input`, `cn` from `@just-do-it/ui`.
+- Produces: `QuickAddField`, a props-free component (`export function QuickAddField(): JSX.Element`). Task 4 renders the same component with no props.
 
 - [ ] **Step 1: Create the component**
 
@@ -839,7 +813,9 @@ In `apps/just-do-it/src/routes/today-page.tsx`:
 3. Replace the `<form>…</form>` block and the `<p id="today-quick-add-help">…</p>` that follows it with a single `<QuickAddField />`.
 4. Remove now-unused imports: `Input` from `@just-do-it/ui`, `Plus` from `lucide-react`, `toTaskInput` and `useCreateTask` from `'../features/tasks'`. Leave `useState` if any other state remains on the page, and leave `Sparkles` — the Card heading still uses it.
 
-Oxlint will fail the build on an unused import, so this cleanup is not optional.
+This cleanup is not optional, but oxlint is not what enforces it: `.oxlintrc.json` enables only
+`react/rules-of-hooks` and `react/only-export-components`. `tsconfig.app.json` sets
+`noUnusedLocals: true`, so `pnpm typecheck` fails on a leftover import with `TS6133`.
 
 - [ ] **Step 4: Verify the gate and check it by hand**
 
@@ -871,7 +847,7 @@ git commit -m "feat(tasks): add the quick-add field with a live parse preview"
 
 ---
 
-### Task 5: Quick add on the Tasks page
+### Task 4: Quick add on the Tasks page
 
 **Files:**
 
@@ -879,7 +855,7 @@ git commit -m "feat(tasks): add the quick-add field with a live parse preview"
 
 **Interfaces:**
 
-- Consumes: `QuickAddField` from `'../features/tasks'` (Task 4). No props.
+- Consumes: `QuickAddField` from `'../features/tasks'` (Task 3). No props.
 - Produces: nothing new.
 
 - [ ] **Step 1: Render the component**
@@ -922,7 +898,7 @@ git commit -m "feat(tasks): put quick add on the tasks page"
 
 ---
 
-### Task 6: Record the phase progress
+### Task 5: Record the phase progress
 
 **Files:**
 
@@ -985,7 +961,7 @@ git commit -m "docs: record the quick-add parser and what phase 12 still owes"
 - [ ] `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build` — all green from the repo root.
 - [ ] Every mutation in Task 3 is caught by at least one test.
 - [ ] Every worked example in the spec's grammar table produces the tabulated result, checked by hand in `pnpm dev` on both `/today` and `/tasks`.
-- [ ] `git log --oneline main..HEAD` shows five or six commits, each one a complete, green change.
+- [ ] `git log --oneline main..HEAD` shows four or five commits, each one a complete, green change.
 - [ ] Push and open a PR against `main`. Branch protection requires the **Verify** check.
 
 ## Known limitations to state in the PR
