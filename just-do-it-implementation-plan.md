@@ -23,23 +23,23 @@ The original plan carried **two conflicting phase numberings** — a "Phase 1–
 
 ## 2. Architecture as built
 
-| Concern         | Choice                                                    | Status                                                                                                          |
-| --------------- | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| Monorepo        | Turborepo + pnpm workspaces                               | Built                                                                                                           |
-| Application     | React 19 + Vite 8 + TypeScript                            | Built                                                                                                           |
-| Routing         | React Router 7                                            | Built                                                                                                           |
-| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                                                                                                           |
-| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan                                                                              |
-| Local state     | Zustand, one store per feature                            | Built                                                                                                           |
-| Validation      | Zod, at import **and** on every mutation                  | Built                                                                                                           |
-| Dates           | date-fns                                                  | Built                                                                                                           |
-| Icons           | Lucide                                                    | Built                                                                                                           |
-| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                                                                                                 |
-| Formatting      | Prettier at the root                                      | Configured, drifted (§6)                                                                                        |
-| Server state    | TanStack Query                                            | Deferred to Phase 15                                                                                            |
-| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15                                                                                            |
-| Deployment      | Vercel                                                    | Not started (Phase 14)                                                                                          |
-| Tests           | vitest                                                    | Covers habit selectors, schemas, and the store, plus one lists selector — routes and components remain untested |
+| Concern         | Choice                                                    | Status                                                                                                              |
+| --------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Monorepo        | Turborepo + pnpm workspaces                               | Built                                                                                                               |
+| Application     | React 19 + Vite 8 + TypeScript                            | Built                                                                                                               |
+| Routing         | React Router 7                                            | Built                                                                                                               |
+| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                                                                                                               |
+| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan                                                                                  |
+| Local state     | Zustand, one store per feature                            | Built                                                                                                               |
+| Validation      | Zod, at import **and** on every mutation                  | Built                                                                                                               |
+| Dates           | date-fns                                                  | Built                                                                                                               |
+| Icons           | Lucide                                                    | Built                                                                                                               |
+| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                                                                                                     |
+| Formatting      | Prettier at the root                                      | Configured, drifted (§6)                                                                                            |
+| Server state    | TanStack Query                                            | Deferred to Phase 15                                                                                                |
+| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15                                                                                                |
+| Deployment      | Vercel                                                    | Not started (Phase 14)                                                                                              |
+| Tests           | vitest                                                    | 191 tests across all five domains — selectors, stores, schemas and the quick-add parser. No route or component test |
 
 ### Data flow
 
@@ -92,24 +92,24 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 
 ## 3. Phase status
 
-| #   | Phase                          | Status                    | Notes                                                                                                                                                     |
-| --- | ------------------------------ | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint                                                                                                         |
-| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped                                                                                                        |
-| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed                                                                                                                |
-| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                                                                                                                                 |
-| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                                                                                                                            |
-| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                                                                                                                        |
-| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add                                                                                                           |
-| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators                                                                                                   |
-| 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                                                                                            |
-| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                                                                                                |
-| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                                                                                                 |
-| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette                                                                           |
-| 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes                                                                         |
-| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                                                                                                  |
-| 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; vitest covers habit selectors, schemas and store, one lists selector, and the quick-add parser — no route or component test |
-| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                                                                                              |
+| #   | Phase                          | Status                    | Notes                                                                                                                                                                                |
+| --- | ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | Monorepo foundation            | **Done**                  | No shared config packages; oxlint replaced ESLint                                                                                                                                    |
+| 2   | Application foundation         | **Done**                  | shadcn/ui and TanStack Query intentionally skipped                                                                                                                                   |
+| 3   | Shared design system           | **Done**                  | 4 primitives, not the 10 originally listed                                                                                                                                           |
+| 4   | Static data foundation         | **Done**                  | 5 fixtures, Zod-validated                                                                                                                                                            |
+| 5   | Initial data model             | **Done, with deviations** | Habits diverge materially — §5                                                                                                                                                       |
+| 6   | Feature architecture           | **Done**                  | Canonical; all 5 domains follow it                                                                                                                                                   |
+| 7   | Today dashboard                | **Done**                  | Sections, habit strip, goal progress, quick add                                                                                                                                      |
+| 8   | Calendar                       | **Done**                  | Month grid, day select, day/week agenda, all indicators                                                                                                                              |
+| 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                                                                                                                       |
+| 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                                                                                                                           |
+| 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                                                                                                                            |
+| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette                                                                                                      |
+| 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes                                                                                                    |
+| 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                                                                                                                             |
+| 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; 191 vitest tests cover every domain's selectors and stores plus the quick-add parser — no route or component test, and `packages/ui` is still unlinted |
+| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                                                                                                                         |
 
 **Where the project actually is:** the entire fixture-backed product surface is built, habits included. What remains is not more domains — it is _finishing_ the one half-built one (quick add), then hardening (deploy, polish).
 
@@ -257,7 +257,12 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is narrow.** vitest covers habit selectors, schemas, and the store, plus one lists selector — no route or component has a test, and a green `build` / `typecheck` verifies nothing about behaviour beyond types.
+- **Test coverage is deep on logic and blind on UI.** 191 vitest tests cover every domain's
+  selectors and stores, the Zod round-trip on mutation, and the quick-add parser. **No route or
+  component has a test** — there are no `.test.tsx` files at all, because jsdom and Testing
+  Library are not configured. The notable untested logic is the calendar date mapping in
+  `routes/calendar-page.tsx`. A green `build` / `typecheck` verifies nothing about behaviour
+  beyond types.
 - **`calendar-page.tsx` ~950 lines, `books-page.tsx` ~600, `goals-page.tsx` ~555.** Domain UI living in route files. Extract per domain when touched.
 - **`/settings` renders `PlaceholderPage`.** It is a live nav destination that leads nowhere. (`/habits` is no longer in this state — Phase 13.)
 - **Phase branches are duplicated.** Each `feat/*` branch has a cherry-picked twin from the pre-rebase history. Prune the stale ones.
@@ -320,15 +325,18 @@ Do this before Phase 16 — migrating a positional array into a completions tabl
 
 ### Phase 15 — Testing & quality gates
 
-Not in the original plan. Added because the repo currently has no way to verify anything.
+Not in the original plan. Added because the repo had no way to verify anything; most of it has since landed.
 
-- [ ] Vitest in `apps/just-do-it`, wired as a `test` task in `turbo.json`
-- [ ] Unit tests for selectors first — they are pure and carry the real logic (`selectTodayTaskSections`, calendar mapping, habit streaks, the quick-add parser)
-- [ ] Store tests for the mutation → Zod round-trip
-- [ ] Fixture-validity tests, so a malformed fixture fails CI rather than app boot
+- [x] Vitest in `apps/just-do-it`, wired as a `test` task in `turbo.json`
+- [ ] Unit tests for selectors first — `selectTodayTaskSections`, habit streaks and the quick-add
+      parser are done; **the calendar mapping is not**, and is the last untested logic of substance
+- [x] Store tests for the mutation → Zod round-trip — all four stores
+- [ ] Fixture-validity tests, so a malformed fixture fails CI rather than app boot — enforced
+      indirectly today (each `-data.ts` parses its fixture eagerly at import, so a malformed one
+      throws the moment any test imports it) but never asserted directly
 - [ ] React Testing Library for Today and Tasks
 - [x] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
-- [ ] Extend oxlint to `packages/ui`
+- [ ] Extend oxlint to `packages/ui` — its `lint` script is still `tsc --noEmit`
 
 ### Phase 16 — Hosted persistence (deferred)
 
