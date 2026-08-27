@@ -20,6 +20,7 @@ export {
   selectTodayTaskSections,
   selectVisibleTodayTasks,
 } from './task-selectors';
+export { parseQuickAdd } from './quick-add-parser';
 export {
   useCreateTask,
   useDeleteTask,
@@ -32,6 +33,7 @@ export {
 } from './hooks';
 export { useTaskStore } from './task-store';
 export type { TodayTaskSection, TodayTaskSectionKey } from './task-selectors';
+export type { QuickAddParseResult } from './quick-add-parser';
 export type { Task, TaskEditorValues, TaskFilters, TaskInput } from './types';
 export {
   TASK_CATEGORY_VALUES,
