@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 
 import { Badge, Button, Card } from '@just-do-it/ui';
 import {
+  QuickAddField,
   TaskFiltersPanel,
   TaskForm,
   TaskList,
@@ -115,6 +116,16 @@ export function TasksPage() {
           New task
         </Button>
       </section>
+
+      <Card className="mb-6">
+        <div className="mb-4">
+          <h2 className="font-bold">Quick add</h2>
+          <p className="text-sm text-[var(--muted-foreground)]">
+            Type a day, <code>#category</code> or <code>!priority</code> straight into the title.
+          </p>
+        </div>
+        <QuickAddField />
+      </Card>
 
       <div className="mb-6 grid gap-4 md:grid-cols-3">
         <Card>
