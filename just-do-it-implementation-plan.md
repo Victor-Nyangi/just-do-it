@@ -1,7 +1,7 @@
 # Just Do It: Implementation Plan
 
 **Repository:** <https://github.com/Victor-Nyangi/just-do-it>
-**Status as of 2026-08-18:** Phases 1–11 and 13 complete, Phase 12 partial. See [§3 Phase status](#3-phase-status).
+**Status as of 2026-08-27:** Phases 1–11 and 13 complete, Phase 12 partial. See [§3 Phase status](#3-phase-status).
 
 ---
 
@@ -105,7 +105,7 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 | 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                       |
 | 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                           |
 | 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                            |
-| 12  | Quick add & command surface    | **Partial**               | Plain quick add ships; no parser, no palette                                         |
+| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette      |
 | 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes    |
 | 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                             |
 | 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; vitest still only covers habits and one lists selector |
@@ -270,14 +270,27 @@ Carry these into whichever phase touches them; none block progress today.
 
 ### Phase 12 — Quick add & command surface (partial)
 
-What exists: a quick-add input on Today that creates a title-only task with hard-coded defaults (`todo`, `medium`, `Personal`, no due date).
+What exists: a quick-add input on Today and Tasks that parses the typed title into a due date,
+category, and priority (`parseQuickAdd`), with a live parsed-result preview shown before commit.
+Fields the parser can't find still fall back to the prior hard-coded defaults (`todo`, `medium`,
+`Personal`).
 
-- [ ] Natural-language parser — `Workout tomorrow`, `Read 20 pages Friday`, `Finish portfolio Aug 20`
-- [ ] Parse due date via date-fns, infer category from keywords, infer priority from markers
-- [ ] Show a parsed-result preview before commit, so the guess is correctable
+- [x] Natural-language parser — `Workout tomorrow`, `Read 20 pages Friday`, `Finish portfolio Aug 20`
+- [x] Parse due date via date-fns; category and priority via explicit sigils (`#Reading`, `!high`)
+- [x] Show a parsed-result preview before commit, so the guess is correctable
 - [ ] Command palette (⌘K) — needs a `command` primitive in `packages/ui`
 - [ ] Keyboard shortcuts for new task, search, and navigation
 - [ ] Make quick add reachable from every route, not just Today
+
+The parser shipped with explicit sigils for category and priority (`#Reading`, `!high`) rather
+than keyword inference — "Buy a book about workout nutrition" matches two categories and any
+tie-break is a guess. Dates are natural language (`today`, `tomorrow`, `Friday`, `next Friday`,
+`Aug 20`, `20 August`, `2026-11-30`); matched tokens are stripped from the title, and a bare
+month-day already in the past rolls forward one year. Quick add is on Today and Tasks; the
+remaining three boxes are the command-palette half of this phase, deferred to its own spec.
+Recurrence parsing (`every Monday`) and description parsing were also considered and deferred.
+40 parser tests were added; the repo total is now 172. See
+`docs/superpowers/specs/2026-08-27-quick-add-parser-design.md`.
 
 Build the parser as a pure, unit-testable function in `features/tasks/`. No AI — revisit only if a plain parser proves inadequate.
 
