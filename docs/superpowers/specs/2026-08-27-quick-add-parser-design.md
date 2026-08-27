@@ -119,19 +119,32 @@ consumes `Friday` and strands `next` in the title.
   surprising behaviour.
 - **An unknown sigil is not a match.** `#Groceries` is not a category, so it stays in the title
   verbatim. Silently dropping input the user typed is worse than leaving it visible.
+- **Sigil tokens are invisible to the date matchers.** Every `#word` and `!word` is blanked out
+  of the text the date matchers see, whether or not it named a real category or priority. Cutting
+  only the _matched_ sigils is not enough: `#Monday` is not a category, so it would survive into
+  the date scan, and a word boundary sits between `#` and `M` — the weekday matcher would read a
+  due date out of it. `Plan the week #Monday` must produce no due date.
 - **The title is the remainder**, with runs of whitespace collapsed to one space and the result
   trimmed.
 
 ### Worked examples
 
-| Input (`now` = Thu 2026-08-27)        | title              | dueDate      | category  | priority |
-| ------------------------------------- | ------------------ | ------------ | --------- | -------- |
-| `Read 20 pages Friday #Reading !high` | `Read 20 pages`    | `2026-08-28` | `Reading` | `high`   |
-| `Workout tomorrow`                    | `Workout`          | `2026-08-28` | —         | —        |
-| `Finish portfolio Aug 20`             | `Finish portfolio` | `2027-08-20` | —         | —        |
-| `Call the dentist`                    | `Call the dentist` | —            | —         | —        |
-| `Email #Groceries`                    | `Email #Groceries` | —            | —         | —        |
-| `#Reading`                            | `` (empty)         | —            | `Reading` | —        |
+| Input (`now` = Thu 2026-08-27)        | title                   | dueDate      | category  | priority |
+| ------------------------------------- | ----------------------- | ------------ | --------- | -------- |
+| `Read 20 pages Friday #Reading !high` | `Read 20 pages`         | `2026-08-28` | `Reading` | `high`   |
+| `Workout tomorrow`                    | `Workout`               | `2026-08-28` | —         | —        |
+| `Finish portfolio Aug 20`             | `Finish portfolio`      | `2027-08-20` | —         | —        |
+| `Call the dentist`                    | `Call the dentist`      | —            | —         | —        |
+| `Email #Groceries`                    | `Email #Groceries`      | —            | —         | —        |
+| `#Reading`                            | `` (empty)              | —            | `Reading` | —        |
+| `Plan the week #Monday`               | `Plan the week #Monday` | —            | —         | —        |
+| `Plan #Reading #Workout`              | `Plan #Workout`         | —            | `Reading` | —        |
+
+## Known limitations
+
+- **`may` is both a month and a common word.** `Read the may 20 report` parses `may 20` as 20 May.
+  Rare in practice, and the live preview shows the resolved date before commit, so it is accepted
+  rather than special-cased.
 
 ## Preview and the field component
 
