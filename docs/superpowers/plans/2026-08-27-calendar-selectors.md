@@ -65,7 +65,7 @@ export type { BadgeTone } from './components/badge';
 
 - [ ] **Step 2: Create the types module**
 
-Create `apps/just-do-it/src/features/calendar/types.ts`. These are lines 39–64 of `calendar-page.tsx` verbatim, minus `BadgeTone` which now comes from the UI package:
+Create `apps/just-do-it/src/features/calendar/types.ts`. These are lines 58–83 of `calendar-page.tsx` verbatim, minus `BadgeTone` which now comes from the UI package:
 
 ```ts
 import type { BadgeTone } from '@just-do-it/ui';
@@ -127,8 +127,8 @@ import type { AgendaItem, AgendaItemKind, DayIndicators, GoalTarget } from './ty
 
 const agendaKindOrder: Record<AgendaItemKind, number> = {
   task: 0,
-  habit: 1,
-  goal: 2,
+  goal: 1,
+  habit: 2,
 };
 
 export function pluralize(count: number, singular: string, plural = `${singular}s`) {
@@ -402,7 +402,7 @@ export type { AgendaItem, AgendaItemKind, AgendaMode, DayIndicators, GoalTarget 
 
 In `apps/just-do-it/src/routes/calendar-page.tsx`:
 
-1. Delete the type declarations at lines 39–64 (`AgendaMode`, `AgendaItemKind`, `BadgeTone`, `DayIndicators`, `GoalTarget`, `AgendaItem`).
+1. Delete the type declarations at **lines 58–83** (`AgendaMode`, `AgendaItemKind`, `BadgeTone`, `DayIndicators`, `GoalTarget`, `AgendaItem`). Locate them by name, not by line number, in case the file has shifted.
 2. Delete `agendaKindOrder` at line 85.
 3. Delete every function from line 97 (`pluralize`) through line 320 (the end of `getDayButtonLabel`).
 4. Keep `weekdayLabels` and `allTaskFilters` — they are presentation and route config.
@@ -419,14 +419,31 @@ import {
   createTaskMap,
   getDayButtonLabel,
   getIndicatorsForDate,
+  pluralize,
   toIsoDateKey,
   type AgendaItem,
+  type AgendaItemKind,
   type AgendaMode,
   type DayIndicators,
+  type GoalTarget,
 } from '../features/calendar';
 ```
 
-Import only what the remaining JSX actually references — `pluralize`, `getTaskAgendaTone`, `createEmptyDayIndicators`, `AgendaItemKind` and `GoalTarget` may no longer be used directly by the route. `noUnusedLocals` will tell you: run `pnpm typecheck` and remove whatever it flags.
+**What the route still needs, verified by counting usages outside the moved block:** `pluralize`
+(8 uses in the JSX), `toIsoDateKey` (2), `createMonthSelection`, `createTaskMap`,
+`createHabitActivityMap`, `createGoalTargets`, `createAgendaItems`, `createCalendarIndicators`,
+`getIndicatorsForDate` (2), `countHabitCheckInsInMonth`, `getDayButtonLabel`, and the types
+`AgendaItem`, `AgendaItemKind` (used by the route's own `agendaIcons` map), `AgendaMode`,
+`DayIndicators` and `GoalTarget`.
+
+**`getTaskAgendaTone` and `createEmptyDayIndicators` are NOT used by the route** — they are
+internal to the moved logic, so do not import them.
+
+**`BadgeTone` comes from `@just-do-it/ui`, not from the calendar barrel.** The route uses it
+outside the moved block, so add it to the existing `@just-do-it/ui` import.
+
+`noUnusedLocals` catches anything imported and unused; a missing import is a plain compile error.
+Run `pnpm typecheck` and let it arbitrate.
 
 6. The route still imports `selectHabitCompletionsByDate` and `formatGoalDeadlineLabel` today; if the moved functions were their only consumers, `noUnusedLocals` will flag those too. Remove them, and trim the `date-fns` import list the same way — the route no longer needs `compareAsc`, `getDate`, `getDaysInMonth`, `getMonth`, `getYear` or `isSameMonth` unless its own JSX uses them.
 
@@ -753,19 +770,19 @@ describe('createAgendaItems', () => {
 
     expect(items.map((item) => item.id)).toEqual([
       'task-shared',
-      'habit-2026-08-20',
       'goal-shared',
+      'habit-2026-08-20',
     ]);
   });
 
-  it('orders task before habit before goal on the same day', () => {
+  it('orders task before goal before habit on the same day', () => {
     const items = createAgendaItems(
       [buildTask({ id: 'a-task', dueDate: '2026-08-20' })],
       new Map([['2026-08-20', ['Reading']]]),
       [{ id: 'a-goal', title: 'Goal', progress: 10, targetDate: new Date(2026, 7, 20) }],
     );
 
-    expect(items.map((item) => item.kind)).toEqual(['task', 'habit', 'goal']);
+    expect(items.map((item) => item.kind)).toEqual(['task', 'goal', 'habit']);
   });
 
   it('orders by date before kind', () => {
@@ -1019,7 +1036,7 @@ record CAUGHT or SURVIVED and which test failed, then
 | 4   | `createHabitActivityMap`: drop the `.filter(...)` that removes unknown labels                     | "drops a completion whose habit no longer exists"         |
 | 5   | `createGoalTargets`: sort descending instead of ascending                                         | "sorts targets by date ascending"                         |
 | 6   | `getTaskAgendaTone`: check priority before completed status                                       | "is success for a completed task, even an urgent one"     |
-| 7   | `createAgendaItems`: swap `agendaKindOrder` so goal is 0 and task is 2                            | "orders task before habit before goal on the same day"    |
+| 7   | `createAgendaItems`: swap `agendaKindOrder` so habit is 0 and task is 2                           | "orders task before goal before habit on the same day"    |
 | 8   | `createAgendaItems`: compare kind before date                                                     | "orders by date before kind"                              |
 | 9   | `createCalendarIndicators`: overwrite goals with 1 rather than incrementing                       | "accumulates two goals landing on one day"                |
 | 10  | `getIndicatorsForDate`: return `undefined` instead of the empty fallback                          | "falls back to zeroes for a date with nothing on it"      |
