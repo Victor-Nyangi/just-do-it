@@ -23,23 +23,23 @@ The original plan carried **two conflicting phase numberings** — a "Phase 1–
 
 ## 2. Architecture as built
 
-| Concern         | Choice                                                    | Status                                                                                                              |
-| --------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| Monorepo        | Turborepo + pnpm workspaces                               | Built                                                                                                               |
-| Application     | React 19 + Vite 8 + TypeScript                            | Built                                                                                                               |
-| Routing         | React Router 7                                            | Built                                                                                                               |
-| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                                                                                                               |
-| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan                                                                                  |
-| Local state     | Zustand, one store per feature                            | Built                                                                                                               |
-| Validation      | Zod, at import **and** on every mutation                  | Built                                                                                                               |
-| Dates           | date-fns                                                  | Built                                                                                                               |
-| Icons           | Lucide                                                    | Built                                                                                                               |
-| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                                                                                                     |
-| Formatting      | Prettier at the root                                      | Configured, drifted (§6)                                                                                            |
-| Server state    | TanStack Query                                            | Deferred to Phase 15                                                                                                |
-| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15                                                                                                |
-| Deployment      | Vercel                                                    | Not started (Phase 14)                                                                                              |
-| Tests           | vitest                                                    | 191 tests across all five domains — selectors, stores, schemas and the quick-add parser. No route or component test |
+| Concern         | Choice                                                    | Status                                                                                                                                    |
+| --------------- | --------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Monorepo        | Turborepo + pnpm workspaces                               | Built                                                                                                                                     |
+| Application     | React 19 + Vite 8 + TypeScript                            | Built                                                                                                                                     |
+| Routing         | React Router 7                                            | Built                                                                                                                                     |
+| Styling         | Tailwind CSS 4 (CSS-first config, no `tailwind.config`)   | Built                                                                                                                                     |
+| Components      | **Hand-rolled `packages/ui`** — shadcn/ui was not adopted | Built, deviates from original plan                                                                                                        |
+| Local state     | Zustand, one store per feature                            | Built                                                                                                                                     |
+| Validation      | Zod, at import **and** on every mutation                  | Built                                                                                                                                     |
+| Dates           | date-fns                                                  | Built                                                                                                                                     |
+| Icons           | Lucide                                                    | Built                                                                                                                                     |
+| Linting         | **oxlint** (app only) — ESLint was not adopted            | Built, deviates                                                                                                                           |
+| Formatting      | Prettier at the root                                      | Configured, drifted (§6)                                                                                                                  |
+| Server state    | TanStack Query                                            | Deferred to Phase 15                                                                                                                      |
+| Database / auth | Supabase or equivalent                                    | Deferred to Phase 15                                                                                                                      |
+| Deployment      | Vercel                                                    | Not started (Phase 14)                                                                                                                    |
+| Tests           | vitest                                                    | 252 tests across all five domains — selectors, stores, schemas, the quick-add parser and the calendar mapping. No route or component test |
 
 ### Data flow
 
@@ -172,7 +172,7 @@ Greeting and date, task sections (**Overdue / Due today / Flexible**), a 5-day h
 
 Every original checkbox is ticked: monthly grid (Monday-first), day selection, tasks for the selected day, goal milestones, habit activity, and a **day / week agenda toggle**. Per-day indicator chips count tasks, habit check-ins, and goal targets. Day buttons carry composed `aria-label`s. All date maths goes through date-fns.
 
-At ~950 lines, `calendar-page.tsx` is the largest file in the repo and the first candidate for extraction into `features/calendar/`.
+At ~950 lines, `calendar-page.tsx` was the largest file in the repo and the first candidate for extraction into `features/calendar/` — that extraction has since happened (§6); it is now 708 lines.
 
 ### Phase 9 — Goals ✅
 
