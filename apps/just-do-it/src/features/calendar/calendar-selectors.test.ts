@@ -147,6 +147,22 @@ describe('createTaskMap', () => {
   it('returns an empty map for no tasks', () => {
     expect(createTaskMap([]).size).toBe(0);
   });
+
+  it('appends three or more tasks on one date', () => {
+    const tasks = [
+      buildTask({ id: 'alpha', dueDate: '2026-08-20' }),
+      buildTask({ id: 'bravo', dueDate: '2026-08-20' }),
+      buildTask({ id: 'charlie', dueDate: '2026-08-20' }),
+    ];
+
+    const tasksByDate = createTaskMap(tasks);
+
+    expect(tasksByDate.get('2026-08-20')?.map((task) => task.id)).toEqual([
+      'alpha',
+      'bravo',
+      'charlie',
+    ]);
+  });
 });
 
 describe('createHabitActivityMap', () => {
@@ -188,6 +204,24 @@ describe('createHabitActivityMap', () => {
   it('returns an empty map for no completions', () => {
     expect(createHabitActivityMap(habits, []).size).toBe(0);
   });
+
+  it('drops all completions when every orphan habit spans multiple dates', () => {
+    const completions = [
+      buildCompletion('deleted-habit', '2026-08-20'),
+      buildCompletion('deleted-habit', '2026-08-21'),
+    ];
+
+    expect(createHabitActivityMap(habits, completions).size).toBe(0);
+  });
+
+  it('does not include a habit with no completions', () => {
+    const completions = [buildCompletion('reading', '2026-08-20')];
+    const activity = createHabitActivityMap(habits, completions);
+
+    expect(activity.has('2026-08-20')).toBe(true);
+    expect(activity.get('2026-08-20')).toEqual(['Reading']);
+    expect(activity.has('2026-08-21')).toBe(false);
+  });
 });
 
 describe('createGoalTargets', () => {
@@ -220,6 +254,18 @@ describe('createGoalTargets', () => {
 
   it('returns an empty array for no goals', () => {
     expect(createGoalTargets([])).toEqual([]);
+  });
+
+  it('preserves input order for goals with the same targetDate', () => {
+    const goals = [
+      buildGoal({ id: 'first-tie', targetDate: '2026-08-20' }),
+      buildGoal({ id: 'second-tie', targetDate: '2026-08-20' }),
+    ];
+
+    expect(createGoalTargets(goals).map((target) => target.id)).toEqual([
+      'first-tie',
+      'second-tie',
+    ]);
   });
 });
 
@@ -458,6 +504,15 @@ describe('countHabitCheckInsInMonth', () => {
   it('is zero for empty activity', () => {
     expect(countHabitCheckInsInMonth(new Map(), new Date(2026, 7, 15))).toBe(0);
   });
+
+  it('counts check-ins across a leap-year February boundary', () => {
+    const leapYearActivity = new Map([
+      ['2028-02-29', ['Reading', 'Workout']],
+      ['2028-03-01', ['Reading']],
+    ]);
+
+    expect(countHabitCheckInsInMonth(leapYearActivity, new Date(2028, 1, 15))).toBe(2);
+  });
 });
 
 describe('getDayButtonLabel', () => {
@@ -476,6 +531,12 @@ describe('getDayButtonLabel', () => {
   it('omits the categories that are zero', () => {
     expect(getDayButtonLabel(new Date(2026, 7, 20), { tasks: 0, habits: 3, goals: 0 })).toBe(
       'Thursday, August 20, 2026. 3 habit check-ins',
+    );
+  });
+
+  it('handles exactly two non-zero categories', () => {
+    expect(getDayButtonLabel(new Date(2026, 7, 20), { tasks: 2, habits: 0, goals: 1 })).toBe(
+      'Thursday, August 20, 2026. 2 due tasks. 1 goal target',
     );
   });
 });
