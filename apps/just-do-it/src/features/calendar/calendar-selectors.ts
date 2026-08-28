@@ -44,6 +44,11 @@ export function createMonthSelection(currentSelection: Date, nextMonth: Date): D
   return startOfDay(new Date(getYear(nextMonth), getMonth(nextMonth), nextDayOfMonth));
 }
 
+// Keys on the raw `task.dueDate` string rather than `toIsoDateKey(date)` like
+// the other maps here. That is only safe because `isoDateSchema` in
+// task-data.ts pins `dueDate` to `^\d{4}-\d{2}-\d{2}$` — if that format ever
+// widens (e.g. to a full datetime), this map's keys would stop lining up
+// with the ones produced by `toIsoDateKey`, and indicators/agenda would desync.
 export function createTaskMap(tasks: readonly Task[]): Map<string, Task[]> {
   const tasksByDate = new Map<string, Task[]>();
 
