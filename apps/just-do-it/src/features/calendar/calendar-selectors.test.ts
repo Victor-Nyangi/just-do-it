@@ -122,6 +122,12 @@ describe('createMonthSelection', () => {
     expect(selection.getHours()).toBe(0);
     expect(selection.getMinutes()).toBe(0);
   });
+
+  it('carries the day across a year boundary', () => {
+    const selection = createMonthSelection(new Date(2026, 11, 31), new Date(2027, 0, 1));
+
+    expect(toIsoDateKey(selection)).toBe('2027-01-31');
+  });
 });
 
 describe('createTaskMap', () => {
@@ -483,6 +489,7 @@ describe('getIndicatorsForDate', () => {
 
 describe('countHabitCheckInsInMonth', () => {
   const activity = new Map([
+    ['2025-08-20', ['Reading']],
     ['2026-07-31', ['Reading']],
     ['2026-08-01', ['Reading', 'Workout']],
     ['2026-08-20', ['Reading']],
@@ -490,6 +497,11 @@ describe('countHabitCheckInsInMonth', () => {
   ]);
 
   it('counts every check-in inside the month', () => {
+    expect(countHabitCheckInsInMonth(activity, new Date(2026, 7, 15))).toBe(3);
+  });
+
+  it('does not conflate the same month in a different year', () => {
+    expect(countHabitCheckInsInMonth(activity, new Date(2025, 7, 15))).toBe(1);
     expect(countHabitCheckInsInMonth(activity, new Date(2026, 7, 15))).toBe(3);
   });
 
