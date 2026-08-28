@@ -2,7 +2,7 @@ import { addDays, compareAsc, format, parseISO } from 'date-fns';
 import { CalendarClock, CheckCircle2, Goal as GoalIcon, Plus, Sparkles } from 'lucide-react';
 import { useMemo, useRef, useState, type FormEvent } from 'react';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
+import { Badge, type BadgeTone, Button, Card, Input, cn } from '@just-do-it/ui';
 import {
   GOAL_STATUS_VALUES,
   defaultGoalEditorValues,
@@ -19,8 +19,6 @@ import {
   type GoalEditorValues,
   type GoalStatus,
 } from '../features/goals';
-
-type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
 
 const controlClassName =
   'min-h-10 w-full rounded-lg border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--ring)]';
