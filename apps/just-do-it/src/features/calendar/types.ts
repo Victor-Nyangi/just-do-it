@@ -1,6 +1,8 @@
 import type { BadgeTone } from '@just-do-it/ui';
 
 export const AGENDA_MODE_VALUES = ['day', 'week'] as const;
+// Declaration order only, not sort order — the agenda's actual sort order
+// lives in `agendaKindOrder` in calendar-selectors.ts (task, goal, habit).
 export const AGENDA_ITEM_KIND_VALUES = ['task', 'habit', 'goal'] as const;
 
 export type AgendaMode = (typeof AGENDA_MODE_VALUES)[number];
