@@ -1,14 +1,9 @@
 import {
   addMonths,
-  compareAsc,
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
-  getDate,
-  getDaysInMonth,
-  getMonth,
-  getYear,
   isSameDay,
   isSameMonth,
   isWithinInterval,
@@ -31,20 +26,29 @@ import {
 import { useMemo, useState } from 'react';
 
 import { Badge, Button, Card, cn } from '@just-do-it/ui';
-import { formatGoalDeadlineLabel, useGoals, type Goal } from '../features/goals';
 import {
-  selectHabitCompletionsByDate,
-  useHabitCompletions,
-  useHabits,
-  type Habit,
-  type HabitCompletion,
-} from '../features/habits';
+  countHabitCheckInsInMonth,
+  createAgendaItems,
+  createCalendarIndicators,
+  createGoalTargets,
+  createHabitActivityMap,
+  createMonthSelection,
+  createTaskMap,
+  getDayButtonLabel,
+  getIndicatorsForDate,
+  pluralize,
+  toIsoDateKey,
+  type AgendaItem,
+  type AgendaItemKind,
+  type AgendaMode,
+} from '../features/calendar';
+import { formatGoalDeadlineLabel, useGoals } from '../features/goals';
+import { useHabitCompletions, useHabits } from '../features/habits';
 import {
   TaskMetadata,
   selectFilteredTasks,
   useTasks,
   useToggleTaskCompletion,
-  type Task,
   type TaskFilters,
 } from '../features/tasks';
 
@@ -55,269 +59,11 @@ const allTaskFilters: TaskFilters = {
   category: 'all',
 };
 
-type AgendaMode = 'day' | 'week';
-type AgendaItemKind = 'task' | 'habit' | 'goal';
-type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
-
-type DayIndicators = {
-  tasks: number;
-  habits: number;
-  goals: number;
-};
-
-type GoalTarget = {
-  id: string;
-  title: string;
-  progress: number;
-  targetDate: Date;
-};
-
-type AgendaItem = {
-  id: string;
-  kind: AgendaItemKind;
-  title: string;
-  description: string;
-  badge: string;
-  date: Date;
-  tone: BadgeTone;
-};
-
-const agendaKindOrder: Record<AgendaItemKind, number> = {
-  task: 0,
-  goal: 1,
-  habit: 2,
-};
-
 const agendaIcons: Record<AgendaItemKind, LucideIcon> = {
   task: CalendarClock,
   goal: GoalIcon,
   habit: Flame,
 };
-
-function pluralize(count: number, singular: string, plural = `${singular}s`) {
-  return `${count} ${count === 1 ? singular : plural}`;
-}
-
-function toIsoDateKey(date: Date): string {
-  return format(date, 'yyyy-MM-dd');
-}
-
-function createEmptyDayIndicators(): DayIndicators {
-  return {
-    tasks: 0,
-    habits: 0,
-    goals: 0,
-  };
-}
-
-function createMonthSelection(currentSelection: Date, nextMonth: Date): Date {
-  const nextDayOfMonth = Math.min(getDate(currentSelection), getDaysInMonth(nextMonth));
-
-  return startOfDay(new Date(getYear(nextMonth), getMonth(nextMonth), nextDayOfMonth));
-}
-
-function createTaskMap(tasks: readonly Task[]): Map<string, Task[]> {
-  const tasksByDate = new Map<string, Task[]>();
-
-  for (const task of tasks) {
-    if (!task.dueDate) continue;
-
-    const currentTasks = tasksByDate.get(task.dueDate);
-
-    if (currentTasks) {
-      currentTasks.push(task);
-      continue;
-    }
-
-    tasksByDate.set(task.dueDate, [task]);
-  }
-
-  return tasksByDate;
-}
-
-function createHabitActivityMap(
-  habits: readonly Habit[],
-  completions: readonly HabitCompletion[],
-): Map<string, string[]> {
-  const labelsByHabitId = new Map(habits.map((habit) => [habit.id, habit.label]));
-  const habitActivityByDate = new Map<string, string[]>();
-
-  for (const [dateKey, habitIds] of selectHabitCompletionsByDate(completions)) {
-    const labels = habitIds
-      .map((habitId) => labelsByHabitId.get(habitId))
-      .filter((label): label is string => Boolean(label));
-
-    if (labels.length > 0) {
-      habitActivityByDate.set(dateKey, labels);
-    }
-  }
-
-  return habitActivityByDate;
-}
-
-function createGoalTargets(goals: readonly Goal[]): GoalTarget[] {
-  return [...goals]
-    .map((goal) => ({
-      id: goal.id,
-      title: goal.title,
-      progress: goal.progress,
-      targetDate: startOfDay(parseISO(goal.targetDate)),
-    }))
-    .sort((leftTarget, rightTarget) => compareAsc(leftTarget.targetDate, rightTarget.targetDate));
-}
-
-function getTaskAgendaTone(task: Task): BadgeTone {
-  if (task.status === 'completed') return 'success';
-  if (task.priority === 'urgent' || task.priority === 'high') return 'warning';
-  if (task.status === 'in_progress') return 'accent';
-
-  return 'neutral';
-}
-
-function createAgendaItems(
-  tasks: readonly Task[],
-  habitActivityByDate: Map<string, string[]>,
-  goalTargets: readonly GoalTarget[],
-): AgendaItem[] {
-  const agendaItems: AgendaItem[] = [];
-
-  for (const task of tasks) {
-    if (!task.dueDate) continue;
-
-    agendaItems.push({
-      id: `task-${task.id}`,
-      kind: 'task',
-      title: task.title,
-      description:
-        task.description ??
-        `${task.priority.replace(/\b\w/gu, (character) => character.toUpperCase())} priority · ${task.category}`,
-      badge:
-        task.status === 'completed'
-          ? 'Completed task'
-          : task.status === 'in_progress'
-            ? 'In progress'
-            : 'Due task',
-      date: parseISO(task.dueDate),
-      tone: getTaskAgendaTone(task),
-    });
-  }
-
-  for (const [dateKey, labels] of habitActivityByDate) {
-    agendaItems.push({
-      id: `habit-${dateKey}`,
-      kind: 'habit',
-      title: pluralize(labels.length, 'habit check-in'),
-      description: labels.join(', '),
-      badge: 'Habit activity',
-      date: parseISO(dateKey),
-      tone: 'success',
-    });
-  }
-
-  for (const goalTarget of goalTargets) {
-    agendaItems.push({
-      id: `goal-${goalTarget.id}`,
-      kind: 'goal',
-      title: goalTarget.title,
-      description: `${goalTarget.progress}% complete · ${formatGoalDeadlineLabel(toIsoDateKey(goalTarget.targetDate))}`,
-      badge: 'Goal target',
-      date: goalTarget.targetDate,
-      tone: 'accent',
-    });
-  }
-
-  return agendaItems.sort((leftItem, rightItem) => {
-    const dateComparison = compareAsc(leftItem.date, rightItem.date);
-
-    if (dateComparison !== 0) return dateComparison;
-
-    const kindComparison = agendaKindOrder[leftItem.kind] - agendaKindOrder[rightItem.kind];
-
-    if (kindComparison !== 0) return kindComparison;
-
-    return leftItem.title.localeCompare(rightItem.title);
-  });
-}
-
-function createCalendarIndicators(
-  tasksByDate: Map<string, Task[]>,
-  habitActivityByDate: Map<string, string[]>,
-  goalTargets: readonly GoalTarget[],
-): Map<string, DayIndicators> {
-  const indicatorsByDate = new Map<string, DayIndicators>();
-
-  for (const [dateKey, dayTasks] of tasksByDate) {
-    indicatorsByDate.set(dateKey, {
-      ...createEmptyDayIndicators(),
-      tasks: dayTasks.length,
-    });
-  }
-
-  for (const [dateKey, labels] of habitActivityByDate) {
-    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators();
-
-    indicatorsByDate.set(dateKey, {
-      ...currentIndicators,
-      habits: labels.length,
-    });
-  }
-
-  for (const goalTarget of goalTargets) {
-    const dateKey = toIsoDateKey(goalTarget.targetDate);
-    const currentIndicators = indicatorsByDate.get(dateKey) ?? createEmptyDayIndicators();
-
-    indicatorsByDate.set(dateKey, {
-      ...currentIndicators,
-      goals: currentIndicators.goals + 1,
-    });
-  }
-
-  return indicatorsByDate;
-}
-
-function getIndicatorsForDate(
-  indicatorsByDate: Map<string, DayIndicators>,
-  date: Date,
-): DayIndicators {
-  return indicatorsByDate.get(toIsoDateKey(date)) ?? createEmptyDayIndicators();
-}
-
-function countHabitCheckInsInMonth(
-  habitActivityByDate: Map<string, string[]>,
-  month: Date,
-): number {
-  let total = 0;
-
-  for (const [dateKey, labels] of habitActivityByDate) {
-    if (!isSameMonth(parseISO(dateKey), month)) continue;
-
-    total += labels.length;
-  }
-
-  return total;
-}
-
-function getDayButtonLabel(date: Date, indicators: DayIndicators): string {
-  const parts = [format(date, 'EEEE, MMMM d, yyyy')];
-
-  if (indicators.tasks > 0) {
-    parts.push(pluralize(indicators.tasks, 'due task'));
-  }
-
-  if (indicators.habits > 0) {
-    parts.push(pluralize(indicators.habits, 'habit check-in'));
-  }
-
-  if (indicators.goals > 0) {
-    parts.push(pluralize(indicators.goals, 'goal target'));
-  }
-
-  if (parts.length === 1) {
-    parts.push('No scheduled items');
-  }
-
-  return parts.join('. ');
-}
 
 function CalendarEmptyState({
   description,
