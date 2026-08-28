@@ -1,7 +1,7 @@
 import { BookOpen, CheckCircle2, LibraryBig, Plus, Sparkles, Star } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 
-import { Badge, Button, Card, Input, cn } from '@just-do-it/ui';
+import { Badge, type BadgeTone, Button, Card, Input, cn } from '@just-do-it/ui';
 import {
   useBooks,
   useCreateBook,
@@ -39,8 +39,6 @@ type BookSectionConfig = {
   emptyDescription: string;
   status: VisibleBookStatus;
 };
-
-type BadgeTone = 'neutral' | 'accent' | 'success' | 'warning';
 
 const bookSections: readonly BookSectionConfig[] = [
   {
