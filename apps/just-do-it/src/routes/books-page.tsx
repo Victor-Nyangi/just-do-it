@@ -236,6 +236,7 @@ function BookCard({
                 return (
                   <button
                     aria-label={`Rate ${book.title} ${rating} star${rating === 1 ? '' : 's'}`}
+                    aria-pressed={active}
                     className={cn(
                       'inline-flex min-w-11 items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-2',
                       active

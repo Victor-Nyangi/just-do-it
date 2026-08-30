@@ -266,11 +266,10 @@ Carry these into whichever phase touches them; none block progress today.
   guarding the test harness itself. The `/tasks` suite reaches `TaskFiltersPanel`, `TaskForm` and
   `TaskList` through the route. Every route except `/settings` — still a placeholder — now renders
   under test. A green `build` / `typecheck` still verifies nothing about behaviour beyond types.
-- **`/tasks` renders two controls named "Priority" and two named "Category".** The filter panel and
-  the composer duplicate both accessible names on one page, so a role-and-name query cannot tell
-  them apart and neither can a screen-reader user listing the form controls. The tests work around
-  it by scoping to the composer's `<form>`; the fix is to make the names distinct (e.g. "Filter by
-  priority") or to give each block a named region.
+- ~~**`/tasks` renders two controls named "Priority" and two named "Category".**~~ Resolved — the
+  filter panel's controls are now "Filter by priority" and "Filter by category", so nothing on the
+  page shares an accessible name with the composer. The route test lost the containment-scoping
+  helpers it needed to work around the collision.
 - **Route-level guards duplicate logic that already holds elsewhere, and none of them can fire.**
   The route test sweep turned up seven of these by mutation testing, in three shapes. None are
   bugs — each is defence in depth behind a layer that already covers it — but each is a line that
@@ -297,10 +296,9 @@ Carry these into whichever phase touches them; none block progress today.
   anything typed next appends to that rather than replacing it. Clearing and typing "2" produces
   12, which then clamps to the maximum of 7. Selecting the contents and typing over them works, so
   this is awkward rather than broken, but it is the kind of thing that reads as a bug.
-- **Book rating buttons convey selection by colour alone.** The five star buttons on each book card
-  carry an `aria-label` but no `aria-pressed`, so the chosen rating is exposed only as a colour and
-  a filled icon. A screen-reader user cannot tell which rating is set, and no role-and-name query
-  can assert it — the tests read it back from the store instead. Adding `aria-pressed` fixes both.
+- ~~**Book rating buttons convey selection by colour alone.**~~ Resolved — each star button now
+  carries `aria-pressed`, so the chosen rating is exposed to assistive technology and the tests
+  assert it by role rather than reading it back from the store.
 - **`HabitDayGrid` hides the information it displays.** Its root is `aria-hidden="true"` and a
   day's completion is encoded only as a background colour (`bg-[var(--primary)]` against
   `bg-[var(--surface)]`), with no text, role or label anywhere. A screen-reader user gets nothing
@@ -313,12 +311,10 @@ Carry these into whichever phase touches them; none block progress today.
 - **`/settings` renders `PlaceholderPage`.** It is a live nav destination that leads nowhere. (`/habits` is no longer in this state — Phase 13.)
 - **Phase branches are duplicated.** Each `feat/*` branch has a cherry-picked twin from the pre-rebase history. Prune the stale ones.
 - **Habit fixtures go stale.** `src/data/habit-completions.json` uses absolute dates like every other fixture in this repo, so it goes stale — in a few months the app will display a streak that ended long ago. Every fixture here already has this problem, but streaks make it read as a bug rather than as old data. Deliberately not solved with date-shifting, which would make the fixture stop being checked-in data.
-- **Calendar spillover days carry no accessible signal.** In the month grid, days outside the
-  visible month are distinguished only by an `opacity-45` class (`calendar-page.tsx`); their
-  `aria-label` is identical in shape to an in-month day. A screen-reader user cannot tell the
-  difference, and no role-and-name query can assert on it — which is why the grid tests check the
-  first and last cells by date rather than by "is this cell in the month". Fixing it means adding
-  something like `aria-disabled` or a label suffix.
+- ~~**Calendar spillover days carry no accessible signal.**~~ Resolved — `getDayButtonLabel` takes
+  an optional `isOutsideVisibleMonth` and appends "Outside this month", which the grid passes from
+  the `isCurrentMonth` it already computed. `aria-disabled` would have been wrong: spillover days
+  are clickable and jump the grid to that month.
 - **Untested calendar-route behaviour, reachable now that the harness exists.** Indicator chips on
   day cells; clicking a spillover day to flip the visible month; the task completion toggle; the
   "Today" reset button and `aria-current`; the summary cards. All were outside the scope of the

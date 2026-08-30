@@ -114,18 +114,31 @@ describe('BooksPage — moving a book between shelves', () => {
 });
 
 describe('BooksPage — rating', () => {
-  it('rates a book', async () => {
+  it('rates a book, and says so on the button', async () => {
     const user = setUpUser();
     renderBooks();
 
     await user.click(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' }));
 
+    expect(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
     expect(findBook('Atomic Habits')?.rating).toBe(4);
   });
 
-  // The rating buttons carry no `aria-pressed` — selection is conveyed by colour
-  // and a filled icon alone — so the state has to be read from the store. That
-  // is a gap in the page rather than in the test; see the plan's debt list.
+  it('leaves the other stars unpressed', async () => {
+    const user = setUpUser();
+    renderBooks();
+
+    await user.click(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' }));
+
+    expect(screen.getByRole('button', { name: 'Rate Atomic Habits 3 stars' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
+  });
+
   it('clears the rating when the same star is pressed again', async () => {
     const user = setUpUser();
     renderBooks();
@@ -133,6 +146,10 @@ describe('BooksPage — rating', () => {
     await user.click(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' }));
     await user.click(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' }));
 
+    expect(screen.getByRole('button', { name: 'Rate Atomic Habits 4 stars' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     expect(findBook('Atomic Habits')?.rating).toBeUndefined();
   });
 

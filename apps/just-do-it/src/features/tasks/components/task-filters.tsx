@@ -68,7 +68,7 @@ export function TaskFiltersPanel({
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <label className="text-sm font-medium" htmlFor="task-priority-filter">
-            Priority
+            Filter by priority
           </label>
           <select
             className={controlClassName}
@@ -87,7 +87,7 @@ export function TaskFiltersPanel({
 
         <div className="space-y-2">
           <label className="text-sm font-medium" htmlFor="task-category-filter">
-            Category
+            Filter by category
           </label>
           <select
             className={controlClassName}
