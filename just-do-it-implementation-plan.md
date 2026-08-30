@@ -257,15 +257,22 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and now spans one route and one component.** 286 vitest tests
-  across 14 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
+- **Test coverage is deep on logic, and now spans two routes and one component.** 300 vitest tests
+  across 15 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
   quick-add parser, and — since the extraction into `features/calendar` — the calendar date
   mapping, plus (now that jsdom and Testing Library are configured) 15 rendering tests for the
-  calendar route, 13 for `QuickAddField`, and 4 guarding the test harness itself. The other eight
-  routes (`today`, `tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`, `goals`) are
-  still unrendered by any test, as is every other feature component — `HabitDayGrid` most notably,
-  since it has three consumers. A green `build` / `typecheck` verifies nothing about behaviour
-  beyond types.
+  calendar route, 14 for `/today`, 13 for `QuickAddField`, and 4 guarding the test harness itself.
+  The other seven routes (`tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`,
+  `goals`) are still unrendered by any test. A green `build` / `typecheck` verifies nothing about
+  behaviour beyond types.
+- **`HabitDayGrid` hides the information it displays.** Its root is `aria-hidden="true"` and a
+  day's completion is encoded only as a background colour (`bg-[var(--primary)]` against
+  `bg-[var(--surface)]`), with no text, role or label anywhere. A screen-reader user gets nothing
+  from it, and on `/habits/:habitId` that is an entire 84-day history — the surrounding copy gives
+  the streak length but never which days. It also fails on colour alone for colourblind users. Two
+  consequences: the component cannot be tested by role-and-name query, only through a route that
+  renders it; and fixing it is a deliberate accessibility change (a `role="img"` with a summarising
+  `aria-label` per row is the cheapest option) rather than a refactor, so it needs its own decision.
 - **`calendar-page.tsx` 708 lines (down from ~950 after extracting the date-mapping selectors into `features/calendar`), `books-page.tsx` ~600, `goals-page.tsx` ~555.** Domain UI living in route files. Extract per domain when touched.
 - **`/settings` renders `PlaceholderPage`.** It is a live nav destination that leads nowhere. (`/habits` is no longer in this state — Phase 13.)
 - **Phase branches are duplicated.** Each `feat/*` branch has a cherry-picked twin from the pre-rebase history. Prune the stale ones.
@@ -349,8 +356,9 @@ Not in the original plan. Added because the repo had no way to verify anything; 
       throws the moment any test imports it) but never asserted directly
 - [ ] React Testing Library — installed and proven on `/calendar` (including one block pinned to a
       month the fixtures actually reach, so the fixture → store → selector → route path is covered
-      end to end) and on `QuickAddField`, the one component that had shipped verified by eye alone;
-      Today, Tasks and the other six routes are still unrendered by any test
+      end to end), on `/today` (which also covers the QuickAddField → store → lane path across
+      features), and on `QuickAddField` itself, the one component that had shipped verified by eye
+      alone; Tasks and the other six routes are still unrendered by any test
 - [x] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
 - [ ] Extend oxlint to `packages/ui` — its `lint` script is still `tsc --noEmit`
 
