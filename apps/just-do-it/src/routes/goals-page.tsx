@@ -194,14 +194,14 @@ function GoalCard({
               <div className="flex gap-2 sm:shrink-0">
                 <Button
                   aria-label={`Decrease ${goal.title} progress by 10 percent`}
-                  onClick={() => onProgressChange(goal, Math.max(goal.progress - 10, 0))}
+                  onClick={() => onProgressChange(goal, goal.progress - 10)}
                   variant="secondary"
                 >
                   -10%
                 </Button>
                 <Button
                   aria-label={`Increase ${goal.title} progress by 10 percent`}
-                  onClick={() => onProgressChange(goal, Math.min(goal.progress + 10, 100))}
+                  onClick={() => onProgressChange(goal, goal.progress + 10)}
                   variant="secondary"
                 >
                   +10%
@@ -283,12 +283,10 @@ export function GoalsPage() {
     resetForm();
   }
 
+  // `buildGoalRecord` owns the progress invariants: it clamps to 0-100,
+  // completes a goal that reaches 100, and reopens one whose progress falls
+  // back below it. Nothing here needs to pre-empt any of that.
   function handleProgressChange(goal: Goal, progress: number) {
-    if (goal.status === 'completed' && progress < 100) {
-      updateGoal(goal.id, { progress, status: 'active' });
-      return;
-    }
-
     updateGoalProgress(goal.id, progress);
   }
 

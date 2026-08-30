@@ -87,12 +87,11 @@ export function TasksPage() {
     focusComposer();
   }
 
+  // No composer reset here: `editingTask` is derived from the live task list,
+  // so deleting the task being edited already drops the composer back to create
+  // mode and remounts the form with defaults.
   function handleDelete(taskId: string) {
     deleteTask(taskId);
-
-    if (editingTaskId === taskId) {
-      resetComposer();
-    }
   }
 
   return (

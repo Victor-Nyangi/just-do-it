@@ -127,7 +127,7 @@ export function HabitDetailPage() {
       label: normalizedLabel,
       description: normalizedDescription,
       frequency: draftFrequency,
-      target: draftFrequency === 'daily' ? 1 : draftTarget,
+      target: draftTarget,
     });
   }
 
