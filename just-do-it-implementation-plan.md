@@ -257,17 +257,28 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and now spans one route.** 267 vitest tests across 13 files
+- **Test coverage is deep on logic, and now spans one route.** 273 vitest tests across 13 files
   cover every domain's selectors and stores, the Zod round-trip on mutation, the quick-add parser,
   and — since the extraction into `features/calendar` — the calendar date mapping, plus (now that
-  jsdom and Testing Library are configured) 11 rendering tests for the calendar route. The other
-  eight routes (`today`, `tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`,
-  `goals`) are still unrendered by any test, and `QuickAddField` has no component test either. A
-  green `build` / `typecheck` verifies nothing about behaviour beyond types.
+  jsdom and Testing Library are configured) 15 rendering tests for the calendar route and 4
+  guarding the test harness itself. The other eight routes (`today`, `tasks`, `habits`,
+  `habit-detail`, `lists`, `list-detail`, `books`, `goals`) are still unrendered by any test, and
+  `QuickAddField` has no component test either. A green `build` / `typecheck` verifies nothing
+  about behaviour beyond types.
 - **`calendar-page.tsx` 708 lines (down from ~950 after extracting the date-mapping selectors into `features/calendar`), `books-page.tsx` ~600, `goals-page.tsx` ~555.** Domain UI living in route files. Extract per domain when touched.
 - **`/settings` renders `PlaceholderPage`.** It is a live nav destination that leads nowhere. (`/habits` is no longer in this state — Phase 13.)
 - **Phase branches are duplicated.** Each `feat/*` branch has a cherry-picked twin from the pre-rebase history. Prune the stale ones.
 - **Habit fixtures go stale.** `src/data/habit-completions.json` uses absolute dates like every other fixture in this repo, so it goes stale — in a few months the app will display a streak that ended long ago. Every fixture here already has this problem, but streaks make it read as a bug rather than as old data. Deliberately not solved with date-shifting, which would make the fixture stop being checked-in data.
+- **Calendar spillover days carry no accessible signal.** In the month grid, days outside the
+  visible month are distinguished only by an `opacity-45` class (`calendar-page.tsx`); their
+  `aria-label` is identical in shape to an in-month day. A screen-reader user cannot tell the
+  difference, and no role-and-name query can assert on it — which is why the grid tests check the
+  first and last cells by date rather than by "is this cell in the month". Fixing it means adding
+  something like `aria-disabled` or a label suffix.
+- **Untested calendar-route behaviour, reachable now that the harness exists.** Indicator chips on
+  day cells; clicking a spillover day to flip the visible month; the task completion toggle; the
+  "Today" reset button and `aria-current`; the summary cards. All were outside the scope of the
+  branch that built the rendering layer, and all are one short test each.
 - **`src/data/dashboard.ts` is dead code.** Nothing in the app imports `dashboardData` or `staticData`, despite CLAUDE.md describing this file as "the only cross-domain aggregation point."
 
 ---
@@ -335,8 +346,9 @@ Not in the original plan. Added because the repo had no way to verify anything; 
 - [ ] Fixture-validity tests, so a malformed fixture fails CI rather than app boot — enforced
       indirectly today (each `-data.ts` parses its fixture eagerly at import, so a malformed one
       throws the moment any test imports it) but never asserted directly
-- [ ] React Testing Library — installed and proven on `/calendar`; Today, Tasks and the other six
-      routes are still unrendered by any test
+- [ ] React Testing Library — installed and proven on `/calendar`, including one block pinned to a
+      month the fixtures actually reach so the fixture → store → selector → route path is covered
+      end to end; Today, Tasks and the other six routes are still unrendered by any test
 - [x] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
 - [ ] Extend oxlint to `packages/ui` — its `lint` script is still `tsc --noEmit`
 

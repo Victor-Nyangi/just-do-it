@@ -31,13 +31,35 @@ Things to know before trusting a green run:
 - **`pnpm test` runs vitest, and coverage is selector- and store-deep, plus one route.** All five domains have tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. The calendar route now has a rendering test too — the first component or route test in the repo. The other eight routes (`today`, `tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`, `goals`) are still unrendered by any test, and `QuickAddField` — the component that shipped verified only by eye — has no component test either. A passing `build` is not verification of behavior beyond types, and a passing `test` still says nothing about the UI beyond `/calendar`.
 
 Component and route tests opt into jsdom per file with a `// @vitest-environment jsdom` docblock —
-the default environment stays `node` so the pure-logic suites stay fast. `src/test/setup.ts`
-registers jest-dom matchers, cleans up after each test, and resets every zustand store, since the
-stores are module singletons that otherwise leak between tests in a file. Query by role and
-accessible name; the routes already carry good ones. Any test that renders `CalendarPage` must pin
-the clock with `vi.useFakeTimers({ shouldAdvanceTime: true })` and bridge it into user-event with
-`userEvent.setup({ advanceTimers: vi.advanceTimersByTime })` — the page reads `new Date()`
-directly, and user-event hangs on unbridged fake timers.
+the default environment stays `node` so the pure-logic suites stay fast. Because vitest takes one
+`setupFiles` list for both environments, `src/test/setup.ts` gates all of its work behind
+`typeof document !== 'undefined'` and then dynamically imports Testing Library and the feature
+barrels: inside the gate it registers jest-dom matchers, cleans up after each test, and resets
+every zustand store, since the stores are module singletons that otherwise leak between tests in a
+file. **Keep that gate.** Importing those eagerly pulls React and eager fixture parsing into the
+eleven pure-logic suites and takes them from ~2.8s to ~4.5s to run ~0.4s of assertions.
+`src/test/environment.test.tsx` is the deliberate guard on all of this, not a scratch file — it
+fails if the jsdom docblock or the gate ever stops firing. Revisit the arrangement (vitest
+`projects` is the next step up, and gives per-environment `setupFiles`) when the DOM setup stops
+being cheap enough to load under node.
+
+Query by role and accessible name; the routes already carry good ones. **Any test that pins the
+clock must bridge it into user-event**, and both halves are load-bearing:
+
+```ts
+vi.useFakeTimers({ shouldAdvanceTime: true });
+const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+```
+
+user-event hangs on unbridged fake timers. Five routes — `calendar`, `today`, `habits`,
+`habit-detail` and `goals` — read `new Date()` directly, so any test rendering one of them needs a
+pinned clock and therefore needs this. Pin to midday rather than midnight, so that the clock
+creeping forward under `shouldAdvanceTime` cannot roll the date over.
+
+One more trap for date-driven routes: the fixtures only span **May–September 2026**. A test pinned
+outside that window renders every empty state and nothing else, which is fine for asserting
+structure and useless for asserting content — `calendar-page.test.tsx` pins December for the grid
+and navigation, and August for the tests that need real data.
 
 - **`packages/ui` has no real lint or build.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`; `@just-do-it/ui#build` declares no outputs because the app consumes `src/index.ts` directly (no compile step, no `dist`). Oxlint only ever runs over `apps/just-do-it`.
 - **Formatting is uniform and must stay that way.** The whole tree was normalized to Prettier's configured style in `09bd4c9` — semicolons, single quotes, trailing commas, 100 columns. `pnpm format:check` passes; keep it passing. CI runs it on every push to `main` and every pull request, so a drifted tree now fails the build — but there is still no pre-commit hook, so run `pnpm format` before committing rather than finding out from a red check. `.prettierignore` excludes `pnpm-lock.yaml`; `dist` and `node_modules` are covered by `.gitignore`, which Prettier honours by default.
