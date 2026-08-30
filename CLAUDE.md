@@ -28,7 +28,7 @@ Per-package: `pnpm --filter @just-do-it/app dev`, `pnpm --filter @just-do-it/app
 Things to know before trusting a green run:
 
 - **`pnpm typecheck` really checks the app now — it did not until `chore/typecheck-script`.** The app's script used to be `tsc --noEmit`, which resolves the solution-style `apps/just-do-it/tsconfig.json` (`"files": []` plus `references`); `--noEmit` does not follow references, so it checked zero files and passed unconditionally. It is now `tsc -b --noEmit --force`, which follows the references and re-checks every run rather than trusting a stale `.tsbuildinfo`. If you touch that script, verify the change by planting a deliberate type error and confirming a non-zero exit — a green run alone proves nothing.
-- **`pnpm test` runs vitest, and coverage is selector- and store-deep, plus four routes and one component.** All five domains have tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. On top of those, `/calendar`, `/today`, `/habits` and `/habits/:habitId` have route rendering tests and `QuickAddField` has a component test. The other five routes (`tasks`, `lists`, `list-detail`, `books`, `goals`) are still unrendered by any test. A passing `build` is not verification of behavior beyond types.
+- **`pnpm test` runs vitest, and coverage is selector- and store-deep, plus five routes and one component.** All five domains have tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. On top of those, `/calendar`, `/today`, `/habits`, `/habits/:habitId` and `/tasks` have route rendering tests and `QuickAddField` has a component test — the `/tasks` suite also exercises `TaskFiltersPanel`, `TaskForm` and `TaskList`, which the route delegates to. The other four routes (`lists`, `list-detail`, `books`, `goals`) are still unrendered by any test. A passing `build` is not verification of behavior beyond types.
 
 Component and route tests opt into jsdom per file with a `// @vitest-environment jsdom` docblock —
 the default environment stays `node` so the pure-logic suites stay fast. Because vitest takes one
@@ -42,6 +42,13 @@ eleven pure-logic suites and takes them from ~2.8s to ~4.5s to run ~0.4s of asse
 fails if the jsdom docblock or the gate ever stops firing. Revisit the arrangement (vitest
 `projects` is the next step up, and gives per-environment `setupFiles`) when the DOM setup stops
 being cheap enough to load under node.
+
+Two jsdom gaps have already cost time. It does not implement `scrollIntoView` **at all** — not
+even as a no-op — so `vi.spyOn` cannot wrap it and it has to be assigned outright
+(`Element.prototype.scrollIntoView = vi.fn()`), or anything calling it throws; `/tasks` needs this
+for its edit flow. And it does not support text selection on `type="number"` inputs, so neither
+`{selectall}` nor `user.clear()` can replace their contents — typing appends instead, and
+`fireEvent.change` is the honest way to set them.
 
 A route with a dynamic segment has to be mounted through `Routes`/`Route` with `initialEntries`
 rather than a bare `MemoryRouter`, or `useParams` resolves nothing — `habit-detail-page.test.tsx`
