@@ -257,14 +257,24 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and now spans two routes and one component.** 300 vitest tests
-  across 15 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
+- **Test coverage is deep on logic, and now spans four routes and one component.** 326 vitest tests
+  across 17 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
   quick-add parser, and — since the extraction into `features/calendar` — the calendar date
   mapping, plus (now that jsdom and Testing Library are configured) 15 rendering tests for the
-  calendar route, 14 for `/today`, 13 for `QuickAddField`, and 4 guarding the test harness itself.
-  The other seven routes (`tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`,
-  `goals`) are still unrendered by any test. A green `build` / `typecheck` verifies nothing about
-  behaviour beyond types.
+  calendar route, 14 for `/today`, 13 each for `/habits` and `/habits/:habitId`, 13 for
+  `QuickAddField`, and 4 guarding the test harness itself. The other five routes (`tasks`, `lists`,
+  `list-detail`, `books`, `goals`) are still unrendered by any test. A green `build` / `typecheck`
+  verifies nothing about behaviour beyond types.
+- **The weekly-target field cannot be emptied.** `clampWeeklyTarget('')` returns 1, so clearing the
+  input on either habits route snaps it straight to "1" — and because the input is controlled,
+  anything typed next appends to that rather than replacing it. Clearing and typing "2" produces
+  12, which then clamps to the maximum of 7. Selecting the contents and typing over them works, so
+  this is awkward rather than broken, but it is the kind of thing that reads as a bug.
+- **The daily-target normalization is written three times.** `habits-page.tsx` and
+  `habit-detail-page.tsx` both send `frequency === 'daily' ? 1 : target`, and `buildHabitRecord` in
+  `habit-store.ts` normalizes identically before `habitSchema` would reject it. The store is the
+  real enforcement point; deleting either route-level ternary changes no behaviour (confirmed by
+  mutation). Harmless, but it is duplicated invariant logic.
 - **`HabitDayGrid` hides the information it displays.** Its root is `aria-hidden="true"` and a
   day's completion is encoded only as a background colour (`bg-[var(--primary)]` against
   `bg-[var(--surface)]`), with no text, role or label anywhere. A screen-reader user gets nothing
@@ -357,8 +367,10 @@ Not in the original plan. Added because the repo had no way to verify anything; 
 - [ ] React Testing Library — installed and proven on `/calendar` (including one block pinned to a
       month the fixtures actually reach, so the fixture → store → selector → route path is covered
       end to end), on `/today` (which also covers the QuickAddField → store → lane path across
-      features), and on `QuickAddField` itself, the one component that had shipped verified by eye
-      alone; Tasks and the other six routes are still unrendered by any test
+      features), on both habits routes (`/habits/:habitId` is the first test to mount a dynamic
+      route and resolve `useParams`), and on `QuickAddField` itself, the one component that had
+      shipped verified by eye alone; Tasks and the other four routes are still unrendered by any
+      test
 - [x] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
 - [ ] Extend oxlint to `packages/ui` — its `lint` script is still `tsc --noEmit`
 
