@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -50,27 +50,14 @@ function setUpUser() {
 // object"). It has to be assigned outright, and every edit throws without it.
 Element.prototype.scrollIntoView = vi.fn();
 
-// The composer and the filter panel both label a control "Priority" and another
-// "Category", so those names are ambiguous page-wide. Every composer query is
-// scoped to the form, anchored on the Title field — which is unique — rather
-// than on a container class or a DOM index. The duplicate accessible names are
-// themselves a finding; see the plan's debt list.
-function getComposer() {
-  const form = screen.getByLabelText('Title').closest('form');
-  if (!form) throw new Error('expected the composer form');
-
-  return within(form);
-}
-
-// The filter selects are the ones with those names that are *not* in the
-// composer form. Resolved by containment rather than by document order, so
-// moving either block on the page cannot silently swap them.
-function getFilterSelect(label: 'Priority' | 'Category') {
-  const form = screen.getByLabelText('Title').closest('form');
-  const match = screen.getAllByLabelText(label).find((element) => !form?.contains(element));
-  if (!match) throw new Error(`expected a filter select named ${label}`);
-
-  return match;
+// The filter panel used to label its controls "Priority" and "Category", which
+// collided with the composer's own fields and forced every query in this file
+// to be scoped by containment. The filters are now "Filter by priority" and
+// "Filter by category", so plain label queries are unambiguous — which is the
+// point of that change: a screen-reader user listing the form controls had the
+// same problem the tests did.
+function getFilterSelect(label: 'Filter by priority' | 'Filter by category') {
+  return screen.getByLabelText(label);
 }
 
 function getEditButton(title: string) {
@@ -112,7 +99,7 @@ describe('TasksPage — filtering', () => {
     const user = setUpUser();
     renderTasks();
 
-    await user.selectOptions(getFilterSelect('Priority'), 'high');
+    await user.selectOptions(getFilterSelect('Filter by priority'), 'high');
 
     expect(screen.getByText('2 tasks in view.')).toBeInTheDocument();
     expect(getEditButton('Go for a run')).toBeInTheDocument();
@@ -125,7 +112,7 @@ describe('TasksPage — filtering', () => {
     const user = setUpUser();
     renderTasks();
 
-    await user.selectOptions(getFilterSelect('Category'), 'Reading');
+    await user.selectOptions(getFilterSelect('Filter by category'), 'Reading');
 
     expect(screen.getByText('1 task in view.')).toBeInTheDocument();
   });
@@ -135,8 +122,8 @@ describe('TasksPage — filtering', () => {
     renderTasks();
 
     // High priority holds Workout and Other; no task is both high and Reading.
-    await user.selectOptions(getFilterSelect('Priority'), 'high');
-    await user.selectOptions(getFilterSelect('Category'), 'Reading');
+    await user.selectOptions(getFilterSelect('Filter by priority'), 'high');
+    await user.selectOptions(getFilterSelect('Filter by category'), 'Reading');
 
     expect(screen.getByText('No matching tasks yet.')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Nothing to show right now' })).toBeInTheDocument();
@@ -146,11 +133,11 @@ describe('TasksPage — filtering', () => {
     const user = setUpUser();
     renderTasks();
 
-    await user.selectOptions(getFilterSelect('Priority'), 'high');
+    await user.selectOptions(getFilterSelect('Filter by priority'), 'high');
     await user.click(screen.getByRole('button', { name: 'Clear filters' }));
 
     expect(screen.getByText('6 tasks in view.')).toBeInTheDocument();
-    expect(getFilterSelect('Priority')).toHaveValue('all');
+    expect(getFilterSelect('Filter by priority')).toHaveValue('all');
   });
 });
 
@@ -194,9 +181,9 @@ describe('TasksPage — the composer', () => {
     const user = setUpUser();
     renderTasks();
 
-    await user.type(getComposer().getByLabelText('Title'), 'Sharpen the chisels');
-    await user.selectOptions(getComposer().getByLabelText('Priority'), 'urgent');
-    await user.selectOptions(getComposer().getByLabelText('Category'), 'Hobby');
+    await user.type(screen.getByLabelText('Title'), 'Sharpen the chisels');
+    await user.selectOptions(screen.getByLabelText('Priority'), 'urgent');
+    await user.selectOptions(screen.getByLabelText('Category'), 'Hobby');
     await user.click(screen.getByRole('button', { name: 'Create task' }));
 
     expect(getEditButton('Sharpen the chisels')).toBeInTheDocument();
@@ -223,7 +210,7 @@ describe('TasksPage — the composer', () => {
     try {
       renderTasks();
 
-      await user.type(getComposer().getByLabelText('Title'), '   ');
+      await user.type(screen.getByLabelText('Title'), '   ');
       await user.click(screen.getByRole('button', { name: 'Create task' }));
 
       expect(useTaskStore.getState().tasks).toHaveLength(countBefore);
@@ -240,9 +227,9 @@ describe('TasksPage — the composer', () => {
     await user.click(getEditButton('Go for a run'));
 
     expect(screen.getByRole('heading', { name: 'Update Go for a run' })).toBeInTheDocument();
-    expect(getComposer().getByLabelText('Title')).toHaveValue('Go for a run');
-    expect(getComposer().getByLabelText('Priority')).toHaveValue('high');
-    expect(getComposer().getByLabelText('Category')).toHaveValue('Workout');
+    expect(screen.getByLabelText('Title')).toHaveValue('Go for a run');
+    expect(screen.getByLabelText('Priority')).toHaveValue('high');
+    expect(screen.getByLabelText('Category')).toHaveValue('Workout');
   });
 
   it('saves an edit back to the task rather than creating a second one', async () => {
@@ -251,8 +238,8 @@ describe('TasksPage — the composer', () => {
     renderTasks();
 
     await user.click(getEditButton('Go for a run'));
-    await user.clear(getComposer().getByLabelText('Title'));
-    await user.type(getComposer().getByLabelText('Title'), 'Go for a longer run');
+    await user.clear(screen.getByLabelText('Title'));
+    await user.type(screen.getByLabelText('Title'), 'Go for a longer run');
     await user.click(screen.getByRole('button', { name: 'Save changes' }));
 
     expect(getEditButton('Go for a longer run')).toBeInTheDocument();
@@ -268,7 +255,7 @@ describe('TasksPage — the composer', () => {
     await user.click(screen.getByRole('button', { name: 'Cancel' }));
 
     expect(screen.getByRole('heading', { name: 'Create a task' })).toBeInTheDocument();
-    expect(getComposer().getByLabelText('Title')).toHaveValue('');
+    expect(screen.getByLabelText('Title')).toHaveValue('');
   });
 
   // Deleting the task being edited has to drop the composer back to create
@@ -291,7 +278,7 @@ describe('TasksPage — the composer', () => {
     await user.click(screen.getByRole('button', { name: 'Delete Go for a run' }));
 
     expect(screen.getByRole('heading', { name: 'Create a task' })).toBeInTheDocument();
-    expect(getComposer().getByLabelText('Title')).toHaveValue('');
+    expect(screen.getByLabelText('Title')).toHaveValue('');
   });
 });
 

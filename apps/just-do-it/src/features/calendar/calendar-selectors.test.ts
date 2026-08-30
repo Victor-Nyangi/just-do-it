@@ -551,4 +551,22 @@ describe('getDayButtonLabel', () => {
       'Thursday, August 20, 2026. 2 due tasks. 1 goal target',
     );
   });
+
+  it('says nothing about the month unless asked to', () => {
+    expect(getDayButtonLabel(new Date(2026, 7, 20), { tasks: 0, habits: 0, goals: 0 })).not.toMatch(
+      /Outside this month/u,
+    );
+  });
+
+  it('marks a day outside the visible month, after the counts', () => {
+    expect(getDayButtonLabel(new Date(2026, 7, 20), { tasks: 2, habits: 0, goals: 0 }, true)).toBe(
+      'Thursday, August 20, 2026. 2 due tasks. Outside this month',
+    );
+  });
+
+  it('marks an empty day outside the visible month too', () => {
+    expect(getDayButtonLabel(new Date(2026, 7, 20), { tasks: 0, habits: 0, goals: 0 }, true)).toBe(
+      'Thursday, August 20, 2026. No scheduled items. Outside this month',
+    );
+  });
 });

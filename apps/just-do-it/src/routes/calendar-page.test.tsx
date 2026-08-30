@@ -78,6 +78,30 @@ describe('CalendarPage — the month grid', () => {
     expect(getDayCellLabels().at(-1)).toMatch(/^Sunday, January 3, 2027\./u);
   });
 
+  // Spillover days used to be distinguishable only by an `opacity-45` class, so
+  // a screen-reader user had no way to tell 30 November from 1 December in the
+  // December grid. The label now says so, which is also the only reason this is
+  // assertable at all.
+  it('marks the days that fall outside the visible month', () => {
+    renderCalendar();
+
+    const labels = getDayCellLabels();
+
+    expect(labels[0]).toMatch(/Outside this month$/u);
+    expect(labels.at(-1)).toMatch(/Outside this month$/u);
+  });
+
+  it('does not mark the days inside the visible month', () => {
+    renderCalendar();
+
+    const firstOfDecember = getDayCellLabels().find((label) =>
+      label.startsWith('Tuesday, December 1, 2026'),
+    );
+
+    expect(firstOfDecember).toBeDefined();
+    expect(firstOfDecember).not.toMatch(/Outside this month$/u);
+  });
+
   // The first cell, the last cell and the count together still permit a grid
   // with duplicated or missing days in the interior. Checking that every row
   // opens on a Monday is the cheapest assertion that rules that out.

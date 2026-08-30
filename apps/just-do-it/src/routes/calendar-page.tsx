@@ -423,7 +423,7 @@ export function CalendarPage() {
                 return (
                   <button
                     aria-current={isCurrentDay ? 'date' : undefined}
-                    aria-label={getDayButtonLabel(day, indicators)}
+                    aria-label={getDayButtonLabel(day, indicators, !isCurrentMonth)}
                     className={cn(
                       'flex min-h-24 flex-col rounded-xl border p-2 text-left transition-colors sm:min-h-28',
                       isSelected

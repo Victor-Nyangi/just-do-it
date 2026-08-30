@@ -231,7 +231,15 @@ export function countHabitCheckInsInMonth(
   return total;
 }
 
-export function getDayButtonLabel(date: Date, indicators: DayIndicators): string {
+// `isOutsideVisibleMonth` is optional because the label is otherwise a pure
+// function of the date and its counts; the grid is the only caller that knows
+// which month is on screen. Spillover days were previously distinguished by an
+// `opacity-45` class alone, which no assistive technology can read.
+export function getDayButtonLabel(
+  date: Date,
+  indicators: DayIndicators,
+  isOutsideVisibleMonth = false,
+): string {
   const parts = [format(date, 'EEEE, MMMM d, yyyy')];
 
   if (indicators.tasks > 0) {
@@ -248,6 +256,10 @@ export function getDayButtonLabel(date: Date, indicators: DayIndicators): string
 
   if (parts.length === 1) {
     parts.push('No scheduled items');
+  }
+
+  if (isOutsideVisibleMonth) {
+    parts.push('Outside this month');
   }
 
   return parts.join('. ');
