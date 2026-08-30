@@ -257,41 +257,50 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and now spans seven routes and one component.** 365 vitest tests
-  across 20 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
+- **Test coverage is deep on logic, and every route now renders under test.** 392 vitest tests
+  across 22 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
   quick-add parser, and — since the extraction into `features/calendar` — the calendar date
   mapping, plus (now that jsdom and Testing Library are configured) 15 rendering tests for the
-  calendar route, 18 for `/lists/:listId`, 16 for `/tasks`, 14 for `/today`, 13 each for `/habits`
-  and `/habits/:habitId`, 13 for `QuickAddField`, 5 for `/lists`, and 4 guarding the test harness
-  itself. The `/tasks` suite reaches `TaskFiltersPanel`, `TaskForm` and `TaskList` through the
-  route. Only `/books` and `/goals` are still unrendered by any test. A green `build` / `typecheck`
-  verifies nothing about behaviour beyond types.
-- **Submit guards are written twice, and the inner copy is unreachable.** `QuickAddField` and the
-  list rename form both disable the submit button on exactly the condition their submit handler
-  re-checks — and a disabled submit button also suppresses implicit form submission, so Enter
-  cannot reach the handler either. Mutation testing cannot kill the inner check on its own in
-  either place; removing the guard _and_ enabling the button is caught. Harmless defence in depth,
-  but it is the third shape of duplicated-invariant code found here, alongside the two below.
+  calendar route, 18 for `/lists/:listId`, 16 for `/tasks`, 14 each for `/books` and `/today`, 13
+  each for `/habits`, `/habits/:habitId`, `/goals` and `QuickAddField`, 5 for `/lists`, and 4
+  guarding the test harness itself. The `/tasks` suite reaches `TaskFiltersPanel`, `TaskForm` and
+  `TaskList` through the route. Every route except `/settings` — still a placeholder — now renders
+  under test. A green `build` / `typecheck` still verifies nothing about behaviour beyond types.
 - **`/tasks` renders two controls named "Priority" and two named "Category".** The filter panel and
   the composer duplicate both accessible names on one page, so a role-and-name query cannot tell
   them apart and neither can a screen-reader user listing the form controls. The tests work around
   it by scoping to the composer's `<form>`; the fix is to make the names distinct (e.g. "Filter by
   priority") or to give each block a named region.
-- **`handleDelete`'s composer reset is dead code.** `tasks-page.tsx` calls `resetComposer()` when
-  the deleted task is the one being edited, but `editingTask` is derived from the live task list,
-  so it already goes null when the task leaves the store — which flips the heading, changes
-  `formKey` and remounts the form with defaults. Removing the guard changes nothing observable
-  (confirmed by mutation). Same shape as the duplicated daily-target normalization above.
+- **Route-level guards duplicate logic that already holds elsewhere, and none of them can fire.**
+  The route test sweep turned up seven of these by mutation testing, in three shapes. None are
+  bugs — each is defence in depth behind a layer that already covers it — but each is a line that
+  can be deleted without changing behaviour, and each will read as uncovered forever.
+  - _Behind a disabled submit button_, whose `disabled` repeats the handler's own check; a disabled
+    submit button also suppresses implicit form submission, so Enter cannot reach it either:
+    `QuickAddField`'s `hasTitle` check, and `handleRenameList`'s `!normalizedName ||
+!hasNameChanged`.
+  - _Behind a `required` attribute_, where the browser refuses to submit so the handler never runs:
+    `handleCreateBook`'s title/author check and `handleCreateGoal`'s four-field check.
+  - _Behind the store_, where `buildXRecord` normalizes the same invariant before the schema would
+    reject it: the daily-target ternary in `habits-page.tsx` **and** `habit-detail-page.tsx`;
+    `handleProgressChange`'s completed-goal reopening in `goals-page.tsx`, which `buildGoalRecord`
+    already does; and `Math.max(progress - 10, 0)` in the same file, which `normalizeGoalProgress`
+    already does.
+
+  Separately but of a piece: `handleDelete`'s `resetComposer()` in `tasks-page.tsx` is redundant
+  because `editingTask` is derived from the live task list and goes null on its own when the task
+  is deleted. Worth one deliberate cleanup pass rather than picking them off individually, since
+  each removal is a production change the tests — correctly — cannot detect.
+
 - **The weekly-target field cannot be emptied.** `clampWeeklyTarget('')` returns 1, so clearing the
   input on either habits route snaps it straight to "1" — and because the input is controlled,
   anything typed next appends to that rather than replacing it. Clearing and typing "2" produces
   12, which then clamps to the maximum of 7. Selecting the contents and typing over them works, so
   this is awkward rather than broken, but it is the kind of thing that reads as a bug.
-- **The daily-target normalization is written three times.** `habits-page.tsx` and
-  `habit-detail-page.tsx` both send `frequency === 'daily' ? 1 : target`, and `buildHabitRecord` in
-  `habit-store.ts` normalizes identically before `habitSchema` would reject it. The store is the
-  real enforcement point; deleting either route-level ternary changes no behaviour (confirmed by
-  mutation). Harmless, but it is duplicated invariant logic.
+- **Book rating buttons convey selection by colour alone.** The five star buttons on each book card
+  carry an `aria-label` but no `aria-pressed`, so the chosen rating is exposed only as a colour and
+  a filled icon. A screen-reader user cannot tell which rating is set, and no role-and-name query
+  can assert it — the tests read it back from the store instead. Adding `aria-pressed` fixes both.
 - **`HabitDayGrid` hides the information it displays.** Its root is `aria-hidden="true"` and a
   day's completion is encoded only as a background colour (`bg-[var(--primary)]` against
   `bg-[var(--surface)]`), with no text, role or label anywhere. A screen-reader user gets nothing
@@ -381,14 +390,14 @@ Not in the original plan. Added because the repo had no way to verify anything; 
 - [ ] Fixture-validity tests, so a malformed fixture fails CI rather than app boot — enforced
       indirectly today (each `-data.ts` parses its fixture eagerly at import, so a malformed one
       throws the moment any test imports it) but never asserted directly
-- [ ] React Testing Library — installed and proven on `/calendar` (including one block pinned to a
-      month the fixtures actually reach, so the fixture → store → selector → route path is covered
-      end to end), on `/today` (which also covers the QuickAddField → store → lane path across
-      features), on both habits routes (`/habits/:habitId` is the first test to mount a dynamic
-      route and resolve `useParams`), on `/tasks` (which reaches `TaskFiltersPanel`, `TaskForm` and
-      `TaskList` through the route), on both lists routes (covering item reordering, which is the
-      only drag-free ordering UI in the app), and on `QuickAddField` itself, the one component that
-      had shipped verified by eye alone; only `books` and `goals` are still unrendered by any test
+- [x] React Testing Library — **every route renders under test** except `/settings`, which is still
+      a placeholder. `/calendar` pins one block to a month the fixtures actually reach, so the
+      fixture → store → selector → route path is covered end to end; `/today` and `/tasks` both
+      cover the QuickAddField → store → list path across features; `/habits/:habitId` and
+      `/lists/:listId` mount dynamic routes and resolve `useParams`; `/lists/:listId` covers item
+      reordering, the only ordering UI in the app; `/tasks` reaches `TaskFiltersPanel`, `TaskForm`
+      and `TaskList` through the route. `HabitDayGrid` is still reached only indirectly, for the
+      accessibility reason in §6
 - [x] GitHub Actions running `format:check`, `lint`, `typecheck`, `test`, `build`
 - [ ] Extend oxlint to `packages/ui` — its `lint` script is still `tsc --noEmit`
 
