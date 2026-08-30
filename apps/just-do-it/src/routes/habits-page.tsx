@@ -74,7 +74,7 @@ export function HabitsPage() {
     addHabit({
       label,
       frequency: newHabitFrequency,
-      target: newHabitFrequency === 'daily' ? 1 : newHabitTarget,
+      target: newHabitTarget,
     });
 
     setNewHabitLabel('');

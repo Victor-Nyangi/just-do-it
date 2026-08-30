@@ -183,6 +183,40 @@ describe('GoalsPage — nudging progress', () => {
 });
 
 describe('GoalsPage — changing status', () => {
+  // Un-completing a goal cannot leave it sitting at 100%, or the board would
+  // show an active goal that is already finished. `handleStatusChange` knocks
+  // it back to 95 — a hard-coded number, and the only place in the app that
+  // invents a progress value. Unlike the reopening rule, the store does not do
+  // this: `updateGoalStatus` alone would leave the goal active at 100.
+  it('drops a completed goal below the line when it is reopened by hand', async () => {
+    const user = setUpUser();
+    renderGoals();
+
+    await user.click(getGoalCard('Complete 12 workouts').getByRole('button', { name: 'Active' }));
+
+    expect(findGoal('Complete 12 workouts')).toMatchObject({ progress: 95, status: 'active' });
+  });
+
+  it('does the same when a completed goal is paused', async () => {
+    const user = setUpUser();
+    renderGoals();
+
+    await user.click(getGoalCard('Complete 12 workouts').getByRole('button', { name: 'Paused' }));
+
+    expect(findGoal('Complete 12 workouts')).toMatchObject({ progress: 95, status: 'paused' });
+  });
+
+  // The counterpart: marking a goal complete drives it to 100 rather than
+  // leaving it at whatever it was. That rule *is* the store's.
+  it('drives a goal to one hundred when it is marked complete', async () => {
+    const user = setUpUser();
+    renderGoals();
+
+    await user.click(getGoalCard('Build momentum').getByRole('button', { name: 'Completed' }));
+
+    expect(findGoal('Build momentum')).toMatchObject({ progress: 100, status: 'completed' });
+  });
+
   it('pauses an active goal from its card', async () => {
     const user = setUpUser();
     renderGoals();

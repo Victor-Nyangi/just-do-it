@@ -257,7 +257,7 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and every route now renders under test.** 392 vitest tests
+- **Test coverage is deep on logic, and every route now renders under test.** 401 vitest tests
   across 22 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
   quick-add parser, and — since the extraction into `features/calendar` — the calendar date
   mapping, plus (now that jsdom and Testing Library are configured) 15 rendering tests for the
@@ -270,26 +270,34 @@ Carry these into whichever phase touches them; none block progress today.
   filter panel's controls are now "Filter by priority" and "Filter by category", so nothing on the
   page shares an accessible name with the composer. The route test lost the containment-scoping
   helpers it needed to work around the collision.
-- **Route-level guards duplicate logic that already holds elsewhere, and none of them can fire.**
-  The route test sweep turned up seven of these by mutation testing, in three shapes. None are
-  bugs — each is defence in depth behind a layer that already covers it — but each is a line that
-  can be deleted without changing behaviour, and each will read as uncovered forever.
+- **Route-level guards that duplicate the store are gone; the ones guarding the UI stay.** The
+  route test sweep found eight of these by mutation testing, in three shapes. None were bugs — each
+  was defence in depth behind a layer that already held — but each was a line that could be deleted
+  without changing behaviour, and each read as uncovered forever.
+  - ~~_Behind the store_, where `buildXRecord` normalizes the invariant anyway~~ — **removed.** The
+    daily-target ternary in `habits-page.tsx` and `habit-detail-page.tsx`, the completed-goal
+    reopening in `handleProgressChange`, and both `Math.max`/`Math.min` progress clamps in
+    `goals-page.tsx`. Also `handleDelete`'s `resetComposer()` in `tasks-page.tsx`, redundant
+    because `editingTask` is derived from the live task list. The store keeps these invariants and
+    is tested for each one directly, so removing the copies left a single source of truth rather
+    than an untested one.
   - _Behind a disabled submit button_, whose `disabled` repeats the handler's own check; a disabled
     submit button also suppresses implicit form submission, so Enter cannot reach it either:
-    `QuickAddField`'s `hasTitle` check, and `handleRenameList`'s `!normalizedName ||
-!hasNameChanged`.
+    `QuickAddField`'s `hasTitle` check and `handleRenameList`'s `!normalizedName ||
+!hasNameChanged`. **Kept deliberately** — the outer layer is a UI attribute one refactor away
+    from disappearing, and the handler is the last thing between an empty title and a Zod throw.
   - _Behind a `required` attribute_, where the browser refuses to submit so the handler never runs:
-    `handleCreateBook`'s title/author check and `handleCreateGoal`'s four-field check.
-  - _Behind the store_, where `buildXRecord` normalizes the same invariant before the schema would
-    reject it: the daily-target ternary in `habits-page.tsx` **and** `habit-detail-page.tsx`;
-    `handleProgressChange`'s completed-goal reopening in `goals-page.tsx`, which `buildGoalRecord`
-    already does; and `Math.max(progress - 10, 0)` in the same file, which `normalizeGoalProgress`
-    already does.
+    `handleCreateBook`'s title/author check and `handleCreateGoal`'s four-field check. **Kept**, for
+    the same reason.
 
-  Separately but of a piece: `handleDelete`'s `resetComposer()` in `tasks-page.tsx` is redundant
-  because `editingTask` is derived from the live task list and goes null on its own when the task
-  is deleted. Worth one deliberate cleanup pass rather than picking them off individually, since
-  each removal is a production change the tests — correctly — cannot detect.
+  The distinction is whether the surviving layer is one that tests can see. The store is; a
+  `required` attribute or a `disabled` prop is exactly the sort of thing a redesign drops silently.
+
+- **`handleStatusChange` invents a progress of 95.** Moving a completed goal back to active or
+  paused writes `progress: 95` — a hard-coded number, and the only place in the app that makes up a
+  value rather than deriving one. The intent is sound (an active goal should not sit at 100%), but
+  the number is arbitrary and unexplained. Now covered by two tests, so at least it cannot change
+  unnoticed.
 
 - **The weekly-target field cannot be emptied.** `clampWeeklyTarget('')` returns 1, so clearing the
   input on either habits route snaps it straight to "1" — and because the input is controlled,
