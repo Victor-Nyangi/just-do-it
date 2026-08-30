@@ -174,11 +174,11 @@ Expected: all green, **256 tests** (254 + the 2 new environment tests).
 
 ```bash
 git add apps/just-do-it/package.json apps/just-do-it/vitest.config.ts \
-        apps/just-do-it/src/test/ ../../pnpm-lock.yaml
+        apps/just-do-it/src/test/ pnpm-lock.yaml
 git commit -m "chore(test): add jsdom and Testing Library"
 ```
 
-Run `git status` first and adjust the lockfile path to wherever `pnpm-lock.yaml` actually sits relative to your shell — it is at the repo root.
+Run this from the repo root, where `pnpm-lock.yaml` sits. `git status` should show nothing left but the untracked `HANDOVER.md`, which is a scratch file and must stay untracked.
 
 ---
 
