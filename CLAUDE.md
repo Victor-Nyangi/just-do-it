@@ -28,7 +28,7 @@ Per-package: `pnpm --filter @just-do-it/app dev`, `pnpm --filter @just-do-it/app
 Things to know before trusting a green run:
 
 - **`pnpm typecheck` really checks the app now — it did not until `chore/typecheck-script`.** The app's script used to be `tsc --noEmit`, which resolves the solution-style `apps/just-do-it/tsconfig.json` (`"files": []` plus `references`); `--noEmit` does not follow references, so it checked zero files and passed unconditionally. It is now `tsc -b --noEmit --force`, which follows the references and re-checks every run rather than trusting a stale `.tsbuildinfo`. If you touch that script, verify the change by planting a deliberate type error and confirming a non-zero exit — a green run alone proves nothing.
-- **`pnpm test` runs vitest, and coverage is selector- and store-deep, plus one route and one component.** All five domains have tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. On top of those, `/calendar` has a route rendering test and `QuickAddField` has a component test. The other eight routes (`today`, `tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`, `goals`) are still unrendered by any test, as is every other feature component (`HabitDayGrid` among them). A passing `build` is not verification of behavior beyond types.
+- **`pnpm test` runs vitest, and coverage is selector- and store-deep, plus two routes and one component.** All five domains have tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. On top of those, `/calendar` and `/today` have route rendering tests and `QuickAddField` has a component test. The other seven routes (`tasks`, `habits`, `habit-detail`, `lists`, `list-detail`, `books`, `goals`) are still unrendered by any test. A passing `build` is not verification of behavior beyond types.
 
 Component and route tests opt into jsdom per file with a `// @vitest-environment jsdom` docblock —
 the default environment stays `node` so the pure-logic suites stay fast. Because vitest takes one
@@ -43,7 +43,11 @@ fails if the jsdom docblock or the gate ever stops firing. Revisit the arrangeme
 `projects` is the next step up, and gives per-environment `setupFiles`) when the DOM setup stops
 being cheap enough to load under node.
 
-Query by role and accessible name; the routes already carry good ones. **Any test that pins the
+Query by role and accessible name; the routes already carry good ones. One component defeats
+this and it is worth knowing before you try: `HabitDayGrid` sets `aria-hidden="true"` on its root
+and encodes completion purely as a background colour, so it is unreachable by role or name and
+untestable without asserting on Tailwind classes. Cover it through a route that renders it, and see
+the plan's debt list for the underlying accessibility issue. **Any test that pins the
 clock must bridge it into user-event**, and both halves are load-bearing:
 
 ```ts
