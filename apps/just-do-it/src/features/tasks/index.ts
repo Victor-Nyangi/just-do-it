@@ -22,6 +22,7 @@ export {
   selectVisibleTodayTasks,
 } from './task-selectors';
 export { parseQuickAdd } from './quick-add-parser';
+export { toQuickAddTaskInput } from './quick-add-input';
 export {
   useCreateTask,
   useDeleteTask,
