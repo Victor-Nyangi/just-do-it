@@ -132,6 +132,19 @@ describe('Command — keyboard', () => {
     );
   });
 
+  // The test above arrows *up* off the first option, which is the backwards
+  // wrap. Arrowing down off the end is the other direction, and it is the one
+  // the `% options.length` in `moveActiveIndex` exists for: a mutation that
+  // clamps forward movement instead of wrapping leaves every other test green.
+  it('wraps forward from the last option to the first', async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+
+    await user.keyboard('{ArrowDown}{ArrowDown}{ArrowDown}');
+
+    expect(screen.getByRole('option', { name: /Today/u })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('selects the active option on Enter', async () => {
     const user = userEvent.setup();
     const onSelect = vi.fn();
