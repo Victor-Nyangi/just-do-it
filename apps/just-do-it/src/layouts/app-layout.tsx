@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { Button, cn } from '@just-do-it/ui';
+import { CommandPalette } from '../features/command-palette';
 
 const navigation = [
   { label: 'Today', to: '/today', icon: LayoutDashboard },
@@ -122,6 +123,7 @@ export function AppLayout() {
         </header>
         <Outlet />
       </main>
+      <CommandPalette onToggleTheme={() => setDarkMode((current) => !current)} />
     </div>
   );
 }
