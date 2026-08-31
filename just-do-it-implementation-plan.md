@@ -289,6 +289,14 @@ Carry these into whichever phase touches them; none block progress today.
   - _Behind a `required` attribute_, where the browser refuses to submit so the handler never runs:
     `handleCreateBook`'s title/author check and `handleCreateGoal`'s four-field check. **Kept**, for
     the same reason.
+  - _Behind an empty option list_, added by the command-palette sweep — a fourth shape and a ninth
+    guard. `CommandPalette`'s new-task `onSelect` opens with `if (parsed.title.length === 0)
+return;`, but the same render computes `options` from the same `parsed.title.length > 0`, so
+    with no title the primitive renders no option: Enter finds no `activeOption` and there is
+    nothing to click. Deleting the guard leaves the whole suite green, and "does not create a task
+    with no title" still passes — direct evidence that the guard is not what stops the creation.
+    **Kept deliberately**, for the same reason as the `disabled` and `required` cases: the layer
+    that actually holds is a prop one refactor away from changing.
 
   The distinction is whether the surviving layer is one that tests can see. The store is; a
   `required` attribute or a `disabled` prop is exactly the sort of thing a redesign drops silently.

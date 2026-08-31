@@ -191,3 +191,52 @@ describe('CommandPalette — creating a task', () => {
     expect(screen.getByRole('option', { name: 'New task…' })).toBeInTheDocument();
   });
 });
+
+// Each mode returns its `Command` under a distinct `key`, so switching mode
+// unmounts one dialog and mounts the other. The primitive captures its
+// focus-restore target once, on mount, so the mode switch moves that target —
+// and nothing else covers what happens to it. React runs a commit's passive
+// cleanups before its passive effects, so the outgoing dialog hands focus back
+// to the opener before the incoming one captures it; these pin that, because
+// the alternative is focus stranded on `document.body` after every quick-add.
+describe('CommandPalette — focus across a mode switch', () => {
+  function renderWithOpener() {
+    const view = render(
+      <MemoryRouter initialEntries={['/today']}>
+        <button type="button">Open something</button>
+        <CommandPalette onToggleTheme={vi.fn()} />
+      </MemoryRouter>,
+    );
+    const opener = screen.getByRole('button', { name: 'Open something' });
+    opener.focus();
+
+    return { ...view, opener };
+  }
+
+  it('returns focus to the opener after stepping back out of quick-add mode', async () => {
+    const user = setUpUser();
+    const { opener } = renderWithOpener();
+
+    await openPalette(user);
+    await user.click(screen.getByRole('option', { name: 'New task…' }));
+    expect(screen.getByRole('dialog', { name: 'New task' })).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await user.keyboard('{Escape}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
+
+  it('returns focus to the opener when a task is created from quick-add mode', async () => {
+    const user = setUpUser();
+    const { opener } = renderWithOpener();
+
+    await openPalette(user);
+    await user.click(screen.getByRole('option', { name: 'New task…' }));
+    await user.type(screen.getByRole('combobox', { name: 'New task' }), 'Buy milk{Enter}');
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(opener).toHaveFocus();
+  });
+});
