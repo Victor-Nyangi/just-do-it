@@ -28,7 +28,7 @@ Per-package: `pnpm --filter @just-do-it/app dev`, `pnpm --filter @just-do-it/app
 Things to know before trusting a green run:
 
 - **`pnpm typecheck` really checks the app now — it did not until `chore/typecheck-script`.** The app's script used to be `tsc --noEmit`, which resolves the solution-style `apps/just-do-it/tsconfig.json` (`"files": []` plus `references`); `--noEmit` does not follow references, so it checked zero files and passed unconditionally. It is now `tsc -b --noEmit --force`, which follows the references and re-checks every run rather than trusting a stale `.tsbuildinfo`. If you touch that script, verify the change by planting a deliberate type error and confirming a non-zero exit — a green run alone proves nothing.
-- **`pnpm test` runs vitest, and every route now has a rendering test.** All five domains have logic tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser; and `features/calendar`'s date-mapping selectors. On top of those, all nine real routes render under test — `/today`, `/tasks`, `/habits`, `/habits/:habitId`, `/lists`, `/lists/:listId`, `/books`, `/goals`, `/calendar` — plus `QuickAddField` as a component (401 tests, 22 files). `/settings` is still `<PlaceholderPage>` and has none. The `/tasks` suite also exercises `TaskFiltersPanel`, `TaskForm` and `TaskList`, which the route delegates to; `HabitDayGrid` is reached only through the routes that render it, for the reason in the plan's debt list. A passing `build` is still not verification of behavior beyond types.
+- **`pnpm test` runs vitest, and every route now has a rendering test.** All five domains have logic tests: habit selectors, schemas and store; task selectors; goal selectors and store; book store; list selectors and store; the quick-add parser and its `toQuickAddTaskInput` adapter; `features/calendar`'s date-mapping selectors; and `features/command-palette`'s pure `buildCommands`. On top of those, all nine real routes render under test — `/today`, `/tasks`, `/habits`, `/habits/:habitId`, `/lists`, `/lists/:listId`, `/books`, `/goals`, `/calendar` — alongside component-level suites for `QuickAddField`, `CommandPalette`, the `useGlobalShortcuts` hook, and the `Command` primitive itself (450 tests, 27 files). The primitive is covered from `apps/just-do-it/src/test/ui-command.test.tsx` because `packages/ui` has no vitest of its own; a new primitive gets its test there. `/settings` is still `<PlaceholderPage>` and has none. The `/tasks` suite also exercises `TaskFiltersPanel`, `TaskForm` and `TaskList`, which the route delegates to; `HabitDayGrid` is reached only through the routes that render it, for the reason in the plan's debt list. A passing `build` is still not verification of behavior beyond types.
 
 Component and route tests opt into jsdom per file with a `// @vitest-environment jsdom` docblock —
 the default environment stays `node` so the pure-logic suites stay fast. Because vitest takes one
@@ -140,6 +140,25 @@ Semantics carry meaning and shouldn't be swapped for aesthetics: green = primary
 Tailwind v4 is configured entirely in CSS (`@tailwindcss/vite`, no `tailwind.config`). The app's `src/styles.css` imports the UI stylesheet and declares `@source "../../../packages/ui/src"` so Tailwind scans the package — if a class only used inside `packages/ui` goes missing at runtime, that directive is why.
 
 Dark mode is a `useState` in `AppLayout` writing `document.documentElement.dataset.theme` and `localStorage['theme']`. There is no context provider; anything else needing the theme should read the same key.
+
+### Keyboard shortcuts
+
+`features/command-palette` owns the only global key listener in the app; `AppLayout` mounts
+`<CommandPalette />` once and passes it the theme toggler. `⌘K` / `Ctrl-K` opens the palette from
+anywhere, including from inside a text field, because it is modified and so cannot collide with
+typing.
+
+Navigation chords are `g` then a key: `t` Today, `k` Tasks, `c` Calendar, `g` Goals, `h` Habits,
+`b` Books, `l` Lists, `s` Settings. `k` rather than `t` for Tasks because Today claims `t`.
+`NAVIGATION_CHORDS` in `commands.ts` is the single source of truth — `buildCommands` reads it to
+advertise each hint, so a route can never be offered under a chord that does not work.
+
+**Chords are suppressed whenever the event target is an `input`, `textarea`, or contenteditable.**
+Without that guard, typing "goals" into the quick-add field navigates away mid-word. Any new
+unmodified shortcut needs the same guard.
+
+The palette's active option is tracked with `aria-activedescendant` rather than by moving DOM
+focus, so typing keeps working while arrowing through results.
 
 ## Conventions
 
