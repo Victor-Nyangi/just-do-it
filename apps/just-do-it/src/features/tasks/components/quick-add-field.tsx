@@ -3,7 +3,8 @@ import { CalendarClock, Flag, Plus, Tag } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, Input, cn } from '@just-do-it/ui';
-import { defaultTaskEditorValues, toTaskInput } from '../task-data';
+import { defaultTaskEditorValues } from '../task-data';
+import { toQuickAddTaskInput } from '../quick-add-input';
 import { useCreateTask } from '../hooks';
 import { parseQuickAdd } from '../quick-add-parser';
 
@@ -20,16 +21,7 @@ export function QuickAddField() {
   function submit() {
     if (!hasTitle) return;
 
-    createTask(
-      toTaskInput({
-        ...defaultTaskEditorValues,
-        title: parsed.title,
-        dueDate: parsed.dueDate ?? '',
-        category: parsed.category ?? defaultTaskEditorValues.category,
-        priority: parsed.priority ?? defaultTaskEditorValues.priority,
-      }),
-    );
-
+    createTask(toQuickAddTaskInput(parsed));
     setDraft('');
   }
 
