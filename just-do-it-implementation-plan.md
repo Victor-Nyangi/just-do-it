@@ -1,7 +1,7 @@
 # Just Do It: Implementation Plan
 
 **Repository:** <https://github.com/Victor-Nyangi/just-do-it>
-**Status as of 2026-08-27:** Phases 1–11 and 13 complete, Phase 12 partial. See [§3 Phase status](#3-phase-status).
+**Status as of 2026-08-30:** Phases 1–13 complete. See [§3 Phase status](#3-phase-status).
 
 ---
 
@@ -105,7 +105,7 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 | 9   | Goals                          | **Done**                  | Create, edit, progress, status                                                                                                                                                                                                                                    |
 | 10  | Books                          | **Done**                  | 3 statuses, ratings, notes                                                                                                                                                                                                                                        |
 | 11  | Lists                          | **Done — uncommitted**    | Working tree only; per-item notes missing                                                                                                                                                                                                                         |
-| 12  | Quick add & command surface    | **Partial**               | Natural-language parser and preview ship on Today and Tasks; no command palette                                                                                                                                                                                   |
+| 12  | Quick add & command surface    | **Done**                  | Natural-language parser and preview on Today and Tasks; ⌘K command palette with `g`-then-key chords and a "New task…" mode; no entity search                                                                                                                      |
 | 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes                                                                                                                                                                                 |
 | 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                                                                                                                                                                                                          |
 | 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; 267 vitest tests cover every domain's selectors and stores, the quick-add parser, and the calendar mapping, plus a rendering test for the calendar route — the other eight routes are untested, and `packages/ui` is still unlinted |
@@ -257,15 +257,18 @@ Carry these into whichever phase touches them; none block progress today.
 - ~~**Prettier has drifted.**~~ Resolved in `09bd4c9` — the tree was normalized to the configured style in one isolated commit. Enforced since the Phase 15 CI gate — `format:check` runs on every push to `main` and every pull request.
 - **`packages/ui` is not linted.** Its `build`, `lint`, and `typecheck` scripts are all `tsc --noEmit`. oxlint never sees it.
 - ~~**`pnpm typecheck` silently checks nothing in the app.**~~ Resolved — the script is now `tsc -b --noEmit --force`, which follows the solution file's `references` instead of checking zero files, and re-checks every run rather than trusting a cached `.tsbuildinfo`. The app was clean when it first ran for real; no latent errors surfaced.
-- **Test coverage is deep on logic, and every route now renders under test.** 401 vitest tests
-  across 22 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
+- **Test coverage is deep on logic, and every route now renders under test.** 450 vitest tests
+  across 27 files cover every domain's selectors and stores, the Zod round-trip on mutation, the
   quick-add parser, and — since the extraction into `features/calendar` — the calendar date
-  mapping, plus (now that jsdom and Testing Library are configured) 15 rendering tests for the
-  calendar route, 18 for `/lists/:listId`, 16 for `/tasks`, 14 each for `/books` and `/today`, 13
-  each for `/habits`, `/habits/:habitId`, `/goals` and `QuickAddField`, 5 for `/lists`, and 4
-  guarding the test harness itself. The `/tasks` suite reaches `TaskFiltersPanel`, `TaskForm` and
-  `TaskList` through the route. Every route except `/settings` — still a placeholder — now renders
-  under test. A green `build` / `typecheck` still verifies nothing about behaviour beyond types.
+  mapping, plus (now that jsdom and Testing Library are configured) 17 rendering tests for the
+  calendar route, 18 for `/lists/:listId`, 16 each for `/tasks` and `/goals`, 15 for `/books`, 14
+  for `/today`, 13 each for `/habits`, `/habits/:habitId` and `QuickAddField`, 5 for `/lists`, and 4
+  guarding the test harness itself. The command surface adds 46 more: 14 on `CommandPalette`, 14 on
+  the `Command` primitive (driven from the app, since `packages/ui` has no vitest of its own), 9 on
+  `useGlobalShortcuts` and 9 on `buildCommands`. The `/tasks` suite reaches `TaskFiltersPanel`,
+  `TaskForm` and `TaskList` through the route. Every route except `/settings` — still a placeholder
+  — now renders under test. A green `build` / `typecheck` still verifies nothing about behaviour
+  beyond types.
 - ~~**`/tasks` renders two controls named "Priority" and two named "Category".**~~ Resolved — the
   filter panel's controls are now "Filter by priority" and "Filter by category", so nothing on the
   page shares an accessible name with the composer. The route test lost the containment-scoping
@@ -341,7 +344,7 @@ return;`, but the same render computes `options` from the same `parsed.title.len
 
 ## 7. Remaining roadmap
 
-### Phase 12 — Quick add & command surface (partial)
+### Phase 12 — Quick add & command surface ✅
 
 What exists: a quick-add input on Today and Tasks that parses the typed title into a due date,
 category, and priority (`parseQuickAdd`), with a live parsed-result preview shown before commit.
@@ -351,9 +354,10 @@ Fields the parser can't find still fall back to the prior hard-coded defaults (`
 - [x] Natural-language parser — `Workout tomorrow`, `Read 20 pages Friday`, `Finish portfolio Aug 20`
 - [x] Parse due date via date-fns; category and priority via explicit sigils (`#Reading`, `!high`)
 - [x] Show a parsed-result preview before commit, so the guess is correctable
-- [ ] Command palette (⌘K) — needs a `command` primitive in `packages/ui`
-- [ ] Keyboard shortcuts for new task, search, and navigation
-- [ ] Make quick add reachable from every route, not just Today
+- [x] Command palette (⌘K) — `Command` in `packages/ui`, wired up by `features/command-palette`
+- [x] Keyboard shortcuts for new task, search, and navigation — ⌘K plus `g`-then-key chords
+- [x] Make quick add reachable from every route — as the palette's "New task…" command, rather than
+      a persistent field in the shell
 
 The parser shipped with explicit sigils for category and priority (`#Reading`, `!high`) rather
 than keyword inference — "Buy a book about workout nutrition" matches two categories and any
@@ -364,6 +368,10 @@ remaining three boxes are the command-palette half of this phase, deferred to it
 Recurrence parsing (`every Monday`) and description parsing were also considered and deferred.
 40 parser tests were added; the repo total is now 172. See
 `docs/superpowers/specs/2026-08-27-quick-add-parser-design.md`.
+
+The command surface shipped without entity search: typing "atomic" does not find the book. The
+`CommandItem` shape and the primitive are built so a `search` group can be added without reworking
+either. See `docs/superpowers/specs/2026-08-30-command-palette-design.md`.
 
 Build the parser as a pure, unit-testable function in `features/tasks/`. No AI — revisit only if a plain parser proves inadequate.
 
