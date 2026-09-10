@@ -1,6 +1,19 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { cloneListItem, getInitialLists, listItemSchema, listSchema } from './list-data';
+import {
+  createValidatedMerge,
+  getStorage,
+  PERSIST_KEY_PREFIX,
+  PERSIST_VERSION,
+} from '../../lib/store-persistence';
+import {
+  cloneListItem,
+  getInitialLists,
+  listCollectionSchema,
+  listItemSchema,
+  listSchema,
+} from './list-data';
 import type {
   List,
   ListInput,
@@ -73,95 +86,116 @@ function replaceListItems(list: List, items: ListItem[]): List {
   });
 }
 
-export const useListStore = create<ListStoreState>()((set) => ({
-  lists: getInitialLists(),
-  createList: (input) => {
-    const listId = crypto.randomUUID();
+export const useListStore = create<ListStoreState>()(
+  persist(
+    (set) => ({
+      lists: getInitialLists(),
+      createList: (input) => {
+        const listId = crypto.randomUUID();
 
-    set((state) => ({
-      lists: [...state.lists, buildListRecord(listId, input)],
-    }));
+        set((state) => ({
+          lists: [...state.lists, buildListRecord(listId, input)],
+        }));
 
-    return listId;
-  },
-  updateList: (listId, input) => {
-    set((state) => ({
-      lists: state.lists.map((list) =>
-        list.id === listId ? buildListRecord(listId, input, list) : list,
-      ),
-    }));
-  },
-  reorderLists: (fromIndex, toIndex) => {
-    set((state) => ({
-      lists: moveArrayItem(state.lists, fromIndex, toIndex),
-    }));
-  },
-  deleteList: (listId) => {
-    set((state) => ({
-      lists: state.lists.filter((list) => list.id !== listId),
-    }));
-  },
-  createListItem: (listId, input) => {
-    set((state) => ({
-      lists: state.lists.map((list) => {
-        if (list.id !== listId) return list;
-
-        return replaceListItems(list, [
-          ...list.items,
-          buildListItemRecord(crypto.randomUUID(), input),
-        ]);
-      }),
-    }));
-  },
-  updateListItem: (listId, itemId, input) => {
-    set((state) => ({
-      lists: state.lists.map((list) => {
-        if (list.id !== listId) return list;
-
-        return replaceListItems(
-          list,
-          list.items.map((item) =>
-            item.id === itemId ? buildListItemRecord(itemId, input, item) : item,
+        return listId;
+      },
+      updateList: (listId, input) => {
+        set((state) => ({
+          lists: state.lists.map((list) =>
+            list.id === listId ? buildListRecord(listId, input, list) : list,
           ),
-        );
-      }),
-    }));
-  },
-  toggleListItem: (listId, itemId) => {
-    set((state) => ({
-      lists: state.lists.map((list) => {
-        if (list.id !== listId) return list;
+        }));
+      },
+      reorderLists: (fromIndex, toIndex) => {
+        set((state) => ({
+          lists: moveArrayItem(state.lists, fromIndex, toIndex),
+        }));
+      },
+      deleteList: (listId) => {
+        set((state) => ({
+          lists: state.lists.filter((list) => list.id !== listId),
+        }));
+      },
+      createListItem: (listId, input) => {
+        set((state) => ({
+          lists: state.lists.map((list) => {
+            if (list.id !== listId) return list;
 
-        return replaceListItems(
-          list,
-          list.items.map((item) =>
-            item.id === itemId
-              ? buildListItemRecord(itemId, { complete: !item.complete }, item)
-              : item,
-          ),
-        );
-      }),
-    }));
-  },
-  reorderListItems: (listId, fromIndex, toIndex) => {
-    set((state) => ({
-      lists: state.lists.map((list) =>
-        list.id === listId
-          ? replaceListItems(list, moveArrayItem(list.items, fromIndex, toIndex))
-          : list,
-      ),
-    }));
-  },
-  deleteListItem: (listId, itemId) => {
-    set((state) => ({
-      lists: state.lists.map((list) =>
-        list.id === listId
-          ? replaceListItems(
+            return replaceListItems(list, [
+              ...list.items,
+              buildListItemRecord(crypto.randomUUID(), input),
+            ]);
+          }),
+        }));
+      },
+      updateListItem: (listId, itemId, input) => {
+        set((state) => ({
+          lists: state.lists.map((list) => {
+            if (list.id !== listId) return list;
+
+            return replaceListItems(
               list,
-              list.items.filter((item) => item.id !== itemId),
-            )
-          : list,
-      ),
-    }));
-  },
-}));
+              list.items.map((item) =>
+                item.id === itemId ? buildListItemRecord(itemId, input, item) : item,
+              ),
+            );
+          }),
+        }));
+      },
+      toggleListItem: (listId, itemId) => {
+        set((state) => ({
+          lists: state.lists.map((list) => {
+            if (list.id !== listId) return list;
+
+            return replaceListItems(
+              list,
+              list.items.map((item) =>
+                item.id === itemId
+                  ? buildListItemRecord(itemId, { complete: !item.complete }, item)
+                  : item,
+              ),
+            );
+          }),
+        }));
+      },
+      reorderListItems: (listId, fromIndex, toIndex) => {
+        set((state) => ({
+          lists: state.lists.map((list) =>
+            list.id === listId
+              ? replaceListItems(list, moveArrayItem(list.items, fromIndex, toIndex))
+              : list,
+          ),
+        }));
+      },
+      deleteListItem: (listId, itemId) => {
+        set((state) => ({
+          lists: state.lists.map((list) =>
+            list.id === listId
+              ? replaceListItems(
+                  list,
+                  list.items.filter((item) => item.id !== itemId),
+                )
+              : list,
+          ),
+        }));
+      },
+    }),
+    {
+      name: `${PERSIST_KEY_PREFIX}lists`,
+      version: PERSIST_VERSION,
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ lists: state.lists }),
+      // Any version we did not write is unreadable by definition; returning null
+      // sends it through the same fallback path as corruption.
+      migrate: () => null,
+      merge: createValidatedMerge<ListStoreState>((persisted) => {
+        // NOTE: listCollectionSchema, not listListSchema. The other four domains
+        // use the <domain>ListSchema convention; lists does not.
+        const parsed = listCollectionSchema.safeParse(
+          (persisted as { lists?: unknown } | null)?.lists,
+        );
+        return parsed.success ? { lists: parsed.data } : null;
+      }),
+    },
+  ),
+);
