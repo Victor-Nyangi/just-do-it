@@ -44,4 +44,13 @@ describe('store-persistence', () => {
     const merge = createValidatedMerge<State>((p) => (p === null ? null : { items: [] }));
     expect(merge(null, { items: ['seed'] })).toEqual({ items: ['seed'] });
   });
+
+  it('falls back to current state when validate throws', () => {
+    type State = { items: string[] };
+    const merge = createValidatedMerge<State>(() => {
+      throw new Error('validator exploded');
+    });
+    expect(() => merge({ items: ['stored'] }, { items: ['seed'] })).not.toThrow();
+    expect(merge({ items: ['stored'] }, { items: ['seed'] })).toEqual({ items: ['seed'] });
+  });
 });

@@ -49,12 +49,23 @@ export function getStorage(): StateStorage {
  * null for anything it does not recognise, and we then keep `current` — which is
  * the fixture-seeded initial state. A corrupt store degrades to a working seeded
  * app rather than a white screen.
+ *
+ * `validate` is also called inside a try/catch: a throwing validator (e.g. a
+ * store that uses zod's `.parse()` instead of `.safeParse()`) is treated the
+ * same as a `null` return — a rejection, not a crash. This is the enforcement
+ * point for "rehydration never throws," so it cannot rely on every future
+ * `validate` implementation remembering not to throw.
  */
 export function createValidatedMerge<T extends object>(
   validate: (persisted: unknown) => Partial<T> | null,
 ) {
   return (persisted: unknown, current: T): T => {
-    const valid = validate(persisted);
+    let valid: Partial<T> | null;
+    try {
+      valid = validate(persisted);
+    } catch {
+      valid = null;
+    }
     return valid ? { ...current, ...valid } : current;
   };
 }
