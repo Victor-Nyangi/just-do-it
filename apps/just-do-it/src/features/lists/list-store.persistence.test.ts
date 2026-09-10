@@ -101,6 +101,40 @@ describe('list store persistence', () => {
     expect(useListStore.getState().lists.some((l) => l.id === 'bad')).toBe(false);
   });
 
+  it('rejects a persisted list whose items array contains a malformed item', async () => {
+    // The `items` array itself is well-formed (a real array of two well-shaped
+    // objects) -- unlike the `items: 'not-an-array'` case above, which fails on
+    // the field's own type. Here the second element's `complete` is a string
+    // ('yes') instead of a boolean, violating listItemSchema's
+    // `complete: z.boolean()` (list-data.ts). zod's recursive parse must reject
+    // the whole list -- and therefore the whole persisted collection -- because
+    // one array element fails its element schema, not because the array's shape
+    // is wrong.
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          lists: [
+            {
+              id: 'list-with-bad-item',
+              name: 'Otherwise valid list',
+              items: [
+                { id: 'ok-item', title: 'Fine item', complete: false },
+                { id: 'bad-item', title: 'Bad item', complete: 'yes' },
+              ],
+            },
+          ],
+        },
+        version: 1,
+      }),
+    );
+
+    await reload();
+
+    expect(useListStore.getState().lists).toHaveLength(getInitialLists().length);
+    expect(useListStore.getState().lists.some((l) => l.id === 'list-with-bad-item')).toBe(false);
+  });
+
   it('falls back when the persisted version is unknown', async () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ state: { lists: [] }, version: 999 }));
 
