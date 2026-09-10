@@ -103,7 +103,7 @@ export const useGoalStore = create<GoalStoreState>()(
       merge: createValidatedMerge<GoalStoreState>((persisted) => {
         const parsed = goalListSchema.safeParse((persisted as { goals?: unknown } | null)?.goals);
         return parsed.success ? { goals: parsed.data } : null;
-      }),
+      }, 'goals'),
     },
   ),
 );

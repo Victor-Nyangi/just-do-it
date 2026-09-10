@@ -195,7 +195,7 @@ export const useListStore = create<ListStoreState>()(
           (persisted as { lists?: unknown } | null)?.lists,
         );
         return parsed.success ? { lists: parsed.data } : null;
-      }),
+      }, 'lists'),
     },
   ),
 );

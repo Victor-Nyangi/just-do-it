@@ -96,7 +96,7 @@ export const useBookStore = create<BookStoreState>()(
       merge: createValidatedMerge<BookStoreState>((persisted) => {
         const parsed = bookListSchema.safeParse((persisted as { books?: unknown } | null)?.books);
         return parsed.success ? { books: parsed.data } : null;
-      }),
+      }, 'books'),
     },
   ),
 );

@@ -109,6 +109,8 @@ export const useHabitStore = create<HabitStoreState>()(
       version: PERSIST_VERSION,
       storage: createJSONStorage(getStorage),
       partialize: (state) => ({ habits: state.habits, completions: state.completions }),
+      // Any version we did not write is unreadable by definition; returning null
+      // sends it through the same fallback path as corruption.
       migrate: () => null,
       merge: createValidatedMerge<HabitStoreState>((persisted) => {
         const raw = persisted as { habits?: unknown; completions?: unknown } | null;
@@ -121,7 +123,7 @@ export const useHabitStore = create<HabitStoreState>()(
         if (!habits.success || !completions.success) return null;
 
         return { habits: habits.data, completions: completions.data };
-      }),
+      }, 'habits'),
     },
   ),
 );

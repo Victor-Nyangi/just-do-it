@@ -98,7 +98,7 @@ export const useTaskStore = create<TaskStoreState>()(
       merge: createValidatedMerge<TaskStoreState>((persisted) => {
         const parsed = taskListSchema.safeParse((persisted as { tasks?: unknown } | null)?.tasks);
         return parsed.success ? { tasks: parsed.data } : null;
-      }),
+      }, 'tasks'),
     },
   ),
 );
