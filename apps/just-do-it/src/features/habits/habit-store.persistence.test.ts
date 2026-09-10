@@ -130,17 +130,33 @@ describe('habit store persistence', () => {
     // all-or-nothing -- completions reference habits by id, so admitting valid
     // habits beside rejected completions (or vice versa) risks orphaned rows.
     // Both slices must fall back to their fixtures, not just completions.
+    //
+    // The persisted `habits` payload is deliberately NOT content-identical to
+    // getInitialHabits(): one habit's `label` carries a sentinel value. If the
+    // persisted habits array were byte-for-byte the same as the fixture, a
+    // length/content check after reload could not tell "atomic rejection fell
+    // back to the fixture" apart from "a non-atomic merge independently admitted
+    // this schema-valid habits payload" -- the two paths would look identical.
+    // The sentinel assertion below is what actually discriminates: it only
+    // passes if the persisted habits payload was rejected wholesale, not
+    // admitted on its own merits.
+    const sentinelHabits = getInitialHabits();
+    sentinelHabits[0] = { ...sentinelHabits[0], label: 'PERSISTED-NOT-FIXTURE' };
+
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        state: { habits: getInitialHabits(), completions: [{ nope: true }] },
+        state: { habits: sentinelHabits, completions: [{ nope: true }] },
         version: 1,
       }),
     );
 
     await reload();
 
-    expect(useHabitStore.getState().habits).toHaveLength(getInitialHabits().length);
     expect(useHabitStore.getState().completions).toHaveLength(getInitialHabitCompletions().length);
+    expect(useHabitStore.getState().habits).toHaveLength(getInitialHabits().length);
+    expect(
+      useHabitStore.getState().habits.some((habit) => habit.label === 'PERSISTED-NOT-FIXTURE'),
+    ).toBe(false);
   });
 });
