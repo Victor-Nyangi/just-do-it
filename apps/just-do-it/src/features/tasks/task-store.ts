@@ -1,6 +1,13 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { getInitialTasks, taskSchema } from './task-data';
+import {
+  createValidatedMerge,
+  getStorage,
+  PERSIST_KEY_PREFIX,
+  PERSIST_VERSION,
+} from '../../lib/store-persistence';
+import { getInitialTasks, taskListSchema, taskSchema } from './task-data';
 import type { Task, TaskInput, TaskStatus } from './types';
 
 type TaskStoreState = {
@@ -36,45 +43,62 @@ function getNextStatusAfterToggle(status: TaskStatus): TaskStatus {
   return status === 'completed' ? 'todo' : 'completed';
 }
 
-export const useTaskStore = create<TaskStoreState>()((set) => ({
-  tasks: getInitialTasks(),
-  createTask: (input) => {
-    set((state) => ({
-      tasks: [...state.tasks, buildTaskRecord(crypto.randomUUID(), input)],
-    }));
-  },
-  updateTask: (taskId, input) => {
-    set((state) => ({
-      tasks: state.tasks.map((task) =>
-        task.id === taskId ? buildTaskRecord(taskId, input, task) : task,
-      ),
-    }));
-  },
-  toggleTaskCompletion: (taskId) => {
-    set((state) => ({
-      tasks: state.tasks.map((task) => {
-        if (task.id !== taskId) return task;
+export const useTaskStore = create<TaskStoreState>()(
+  persist(
+    (set) => ({
+      tasks: getInitialTasks(),
+      createTask: (input) => {
+        set((state) => ({
+          tasks: [...state.tasks, buildTaskRecord(crypto.randomUUID(), input)],
+        }));
+      },
+      updateTask: (taskId, input) => {
+        set((state) => ({
+          tasks: state.tasks.map((task) =>
+            task.id === taskId ? buildTaskRecord(taskId, input, task) : task,
+          ),
+        }));
+      },
+      toggleTaskCompletion: (taskId) => {
+        set((state) => ({
+          tasks: state.tasks.map((task) => {
+            if (task.id !== taskId) return task;
 
-        return buildTaskRecord(
-          task.id,
-          {
-            title: task.title,
-            description: task.description,
-            status: getNextStatusAfterToggle(task.status),
-            priority: task.priority,
-            category: task.category,
-            dueDate: task.dueDate,
-            recurrence: task.recurrence,
-            recurrenceInterval: task.recurrenceInterval,
-          },
-          task,
-        );
+            return buildTaskRecord(
+              task.id,
+              {
+                title: task.title,
+                description: task.description,
+                status: getNextStatusAfterToggle(task.status),
+                priority: task.priority,
+                category: task.category,
+                dueDate: task.dueDate,
+                recurrence: task.recurrence,
+                recurrenceInterval: task.recurrenceInterval,
+              },
+              task,
+            );
+          }),
+        }));
+      },
+      deleteTask: (taskId) => {
+        set((state) => ({
+          tasks: state.tasks.filter((task) => task.id !== taskId),
+        }));
+      },
+    }),
+    {
+      name: `${PERSIST_KEY_PREFIX}tasks`,
+      version: PERSIST_VERSION,
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ tasks: state.tasks }),
+      // Any version we did not write is unreadable by definition; returning null
+      // sends it through the same fallback path as corruption.
+      migrate: () => null,
+      merge: createValidatedMerge<TaskStoreState>((persisted) => {
+        const parsed = taskListSchema.safeParse((persisted as { tasks?: unknown } | null)?.tasks);
+        return parsed.success ? { tasks: parsed.data } : null;
       }),
-    }));
-  },
-  deleteTask: (taskId) => {
-    set((state) => ({
-      tasks: state.tasks.filter((task) => task.id !== taskId),
-    }));
-  },
-}));
+    },
+  ),
+);

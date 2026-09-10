@@ -20,12 +20,17 @@ if (typeof document !== 'undefined') {
     import('../features/lists'),
     import('../features/tasks'),
   ]);
+  const { clearPersistedStores } = await import('../lib/store-persistence');
 
   // The zustand stores are module-level singletons seeded from fixtures, so a
   // test that creates a task pollutes every later test in the same file. Vitest
   // gives each test file a fresh module registry, so cross-file leakage is not
   // a concern — within-file leakage is.
   beforeEach(() => {
+    // Clear FIRST: setState below triggers a persist write, and a stale key from
+    // a previous test would otherwise rehydrate into this one.
+    clearPersistedStores();
+
     tasks.useTaskStore.setState({ tasks: tasks.getInitialTasks() });
     habits.useHabitStore.setState({
       habits: habits.getInitialHabits(),
