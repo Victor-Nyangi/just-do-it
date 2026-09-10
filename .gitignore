@@ -6,3 +6,6 @@ dist/
 .env.*
 !.env.example
 resources/
+
+# Isolated worktrees for subagent-driven work (see .worktrees/)
+.worktrees/
