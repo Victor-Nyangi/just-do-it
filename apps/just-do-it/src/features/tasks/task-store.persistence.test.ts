@@ -38,7 +38,13 @@ describe('task store persistence', () => {
   });
 
   it('seeds from the fixture when storage is empty', async () => {
+    // setup.ts's global beforeEach calls setState, and persist writes through on
+    // every setState (middleware.js:367-370) -- so the key exists by now. Remove it
+    // to actually exercise zustand's "no persisted value" path.
+    localStorage.removeItem(STORAGE_KEY);
+
     await reload();
+
     expect(useTaskStore.getState().tasks).toHaveLength(getInitialTasks().length);
   });
 
