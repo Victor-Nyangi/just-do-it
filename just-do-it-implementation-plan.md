@@ -13,7 +13,7 @@ It is also a proof of concept for a heterogeneous frontend monorepo — React + 
 
 ### Delivery decision (still in force)
 
-The POC runs on versioned static JSON fixtures. There is no backend. Changes made in the browser are intentionally session-local and vanish on reload. Hosted persistence, authentication, and sync are deferred to Phase 15 and start only once a managed backend exists.
+The POC runs on versioned static JSON fixtures. There is no backend. Edits now survive a reload via versioned, re-validated `localStorage` persistence, landed ahead of Phase 16 and independent of a backend (see Phase 16 below). Hosted persistence, authentication, and sync are still deferred to Phase 16 and start only once a managed backend exists.
 
 ### About this revision
 
@@ -109,7 +109,7 @@ The planned `src/{components,lib,stores,types}/` directories were deliberately *
 | 13  | Habits as a first-class domain | **Done**                  | Dated completions, streak/rate selectors, `/habits` and `/habits/:habitId` routes                                                                                                                                                                                 |
 | 14  | Product polish & deploy        | **Not started**           | No Vercel config, no PWA, no `/settings`                                                                                                                                                                                                                          |
 | 15  | Testing & quality gates        | **Partial**               | CI gate runs all five checks; 267 vitest tests cover every domain's selectors and stores, the quick-add parser, and the calendar mapping, plus a rendering test for the calendar route — the other eight routes are untested, and `packages/ui` is still unlinted |
-| 16  | Hosted persistence             | **Deferred**              | Blocked on a managed backend                                                                                                                                                                                                                                      |
+| 16  | Hosted persistence             | **Deferred**              | Local durability landed independently via `localStorage` (see Phase 16 below); the hosted half — Supabase, auth, sync — is still blocked on a managed backend                                                                                                                                                                                                                                      |
 
 **Where the project actually is:** the entire fixture-backed product surface is built, habits included. What remains is not more domains — it is _finishing_ the one half-built one (quick add), then hardening (deploy, polish).
 
@@ -423,7 +423,11 @@ Not in the original plan. Added because the repo had no way to verify anything; 
 
 ### Phase 16 — Hosted persistence (deferred)
 
-Start only once a managed backend exists.
+Local durability no longer waits on this phase: the five stores already persist to `localStorage`
+(`src/lib/store-persistence.ts`), versioned and re-validated through each domain's zod schema on
+rehydration, with a corrupt or stale-shaped store falling back to the fixture rather than breaking
+the app. What remains here is specifically the *hosted* half, and it still starts only once a
+managed backend exists.
 
 - [ ] Create the Supabase project (or equivalent); apply schema and Row Level Security
 - [ ] Configure auth and environment variables; add `/login` and `/signup`

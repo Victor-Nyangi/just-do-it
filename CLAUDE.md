@@ -99,7 +99,7 @@ Zod is not just an import-time guard: stores re-`parse()` through `buildXRecord(
 
 The single `<domain>.json` shown above is the common case, not a rule: `features/habits` has two top-level fixtures (`habits.json` and `habit-completions.json`), deliberately mirroring the two planned backend tables. A domain with more than one entity should parse and export more than one fixture from its `-data.ts`, the way habits does.
 
-All edits are session-local by design; nothing persists across a reload (except the theme). Don't add localStorage persistence or a fetch layer without being asked.
+All five stores persist to `localStorage` under a `just-do-it:` key prefix, at `PERSIST_VERSION` 1 (`src/lib/store-persistence.ts`). Rehydration re-validates the persisted value through the domain's own zod schema and falls back to the fixture on any mismatch or thrown error — a corrupt or stale-shaped store degrades to a working seeded app, never a blank screen. Bump `PERSIST_VERSION` when a persisted shape changes. This did not touch the fixture pipeline itself: fixtures are seed-and-test data, not the live source of truth, and a hosted backend still swaps in at the `-data.ts` step exactly as before. Don't add a fetch layer without being asked.
 
 Cross-domain composition has two homes. `src/data/dashboard.ts` aggregates fixtures (and is
 currently dead code — nothing imports it). `features/calendar` composes tasks, habits and goals
