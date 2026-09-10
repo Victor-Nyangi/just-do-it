@@ -1,6 +1,13 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { getInitialGoals, goalSchema } from './goal-data';
+import {
+  createValidatedMerge,
+  getStorage,
+  PERSIST_KEY_PREFIX,
+  PERSIST_VERSION,
+} from '../../lib/store-persistence';
+import { getInitialGoals, goalListSchema, goalSchema } from './goal-data';
 import type { Goal, GoalInput, GoalStatus, GoalUpdateInput } from './types';
 
 type GoalStoreState = {
@@ -54,32 +61,49 @@ function buildGoalRecord(
   });
 }
 
-export const useGoalStore = create<GoalStoreState>()((set) => ({
-  goals: getInitialGoals(),
-  createGoal: (input) => {
-    set((state) => ({
-      goals: [...state.goals, buildGoalRecord(crypto.randomUUID(), input)],
-    }));
-  },
-  updateGoal: (goalId, input) => {
-    set((state) => ({
-      goals: state.goals.map((goal) =>
-        goal.id === goalId ? buildGoalRecord(goalId, input, goal) : goal,
-      ),
-    }));
-  },
-  updateGoalProgress: (goalId, progress) => {
-    set((state) => ({
-      goals: state.goals.map((goal) =>
-        goal.id === goalId ? buildGoalRecord(goalId, { progress }, goal) : goal,
-      ),
-    }));
-  },
-  updateGoalStatus: (goalId, status) => {
-    set((state) => ({
-      goals: state.goals.map((goal) =>
-        goal.id === goalId ? buildGoalRecord(goalId, { status }, goal) : goal,
-      ),
-    }));
-  },
-}));
+export const useGoalStore = create<GoalStoreState>()(
+  persist(
+    (set) => ({
+      goals: getInitialGoals(),
+      createGoal: (input) => {
+        set((state) => ({
+          goals: [...state.goals, buildGoalRecord(crypto.randomUUID(), input)],
+        }));
+      },
+      updateGoal: (goalId, input) => {
+        set((state) => ({
+          goals: state.goals.map((goal) =>
+            goal.id === goalId ? buildGoalRecord(goalId, input, goal) : goal,
+          ),
+        }));
+      },
+      updateGoalProgress: (goalId, progress) => {
+        set((state) => ({
+          goals: state.goals.map((goal) =>
+            goal.id === goalId ? buildGoalRecord(goalId, { progress }, goal) : goal,
+          ),
+        }));
+      },
+      updateGoalStatus: (goalId, status) => {
+        set((state) => ({
+          goals: state.goals.map((goal) =>
+            goal.id === goalId ? buildGoalRecord(goalId, { status }, goal) : goal,
+          ),
+        }));
+      },
+    }),
+    {
+      name: `${PERSIST_KEY_PREFIX}goals`,
+      version: PERSIST_VERSION,
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ goals: state.goals }),
+      // Any version we did not write is unreadable by definition; returning null
+      // sends it through the same fallback path as corruption.
+      migrate: () => null,
+      merge: createValidatedMerge<GoalStoreState>((persisted) => {
+        const parsed = goalListSchema.safeParse((persisted as { goals?: unknown } | null)?.goals);
+        return parsed.success ? { goals: parsed.data } : null;
+      }),
+    },
+  ),
+);

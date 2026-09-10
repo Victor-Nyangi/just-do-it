@@ -1,6 +1,13 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { bookSchema, getInitialBooks } from './book-data';
+import {
+  createValidatedMerge,
+  getStorage,
+  PERSIST_KEY_PREFIX,
+  PERSIST_VERSION,
+} from '../../lib/store-persistence';
+import { bookListSchema, bookSchema, getInitialBooks } from './book-data';
 import type { Book, BookInput, BookStatus, BookUpdateInput } from './types';
 
 type BookStoreState = {
@@ -40,39 +47,56 @@ function buildBookRecord(
   });
 }
 
-export const useBookStore = create<BookStoreState>()((set) => ({
-  books: getInitialBooks(),
-  createBook: (input) => {
-    set((state) => ({
-      books: [...state.books, buildBookRecord(crypto.randomUUID(), input)],
-    }));
-  },
-  updateBook: (bookId, input) => {
-    set((state) => ({
-      books: state.books.map((book) =>
-        book.id === bookId ? buildBookRecord(bookId, input, book) : book,
-      ),
-    }));
-  },
-  updateBookNote: (bookId, note) => {
-    set((state) => ({
-      books: state.books.map((book) =>
-        book.id === bookId ? buildBookRecord(bookId, { note }, book) : book,
-      ),
-    }));
-  },
-  updateBookRating: (bookId, rating) => {
-    set((state) => ({
-      books: state.books.map((book) =>
-        book.id === bookId ? buildBookRecord(bookId, { rating }, book) : book,
-      ),
-    }));
-  },
-  updateBookStatus: (bookId, status) => {
-    set((state) => ({
-      books: state.books.map((book) =>
-        book.id === bookId ? buildBookRecord(bookId, { status }, book) : book,
-      ),
-    }));
-  },
-}));
+export const useBookStore = create<BookStoreState>()(
+  persist(
+    (set) => ({
+      books: getInitialBooks(),
+      createBook: (input) => {
+        set((state) => ({
+          books: [...state.books, buildBookRecord(crypto.randomUUID(), input)],
+        }));
+      },
+      updateBook: (bookId, input) => {
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === bookId ? buildBookRecord(bookId, input, book) : book,
+          ),
+        }));
+      },
+      updateBookNote: (bookId, note) => {
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === bookId ? buildBookRecord(bookId, { note }, book) : book,
+          ),
+        }));
+      },
+      updateBookRating: (bookId, rating) => {
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === bookId ? buildBookRecord(bookId, { rating }, book) : book,
+          ),
+        }));
+      },
+      updateBookStatus: (bookId, status) => {
+        set((state) => ({
+          books: state.books.map((book) =>
+            book.id === bookId ? buildBookRecord(bookId, { status }, book) : book,
+          ),
+        }));
+      },
+    }),
+    {
+      name: `${PERSIST_KEY_PREFIX}books`,
+      version: PERSIST_VERSION,
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ books: state.books }),
+      // Any version we did not write is unreadable by definition; returning null
+      // sends it through the same fallback path as corruption.
+      migrate: () => null,
+      merge: createValidatedMerge<BookStoreState>((persisted) => {
+        const parsed = bookListSchema.safeParse((persisted as { books?: unknown } | null)?.books);
+        return parsed.success ? { books: parsed.data } : null;
+      }),
+    },
+  ),
+);
