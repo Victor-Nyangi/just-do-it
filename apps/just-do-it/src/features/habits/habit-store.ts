@@ -1,9 +1,18 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
+import {
+  createValidatedMerge,
+  getStorage,
+  PERSIST_KEY_PREFIX,
+  PERSIST_VERSION,
+} from '../../lib/store-persistence';
 import {
   getInitialHabitCompletions,
   getInitialHabits,
+  habitCompletionCollectionSchema,
   habitCompletionSchema,
+  habitListSchema,
   habitSchema,
 } from './habit-data';
 import { toHabitDateKey } from './habit-selectors';
@@ -43,53 +52,76 @@ function buildHabitCompletionRecord(
   return habitCompletionSchema.parse({ id: completionId, habitId, date: dateKey });
 }
 
-export const useHabitStore = create<HabitStoreState>()((set) => ({
-  habits: getInitialHabits(),
-  completions: getInitialHabitCompletions(),
-  toggleHabitCompletionOn: (habitId, dateKey) => {
-    set((state) => {
-      if (!state.habits.some((habit) => habit.id === habitId)) return state;
+export const useHabitStore = create<HabitStoreState>()(
+  persist(
+    (set) => ({
+      habits: getInitialHabits(),
+      completions: getInitialHabitCompletions(),
+      toggleHabitCompletionOn: (habitId, dateKey) => {
+        set((state) => {
+          if (!state.habits.some((habit) => habit.id === habitId)) return state;
 
-      const existingCompletion = state.completions.find(
-        (completion) => completion.habitId === habitId && completion.date === dateKey,
-      );
+          const existingCompletion = state.completions.find(
+            (completion) => completion.habitId === habitId && completion.date === dateKey,
+          );
 
-      if (existingCompletion) {
-        return {
-          completions: state.completions.filter(
-            (completion) => completion.id !== existingCompletion.id,
+          if (existingCompletion) {
+            return {
+              completions: state.completions.filter(
+                (completion) => completion.id !== existingCompletion.id,
+              ),
+            };
+          }
+
+          return {
+            completions: [
+              ...state.completions,
+              buildHabitCompletionRecord(crypto.randomUUID(), habitId, dateKey),
+            ],
+          };
+        });
+      },
+      addHabit: (input) => {
+        const habitId = crypto.randomUUID();
+
+        set((state) => ({
+          habits: [...state.habits, buildHabitRecord(habitId, input)],
+        }));
+
+        return habitId;
+      },
+      updateHabit: (habitId, input) => {
+        set((state) => ({
+          habits: state.habits.map((habit) =>
+            habit.id === habitId ? buildHabitRecord(habitId, input, habit) : habit,
           ),
-        };
-      }
+        }));
+      },
+      removeHabit: (habitId) => {
+        set((state) => ({
+          habits: state.habits.filter((habit) => habit.id !== habitId),
+          completions: state.completions.filter((completion) => completion.habitId !== habitId),
+        }));
+      },
+    }),
+    {
+      name: `${PERSIST_KEY_PREFIX}habits`,
+      version: PERSIST_VERSION,
+      storage: createJSONStorage(getStorage),
+      partialize: (state) => ({ habits: state.habits, completions: state.completions }),
+      migrate: () => null,
+      merge: createValidatedMerge<HabitStoreState>((persisted) => {
+        const raw = persisted as { habits?: unknown; completions?: unknown } | null;
+        const habits = habitListSchema.safeParse(raw?.habits);
+        const completions = habitCompletionCollectionSchema.safeParse(raw?.completions);
 
-      return {
-        completions: [
-          ...state.completions,
-          buildHabitCompletionRecord(crypto.randomUUID(), habitId, dateKey),
-        ],
-      };
-    });
-  },
-  addHabit: (input) => {
-    const habitId = crypto.randomUUID();
+        // All-or-nothing on purpose. Completions reference habits by id, so
+        // admitting valid completions beside rejected habits would leave
+        // orphaned rows pointing at ids the seeded fixture may not contain.
+        if (!habits.success || !completions.success) return null;
 
-    set((state) => ({
-      habits: [...state.habits, buildHabitRecord(habitId, input)],
-    }));
-
-    return habitId;
-  },
-  updateHabit: (habitId, input) => {
-    set((state) => ({
-      habits: state.habits.map((habit) =>
-        habit.id === habitId ? buildHabitRecord(habitId, input, habit) : habit,
-      ),
-    }));
-  },
-  removeHabit: (habitId) => {
-    set((state) => ({
-      habits: state.habits.filter((habit) => habit.id !== habitId),
-      completions: state.completions.filter((completion) => completion.habitId !== habitId),
-    }));
-  },
-}));
+        return { habits: habits.data, completions: completions.data };
+      }),
+    },
+  ),
+);
