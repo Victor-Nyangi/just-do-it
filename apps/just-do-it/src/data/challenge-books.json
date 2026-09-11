@@ -1,0 +1,135 @@
+[
+  {
+    "id": "enterprise-integration-patterns",
+    "title": "Enterprise Integration Patterns",
+    "author": "Gregor Hohpe and Bobby Woolf",
+    "track": "technical",
+    "pageCount": 736
+  },
+  {
+    "id": "ddd-distilled",
+    "title": "Domain-Driven Design Distilled",
+    "author": "Vaughn Vernon",
+    "track": "technical",
+    "pageCount": 176
+  },
+  {
+    "id": "building-large-scale-web-apps",
+    "title": "Building Large Scale Web Apps",
+    "author": "Addy Osmani and Hassan Djirdeh",
+    "track": "technical",
+    "pageCount": 400
+  },
+  {
+    "id": "micro-frontends-in-action",
+    "title": "Micro Frontends in Action",
+    "author": "Michael Geers",
+    "track": "technical",
+    "pageCount": 300
+  },
+  {
+    "id": "software-architecture-hard-parts",
+    "title": "Software Architecture: The Hard Parts",
+    "author": "Neal Ford, Mark Richards, Pramod Sadalage and Zhamak Dehghani",
+    "track": "technical",
+    "pageCount": 462
+  },
+  {
+    "id": "philosophy-of-software-design",
+    "title": "A Philosophy of Software Design",
+    "author": "John Ousterhout",
+    "track": "technical",
+    "pageCount": 190
+  },
+  {
+    "id": "laws-of-human-nature",
+    "title": "The Laws of Human Nature",
+    "author": "Robert Greene",
+    "track": "growth",
+    "pageCount": 608
+  },
+  {
+    "id": "48-laws-of-power",
+    "title": "The 48 Laws of Power",
+    "author": "Robert Greene",
+    "track": "growth",
+    "pageCount": 452
+  },
+  {
+    "id": "power-of-now",
+    "title": "The Power of Now",
+    "author": "Eckhart Tolle",
+    "track": "growth",
+    "pageCount": 236
+  },
+  {
+    "id": "breaking-the-habit-of-being-yourself",
+    "title": "Breaking the Habit of Being Yourself",
+    "author": "Joe Dispenza",
+    "track": "growth",
+    "pageCount": 384
+  },
+  {
+    "id": "way-of-the-superior-man",
+    "title": "The Way of the Superior Man",
+    "author": "David Deida",
+    "track": "growth",
+    "pageCount": 208
+  },
+  {
+    "id": "outliers",
+    "title": "Outliers",
+    "author": "Malcolm Gladwell",
+    "track": "growth",
+    "pageCount": 309
+  },
+  {
+    "id": "power-of-your-subconscious-mind",
+    "title": "The Power of Your Subconscious Mind",
+    "author": "Joseph Murphy",
+    "track": "growth",
+    "pageCount": 312
+  },
+  {
+    "id": "richest-man-in-babylon",
+    "title": "The Richest Man in Babylon",
+    "author": "George S. Clason",
+    "track": "growth",
+    "pageCount": 194
+  },
+  {
+    "id": "5am-club",
+    "title": "The 5 AM Club",
+    "author": "Robin Sharma",
+    "track": "growth",
+    "pageCount": 336
+  },
+  {
+    "id": "courage-to-be-disliked",
+    "title": "The Courage to Be Disliked",
+    "author": "Ichiro Kishimi and Fumitake Koga",
+    "track": "growth",
+    "pageCount": 288
+  },
+  {
+    "id": "mans-search-for-meaning",
+    "title": "Man's Search for Meaning",
+    "author": "Viktor E. Frankl",
+    "track": "growth",
+    "pageCount": 184
+  },
+  {
+    "id": "the-red-book",
+    "title": "The Red Book",
+    "author": "C. G. Jung",
+    "track": "growth",
+    "pageCount": 404
+  },
+  {
+    "id": "myth-of-sisyphus",
+    "title": "The Myth of Sisyphus",
+    "author": "Albert Camus",
+    "track": "growth",
+    "pageCount": 212
+  }
+]

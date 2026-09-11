@@ -13,8 +13,9 @@ if (typeof document !== 'undefined') {
   await import('@testing-library/jest-dom/vitest');
   const { cleanup } = await import('@testing-library/react');
 
-  const [books, goals, habits, lists, tasks] = await Promise.all([
+  const [books, challenge, goals, habits, lists, tasks] = await Promise.all([
     import('../features/books'),
+    import('../features/challenge'),
     import('../features/goals'),
     import('../features/habits'),
     import('../features/lists'),
@@ -34,6 +35,11 @@ if (typeof document !== 'undefined') {
     goals.useGoalStore.setState({ goals: goals.getInitialGoals() });
     books.useBookStore.setState({ books: books.getInitialBooks() });
     lists.useListStore.setState({ lists: lists.getInitialLists() });
+    challenge.useChallengeStore.setState({
+      challenge: challenge.getInitialChallenge(),
+      books: challenge.getInitialChallengeBooks(),
+      completions: challenge.getInitialChallengeCompletions(),
+    });
   });
 
   // React Testing Library does not clean up automatically when vitest globals

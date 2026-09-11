@@ -3,6 +3,9 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { AppLayout } from './layouts/app-layout';
 import { BooksPage } from './routes/books-page';
 import { CalendarPage } from './routes/calendar-page';
+import { ChallengeBooksPage } from './routes/challenge-books-page';
+import { ChallengePage } from './routes/challenge-page';
+import { ChallengeStreakPage } from './routes/challenge-streak-page';
 import { GoalsPage } from './routes/goals-page';
 import { HabitDetailPage } from './routes/habit-detail-page';
 import { HabitsPage } from './routes/habits-page';
@@ -18,6 +21,9 @@ export default function App() {
       <Route element={<AppLayout />}>
         <Route index element={<Navigate replace to="/today" />} />
         <Route path="/today" element={<TodayPage />} />
+        <Route path="/challenge" element={<ChallengePage />} />
+        <Route path="/challenge/books" element={<ChallengeBooksPage />} />
+        <Route path="/challenge/streak" element={<ChallengeStreakPage />} />
         <Route path="/tasks" element={<TasksPage />} />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/goals" element={<GoalsPage />} />
