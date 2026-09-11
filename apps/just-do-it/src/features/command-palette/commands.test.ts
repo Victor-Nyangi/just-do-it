@@ -16,6 +16,7 @@ describe('buildCommands — navigation', () => {
 
     expect(labels).toEqual([
       'Today',
+      'Challenge',
       'Tasks',
       'Calendar',
       'Goals',
