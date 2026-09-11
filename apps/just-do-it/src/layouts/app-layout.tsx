@@ -48,6 +48,13 @@ export function AppLayout() {
     localStorage.setItem('theme', darkMode ? 'dark' : 'light');
   }, [darkMode]);
 
+  // Navigating leaves the drawer covering the page it just moved to, so every
+  // destination closes it on the way out. Harmless on desktop, where the drawer
+  // is never open in the first place.
+  function closeMobileNav() {
+    setMobileNavOpen(false);
+  }
+
   const sidebar = (
     <aside className="flex h-full w-72 flex-col border-r border-[var(--border)] bg-[var(--surface)] p-4">
       <div className="mb-8 flex items-center gap-3 px-2">
@@ -58,14 +65,23 @@ export function AppLayout() {
       </div>
       <nav className="space-y-1">
         {navigation.map(({ label, to, icon: Icon }) => (
-          <NavLink key={to} className={({ isActive }) => navigationLinkClass(isActive)} to={to}>
+          <NavLink
+            key={to}
+            className={({ isActive }) => navigationLinkClass(isActive)}
+            onClick={closeMobileNav}
+            to={to}
+          >
             <Icon aria-hidden="true" className="size-4" />
             {label}
           </NavLink>
         ))}
       </nav>
       <div className="mt-auto space-y-1">
-        <NavLink className={({ isActive }) => navigationLinkClass(isActive)} to="/settings">
+        <NavLink
+          className={({ isActive }) => navigationLinkClass(isActive)}
+          onClick={closeMobileNav}
+          to="/settings"
+        >
           <Settings aria-hidden="true" className="size-4" />
           Settings
         </NavLink>
@@ -92,7 +108,10 @@ export function AppLayout() {
             className="absolute inset-0 bg-[var(--overlay)]"
             onClick={() => setMobileNavOpen(false)}
           />
-          <div className="relative h-full">{sidebar}</div>
+          {/* Only as wide as the sidebar itself. As a full-width block this sat
+              above the overlay button in paint order and swallowed every click
+              meant to dismiss the drawer. */}
+          <div className="relative h-full w-72">{sidebar}</div>
         </div>
       )}
       <main className="lg:pl-72">
