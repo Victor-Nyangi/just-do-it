@@ -4,13 +4,10 @@ import type { CommandItem } from './types';
 // advertises these as hints and `useGlobalShortcuts` dispatches them, so a
 // route can never be offered under a chord that does not work.
 //
-// `g k` for Tasks because Today claims `t`, and `g 1` for the 100-day
-// challenge because Calendar already claims `c`. A digit reads oddly next to
-// the letter chords, but "g 1" for the hundred days is at least memorable,
-// which `g a` or `g x` would not be.
+// `g k` for Tasks because Today claims `t`.
 export const NAVIGATION_CHORDS: Readonly<Record<string, string>> = {
   t: '/today',
-  '1': '/challenge',
+  j: '/journeys',
   k: '/tasks',
   c: '/calendar',
   g: '/goals',
@@ -22,7 +19,7 @@ export const NAVIGATION_CHORDS: Readonly<Record<string, string>> = {
 
 const NAVIGATION_LABELS: Readonly<Record<string, string>> = {
   '/today': 'Today',
-  '/challenge': 'Challenge',
+  '/journeys': 'Journeys',
   '/tasks': 'Tasks',
   '/calendar': 'Calendar',
   '/goals': 'Goals',
@@ -36,7 +33,7 @@ const NAVIGATION_LABELS: Readonly<Record<string, string>> = {
 // alphabetical order of the chord keys.
 const NAVIGATION_ORDER = [
   '/today',
-  '/challenge',
+  '/journeys',
   '/tasks',
   '/calendar',
   '/goals',

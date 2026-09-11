@@ -3,7 +3,7 @@ import {
   CalendarDays,
   CheckSquare,
   CircleHelp,
-  Flag,
+  Compass,
   Flame,
   Goal,
   LayoutDashboard,
@@ -21,7 +21,7 @@ import { CommandPalette } from '../features/command-palette';
 
 const navigation = [
   { label: 'Today', to: '/today', icon: LayoutDashboard },
-  { label: 'Challenge', to: '/challenge', icon: Flag },
+  { label: 'Journeys', to: '/journeys', icon: Compass },
   { label: 'Tasks', to: '/tasks', icon: CheckSquare },
   { label: 'Calendar', to: '/calendar', icon: CalendarDays },
   { label: 'Goals', to: '/goals', icon: Goal },

@@ -88,15 +88,15 @@ describe('AppLayout — the mobile drawer', () => {
     expect(drawerIsOpen()).toBe(false);
   });
 
-  it('offers the challenge alongside the other destinations', async () => {
+  it('offers journeys alongside the other destinations', async () => {
     const user = userEvent.setup();
     renderLayout();
 
     await user.click(screen.getByRole('button', { name: 'Open navigation' }));
 
-    expect(within(mobileDrawer()).getByRole('link', { name: 'Challenge' })).toHaveAttribute(
+    expect(within(mobileDrawer()).getByRole('link', { name: 'Journeys' })).toHaveAttribute(
       'href',
-      '/challenge',
+      '/journeys',
     );
   });
 });
