@@ -1,25 +1,30 @@
 import { format, parseISO } from 'date-fns';
 import { BookOpen, Brain, Check, ChevronLeft, ChevronRight, Dumbbell, PenLine } from 'lucide-react';
 import { useState } from 'react';
+import { useParams } from 'react-router-dom';
 
 import { Badge, Button, Card, cn } from '@just-do-it/ui';
 import {
-  ChallengeNav,
-  ChallengeProgressBar,
+  JourneyNav,
+  JourneyNotFound,
+  JourneyProgressBar,
   buildDayPlan,
   clampDayIndex,
   getCurrentDayIndex,
   selectActivitiesByCategory,
   selectCompletedActivityIdsForDay,
+  selectCompletionsForEnrollment,
   selectDayProgress,
-  useChallenge,
-  useChallengeBooks,
-  useChallengeCompletions,
-  useToggleChallengeActivity,
-  type ChallengeActivityCategory,
-} from '../features/challenge';
+  useJourneyById,
+  useJourneyCompletions,
+  useJourneyEnrollment,
+  useToggleJourneyActivity,
+  type EnrolledJourney,
+  type JourneyActivityCategory,
+  type JourneyCompletion,
+} from '../features/journeys';
 
-const CATEGORY_LABELS: Readonly<Record<ChallengeActivityCategory, string>> = {
+const CATEGORY_LABELS: Readonly<Record<JourneyActivityCategory, string>> = {
   physical: 'Physical',
   technical_reading: 'Technical reading',
   growth_reading: 'Growth reading',
@@ -33,25 +38,29 @@ const CATEGORY_ICONS = {
   reflection: PenLine,
 } as const;
 
-function formatChallengeDate(dateKey: string): string {
+function formatJourneyDate(dateKey: string): string {
   return format(parseISO(dateKey), 'EEEE, d MMMM yyyy');
 }
 
-export function ChallengePage() {
+function JourneyDayView({
+  completions,
+  enrolled,
+}: {
+  completions: readonly JourneyCompletion[];
+  enrolled: EnrolledJourney;
+}) {
+  const { enrollment, journey } = enrolled;
   const now = new Date();
-  const challenge = useChallenge();
-  const books = useChallengeBooks();
-  const completions = useChallengeCompletions();
-  const toggleActivity = useToggleChallengeActivity();
+  const toggleActivity = useToggleJourneyActivity();
 
-  const currentDayIndex = getCurrentDayIndex(challenge, now);
+  const currentDayIndex = getCurrentDayIndex(journey, enrollment, now);
   // Outside the window there is no current day, so the page opens on whichever
-  // end of the challenge the user is standing at rather than on nothing.
-  const beforeChallengeStarts = parseISO(challenge.startDate) > now;
-  const openingDayIndex = currentDayIndex ?? (beforeChallengeStarts ? 1 : challenge.totalDays);
+  // end of the journey the user is standing at rather than on nothing.
+  const beforeJourneyStarts = parseISO(enrollment.startDate) > now;
+  const openingDayIndex = currentDayIndex ?? (beforeJourneyStarts ? 1 : journey.totalDays);
 
   const [viewedDayIndex, setViewedDayIndex] = useState(openingDayIndex);
-  const plan = buildDayPlan(challenge, books, viewedDayIndex);
+  const plan = buildDayPlan(journey, enrollment, viewedDayIndex);
 
   // `viewedDayIndex` only ever moves through `clampDayIndex`, so a missing plan
   // is not reachable — but the type says it can be, and an early return is
@@ -67,29 +76,29 @@ export function ChallengePage() {
   const viewingToday = viewedDayIndex === currentDayIndex;
 
   function goToDay(dayIndex: number) {
-    setViewedDayIndex(clampDayIndex(challenge, dayIndex));
+    setViewedDayIndex(clampDayIndex(journey, dayIndex));
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8 sm:py-12">
       <section className="mb-6">
-        <Badge tone="accent">{challenge.title}</Badge>
+        <Badge tone="accent">{journey.title}</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-          Day {plan.dayIndex} of {challenge.totalDays}
+          Day {plan.dayIndex} of {journey.totalDays}
         </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">{formatChallengeDate(plan.date)}</p>
+        <p className="mt-2 text-[var(--muted-foreground)]">{formatJourneyDate(plan.date)}</p>
       </section>
 
       <div className="mb-6">
-        <ChallengeNav />
+        <JourneyNav enrollmentId={enrollment.id} />
       </div>
 
       {currentDayIndex === null ? (
         <Card className="mb-6" variant="subtle">
           <p className="text-sm text-[var(--muted-foreground)]">
-            {beforeChallengeStarts
-              ? `The challenge opens on ${formatChallengeDate(challenge.startDate)}. This is the plan waiting for day one.`
-              : `The challenge closed on ${formatChallengeDate(challenge.endDate)}. This is the record, not a checklist.`}
+            {beforeJourneyStarts
+              ? `This journey opens on ${formatJourneyDate(enrollment.startDate)}. This is the plan waiting for day one.`
+              : `This journey closed on ${formatJourneyDate(plan.date)}. This is the record, not a checklist.`}
           </p>
         </Card>
       ) : null}
@@ -116,7 +125,7 @@ export function ChallengePage() {
 
           <Button
             aria-label="Go to the next day"
-            disabled={viewedDayIndex >= challenge.totalDays}
+            disabled={viewedDayIndex >= journey.totalDays}
             onClick={() => goToDay(viewedDayIndex + 1)}
             variant="secondary"
           >
@@ -124,7 +133,7 @@ export function ChallengePage() {
           </Button>
         </div>
 
-        <ChallengeProgressBar
+        <JourneyProgressBar
           label={`Day ${plan.dayIndex} progress`}
           tone={progress.complete ? 'primary' : 'accent'}
           value={progressPercent}
@@ -145,8 +154,8 @@ export function ChallengePage() {
         </div>
       </Card>
 
-      <section aria-labelledby="challenge-checklist-heading" className="space-y-6">
-        <h2 className="text-lg font-bold" id="challenge-checklist-heading">
+      <section aria-labelledby="journey-checklist-heading" className="space-y-6">
+        <h2 className="text-lg font-bold" id="journey-checklist-heading">
           Today&rsquo;s plan
         </h2>
 
@@ -184,7 +193,7 @@ export function ChallengePage() {
                             ? 'border-[var(--primary)] bg-[var(--primary-subtle)]'
                             : 'border-[var(--border)] bg-[var(--surface)] hover:bg-[var(--surface-muted)]',
                         )}
-                        onClick={() => toggleActivity(plan.dayIndex, activity.id)}
+                        onClick={() => toggleActivity(enrollment.id, plan.dayIndex, activity.id)}
                         type="button"
                       >
                         <span
@@ -222,5 +231,24 @@ export function ChallengePage() {
         })}
       </section>
     </div>
+  );
+}
+
+export function JourneyDayPage() {
+  const { enrollmentId = '' } = useParams<{ enrollmentId: string }>();
+  const enrollment = useJourneyEnrollment(enrollmentId);
+  const journey = useJourneyById(enrollment?.journeyId ?? '');
+  const allCompletions = useJourneyCompletions();
+
+  if (!enrollment || !journey) return <JourneyNotFound />;
+
+  return (
+    <JourneyDayView
+      completions={selectCompletionsForEnrollment(allCompletions, enrollment.id)}
+      enrolled={{ enrollment, journey }}
+      // Switching enrollment must reset which day is being viewed, and that
+      // day lives in `useState` inside the view.
+      key={enrollment.id}
+    />
   );
 }

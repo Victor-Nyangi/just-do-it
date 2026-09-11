@@ -1,19 +1,22 @@
 import { BookOpen, Brain } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 import { Badge, Card } from '@just-do-it/ui';
 import {
-  ChallengeNav,
-  ChallengeProgressBar,
+  JourneyNav,
+  JourneyNotFound,
+  JourneyProgressBar,
   selectBookProgressForTrack,
   selectBookProgressList,
-  useChallenge,
-  useChallengeBooks,
-  useChallengeCompletions,
-  type ChallengeBookProgress,
-  type ChallengeBookTrack,
-} from '../features/challenge';
+  selectCompletionsForEnrollment,
+  useJourneyById,
+  useJourneyCompletions,
+  useJourneyEnrollment,
+  type JourneyBookProgress,
+  type JourneyBookTrack,
+} from '../features/journeys';
 
-const TRACK_LABELS: Readonly<Record<ChallengeBookTrack, string>> = {
+const TRACK_LABELS: Readonly<Record<JourneyBookTrack, string>> = {
   technical: 'Technical reading',
   growth: 'Personal growth reading',
 };
@@ -23,7 +26,7 @@ const TRACK_ICONS = {
   growth: Brain,
 } as const;
 
-function BookProgressCard({ entry }: { entry: ChallengeBookProgress }) {
+function BookProgressCard({ entry }: { entry: JourneyBookProgress }) {
   const { book } = entry;
   const finished = entry.pagesRead >= book.pageCount;
 
@@ -44,7 +47,7 @@ function BookProgressCard({ entry }: { entry: ChallengeBookProgress }) {
           </span>
           <span className="text-sm font-semibold">{entry.progress}%</span>
         </div>
-        <ChallengeProgressBar
+        <JourneyProgressBar
           label={`${book.title} progress`}
           tone={finished ? 'primary' : 'accent'}
           value={entry.progress}
@@ -75,8 +78,8 @@ function BookTrackSection({
   entries,
   track,
 }: {
-  entries: readonly ChallengeBookProgress[];
-  track: ChallengeBookTrack;
+  entries: readonly JourneyBookProgress[];
+  track: JourneyBookTrack;
 }) {
   const TrackIcon = TRACK_ICONS[track];
   const headingId = `challenge-books-${track}-heading`;
@@ -106,38 +109,46 @@ function BookTrackSection({
   );
 }
 
-export function ChallengeBooksPage() {
-  const now = new Date();
-  const challenge = useChallenge();
-  const books = useChallengeBooks();
-  const completions = useChallengeCompletions();
+export function JourneyBooksPage() {
+  const { enrollmentId = '' } = useParams<{ enrollmentId: string }>();
+  const enrollment = useJourneyEnrollment(enrollmentId);
+  const journey = useJourneyById(enrollment?.journeyId ?? '');
+  const allCompletions = useJourneyCompletions();
 
-  const bookProgressList = selectBookProgressList(challenge, books, completions, now);
+  if (!enrollment || !journey) return <JourneyNotFound />;
+
+  const enrolled = { enrollment, journey };
+  const bookProgressList = selectBookProgressList(
+    enrolled,
+    selectCompletionsForEnrollment(allCompletions, enrollment.id),
+    new Date(),
+  );
+  const technicalEntries = selectBookProgressForTrack(bookProgressList, 'technical');
+  const growthEntries = selectBookProgressForTrack(bookProgressList, 'growth');
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
       <section className="mb-6">
-        <Badge tone="accent">{challenge.title}</Badge>
+        <Badge tone="accent">{journey.title}</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Reading list</h1>
         <p className="mt-2 max-w-2xl text-[var(--muted-foreground)]">
-          Every book on both rotations, and how far {challenge.readingPagesPerSession} pages a
-          session has carried you through each one.
+          {bookProgressList.length === 0
+            ? 'This journey schedules no reading.'
+            : `Every book on this journey, and how far ${journey.readingPagesPerSession} pages a session has carried you through each one.`}
         </p>
       </section>
 
       <div className="mb-8">
-        <ChallengeNav />
+        <JourneyNav enrollmentId={enrollment.id} />
       </div>
 
       <div className="space-y-10">
-        <BookTrackSection
-          entries={selectBookProgressForTrack(bookProgressList, 'technical')}
-          track="technical"
-        />
-        <BookTrackSection
-          entries={selectBookProgressForTrack(bookProgressList, 'growth')}
-          track="growth"
-        />
+        {technicalEntries.length > 0 ? (
+          <BookTrackSection entries={technicalEntries} track="technical" />
+        ) : null}
+        {growthEntries.length > 0 ? (
+          <BookTrackSection entries={growthEntries} track="growth" />
+        ) : null}
       </div>
     </div>
   );

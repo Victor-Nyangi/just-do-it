@@ -1,31 +1,62 @@
-import { buildAllDayPlans, getCurrentDayIndex } from './challenge-plan';
+import { buildAllDayPlans, getCurrentDayIndex } from './journey-plan';
 import {
-  CHALLENGE_ACTIVITY_CATEGORY_VALUES,
-  type Challenge,
-  type ChallengeActivity,
-  type ChallengeActivityGroup,
-  type ChallengeBook,
-  type ChallengeBookProgress,
-  type ChallengeBookTrack,
-  type ChallengeCategoryCount,
-  type ChallengeCompletion,
-  type ChallengeDayPlan,
-  type ChallengeDayProgress,
-  type ChallengeDayStatus,
-  type ChallengeDaySummary,
-  type ChallengeStats,
+  JOURNEY_ACTIVITY_CATEGORY_VALUES,
+  type EnrolledJourney,
+  type Journey,
+  type JourneyActivity,
+  type JourneyActivityGroup,
+  type JourneyBookProgress,
+  type JourneyBookTrack,
+  type JourneyCategoryCount,
+  type JourneyCompletion,
+  type JourneyDayPlan,
+  type JourneyDayProgress,
+  type JourneyDayStatus,
+  type JourneyDaySummary,
+  type JourneyEnrollment,
+  type JourneyStats,
 } from './types';
 
 const READING_CATEGORIES = ['technical_reading', 'growth_reading'] as const;
 
-export function selectCompletedActivityIds(
-  completions: readonly ChallengeCompletion[],
-): Set<string> {
+export function selectEnrolledJourney(
+  journeys: readonly Journey[],
+  enrollments: readonly JourneyEnrollment[],
+  enrollmentId: string,
+): EnrolledJourney | null {
+  const enrollment = enrollments.find((entry) => entry.id === enrollmentId);
+  if (!enrollment) return null;
+
+  const journey = journeys.find((entry) => entry.id === enrollment.journeyId);
+
+  return journey ? { enrollment, journey } : null;
+}
+
+export function selectEnrolledJourneys(
+  journeys: readonly Journey[],
+  enrollments: readonly JourneyEnrollment[],
+): EnrolledJourney[] {
+  return enrollments.flatMap((enrollment) => {
+    const journey = journeys.find((entry) => entry.id === enrollment.journeyId);
+
+    return journey ? [{ enrollment, journey }] : [];
+  });
+}
+
+// Completions are scoped to an enrollment, so every count below takes one.
+export function selectCompletionsForEnrollment(
+  completions: readonly JourneyCompletion[],
+  enrollmentId: string,
+): JourneyCompletion[] {
+  return completions.filter((completion) => completion.enrollmentId === enrollmentId);
+}
+
+export function selectCompletedActivityIds(completions: readonly JourneyCompletion[]): Set<string> {
   return new Set(completions.map((completion) => completion.activityId));
 }
 
 export function selectCompletedActivityIdsForDay(
-  completions: readonly ChallengeCompletion[],
+  completions: readonly JourneyCompletion[],
   dayIndex: number,
 ): Set<string> {
   const completedIds = new Set<string>();
@@ -39,55 +70,55 @@ export function selectCompletedActivityIdsForDay(
   return completedIds;
 }
 
-export function isChallengeActivityCompleted(
-  completions: readonly ChallengeCompletion[],
+export function isJourneyActivityCompleted(
+  completions: readonly JourneyCompletion[],
   activityId: string,
 ): boolean {
   return completions.some((completion) => completion.activityId === activityId);
 }
 
 export function selectDayProgress(
-  plan: ChallengeDayPlan,
-  completions: readonly ChallengeCompletion[],
-): ChallengeDayProgress {
+  plan: JourneyDayPlan,
+  completions: readonly JourneyCompletion[],
+): JourneyDayProgress {
   const completedIds = selectCompletedActivityIdsForDay(completions, plan.dayIndex);
   const completedCount = plan.activities.filter((activity) => completedIds.has(activity.id)).length;
 
   return {
     completedCount,
     activityCount: plan.activities.length,
-    // An empty day would otherwise read as complete. No plan is empty today,
-    // but a rotation edit could make one, and "0 of 0 done" is not a win.
+    // An empty day would otherwise read as complete. `journeySchema` refuses a
+    // journey that schedules nothing at all, but a rotation entry can still be
+    // empty, and "0 of 0 done" is not a win.
     complete: plan.activities.length > 0 && completedCount === plan.activities.length,
   };
 }
 
 function toDayStatus(
-  progress: ChallengeDayProgress,
+  progress: JourneyDayProgress,
   dayIndex: number,
   currentDayIndex: number | null,
-): ChallengeDayStatus {
+): JourneyDayStatus {
   if (progress.complete) return 'complete';
   if (currentDayIndex !== null && dayIndex > currentDayIndex) return 'upcoming';
   if (progress.completedCount > 0) return 'partial';
   // The day still has hours left in it, so nothing has been missed yet.
   if (dayIndex === currentDayIndex) return 'in_progress';
-  // Before the challenge opens, `currentDayIndex` is null and every day is
-  // ahead rather than behind.
+  // Before the journey opens, `currentDayIndex` is null and every day is ahead
+  // rather than behind.
   if (currentDayIndex === null) return 'upcoming';
 
   return 'missed';
 }
 
 export function selectDaySummaries(
-  challenge: Challenge,
-  books: readonly ChallengeBook[],
-  completions: readonly ChallengeCompletion[],
+  { journey, enrollment }: EnrolledJourney,
+  completions: readonly JourneyCompletion[],
   now: Date = new Date(),
-): ChallengeDaySummary[] {
-  const currentDayIndex = getCurrentDayIndex(challenge, now);
+): JourneyDaySummary[] {
+  const currentDayIndex = getCurrentDayIndex(journey, enrollment, now);
 
-  return buildAllDayPlans(challenge, books).map((plan) => {
+  return buildAllDayPlans(journey, enrollment).map((plan) => {
     const progress = selectDayProgress(plan, completions);
 
     return {
@@ -104,7 +135,7 @@ export function selectDaySummaries(
 // selectors use, and for the same reason: checking the tracker at breakfast
 // should not report the streak as already lost.
 function selectCurrentStreakFromSummaries(
-  summaries: readonly ChallengeDaySummary[],
+  summaries: readonly JourneyDaySummary[],
   currentDayIndex: number | null,
 ): number {
   if (currentDayIndex === null) return 0;
@@ -129,7 +160,7 @@ function selectCurrentStreakFromSummaries(
   return streak;
 }
 
-function selectLongestStreakFromSummaries(summaries: readonly ChallengeDaySummary[]): number {
+function selectLongestStreakFromSummaries(summaries: readonly JourneyDaySummary[]): number {
   let longestStreak = 0;
   let currentRun = 0;
 
@@ -147,41 +178,47 @@ function selectLongestStreakFromSummaries(summaries: readonly ChallengeDaySummar
 }
 
 function selectCategoryCounts(
-  plans: readonly ChallengeDayPlan[],
-  completions: readonly ChallengeCompletion[],
-): ChallengeCategoryCount[] {
+  plans: readonly JourneyDayPlan[],
+  completions: readonly JourneyCompletion[],
+): JourneyCategoryCount[] {
   const completedIds = selectCompletedActivityIds(completions);
 
-  return CHALLENGE_ACTIVITY_CATEGORY_VALUES.map((category) => {
+  return JOURNEY_ACTIVITY_CATEGORY_VALUES.flatMap((category) => {
     const activities = plans.flatMap((plan) =>
       plan.activities.filter((activity) => activity.category === category),
     );
 
-    return {
-      category,
-      completedCount: activities.filter((activity) => completedIds.has(activity.id)).length,
-      activityCount: activities.length,
-    };
+    // A journey that schedules nothing in a category should not show an empty
+    // row for it — a reading-only journey has no physical card to report.
+    if (activities.length === 0) return [];
+
+    return [
+      {
+        category,
+        completedCount: activities.filter((activity) => completedIds.has(activity.id)).length,
+        activityCount: activities.length,
+      },
+    ];
   });
 }
 
-export function selectChallengeStats(
-  challenge: Challenge,
-  books: readonly ChallengeBook[],
-  completions: readonly ChallengeCompletion[],
+export function selectJourneyStats(
+  enrolled: EnrolledJourney,
+  completions: readonly JourneyCompletion[],
   now: Date = new Date(),
-): ChallengeStats {
-  const plans = buildAllDayPlans(challenge, books);
-  const currentDayIndex = getCurrentDayIndex(challenge, now);
-  const summaries = selectDaySummaries(challenge, books, completions, now);
+): JourneyStats {
+  const { journey, enrollment } = enrolled;
+  const plans = buildAllDayPlans(journey, enrollment);
+  const currentDayIndex = getCurrentDayIndex(journey, enrollment, now);
+  const summaries = selectDaySummaries(enrolled, completions, now);
   const categoryCounts = selectCategoryCounts(plans, completions);
   const elapsedDayCount = currentDayIndex ?? 0;
 
   return {
     currentDayIndex,
     elapsedDayCount,
-    remainingDayCount: Math.max(0, challenge.totalDays - elapsedDayCount),
-    totalDays: challenge.totalDays,
+    remainingDayCount: Math.max(0, journey.totalDays - elapsedDayCount),
+    totalDays: journey.totalDays,
     currentStreak: selectCurrentStreakFromSummaries(summaries, currentDayIndex),
     longestStreak: selectLongestStreakFromSummaries(summaries),
     completedDayCount: summaries.filter((summary) => summary.complete).length,
@@ -194,23 +231,22 @@ export function selectChallengeStats(
   };
 }
 
-function isReadingActivity(activity: ChallengeActivity): boolean {
+function isReadingActivity(activity: JourneyActivity): boolean {
   return READING_CATEGORIES.some((category) => category === activity.category);
 }
 
 export function selectBookProgressList(
-  challenge: Challenge,
-  books: readonly ChallengeBook[],
-  completions: readonly ChallengeCompletion[],
+  { journey, enrollment }: EnrolledJourney,
+  completions: readonly JourneyCompletion[],
   now: Date = new Date(),
-): ChallengeBookProgress[] {
+): JourneyBookProgress[] {
   const completedIds = selectCompletedActivityIds(completions);
-  const currentDayIndex = getCurrentDayIndex(challenge, now);
+  const currentDayIndex = getCurrentDayIndex(journey, enrollment, now);
   const sessionsCompletedByBook = new Map<string, number>();
   const sessionsScheduledByBook = new Map<string, number>();
   const nextScheduledDayByBook = new Map<string, number>();
 
-  for (const plan of buildAllDayPlans(challenge, books)) {
+  for (const plan of buildAllDayPlans(journey, enrollment)) {
     for (const activity of plan.activities) {
       if (!isReadingActivity(activity) || activity.bookId === undefined) continue;
 
@@ -228,8 +264,8 @@ export function selectBookProgressList(
       }
 
       // The first still-open session from today onwards, which is the one the
-      // books page can usefully point at. Before the challenge opens every day
-      // is still ahead, so day 1 qualifies.
+      // books page can usefully point at. Before the journey opens every day is
+      // still ahead, so day 1 qualifies.
       const isUpcoming = currentDayIndex === null || plan.dayIndex >= currentDayIndex;
 
       if (isUpcoming && !nextScheduledDayByBook.has(activity.bookId)) {
@@ -238,14 +274,11 @@ export function selectBookProgressList(
     }
   }
 
-  return books.map((book) => {
+  return journey.books.map((book) => {
     const sessionsCompleted = sessionsCompletedByBook.get(book.id) ?? 0;
     // A book can be scheduled more often than it has pages for; the cap keeps
     // the progress bar honest rather than letting it run past 100%.
-    const pagesRead = Math.min(
-      book.pageCount,
-      sessionsCompleted * challenge.readingPagesPerSession,
-    );
+    const pagesRead = Math.min(book.pageCount, sessionsCompleted * journey.readingPagesPerSession);
 
     return {
       book,
@@ -259,14 +292,14 @@ export function selectBookProgressList(
 }
 
 export function selectBookProgressForTrack(
-  bookProgressList: readonly ChallengeBookProgress[],
-  track: ChallengeBookTrack,
-): ChallengeBookProgress[] {
+  bookProgressList: readonly JourneyBookProgress[],
+  track: JourneyBookTrack,
+): JourneyBookProgress[] {
   return bookProgressList.filter((entry) => entry.book.track === track);
 }
 
-export function selectActivitiesByCategory(plan: ChallengeDayPlan): ChallengeActivityGroup[] {
-  return CHALLENGE_ACTIVITY_CATEGORY_VALUES.flatMap((category) => {
+export function selectActivitiesByCategory(plan: JourneyDayPlan): JourneyActivityGroup[] {
+  return JOURNEY_ACTIVITY_CATEGORY_VALUES.flatMap((category) => {
     const activities = plan.activities.filter((activity) => activity.category === category);
 
     return activities.length > 0 ? [{ category, activities }] : [];

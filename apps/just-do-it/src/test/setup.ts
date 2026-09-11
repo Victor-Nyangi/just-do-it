@@ -13,11 +13,11 @@ if (typeof document !== 'undefined') {
   await import('@testing-library/jest-dom/vitest');
   const { cleanup } = await import('@testing-library/react');
 
-  const [books, challenge, goals, habits, lists, tasks] = await Promise.all([
+  const [books, goals, habits, journeys, lists, tasks] = await Promise.all([
     import('../features/books'),
-    import('../features/challenge'),
     import('../features/goals'),
     import('../features/habits'),
+    import('../features/journeys'),
     import('../features/lists'),
     import('../features/tasks'),
   ]);
@@ -35,10 +35,10 @@ if (typeof document !== 'undefined') {
     goals.useGoalStore.setState({ goals: goals.getInitialGoals() });
     books.useBookStore.setState({ books: books.getInitialBooks() });
     lists.useListStore.setState({ lists: lists.getInitialLists() });
-    challenge.useChallengeStore.setState({
-      challenge: challenge.getInitialChallenge(),
-      books: challenge.getInitialChallengeBooks(),
-      completions: challenge.getInitialChallengeCompletions(),
+    journeys.useJourneyStore.setState({
+      journeys: journeys.getInitialJourneys(),
+      enrollments: journeys.getInitialJourneyEnrollments(),
+      completions: journeys.getInitialJourneyCompletions(),
     });
   });
 

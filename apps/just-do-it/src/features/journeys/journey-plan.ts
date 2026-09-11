@@ -1,17 +1,19 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
-import { addChallengeDays } from './challenge-data';
+import { addJourneyDays } from './journey-data';
 import type {
-  Challenge,
-  ChallengeActivity,
-  ChallengeBook,
-  ChallengeBookTrack,
-  ChallengeDayPlan,
+  Journey,
+  JourneyActivity,
+  JourneyBook,
+  JourneyBookTrack,
+  JourneyDayPlan,
+  JourneyEnrollment,
 } from './types';
 
-// The plan is generated, not stored: a day's activities are a pure function of
-// its index, so the same day always yields the same plan on every device and
-// every render, and 100 days of fixture rows never have to be written by hand.
+// A day's plan is generated, not stored: it is a pure function of the journey
+// definition and the day index, so the same day always yields the same plan on
+// every device and every render, and a hundred days of rows never have to be
+// written by hand.
 //
 // "Randomised but consistent" is the requirement, and a plain modulo would be
 // consistent without being randomised — the books would cycle in fixture order
@@ -60,20 +62,20 @@ function buildSeededPermutation(length: number, seed: number): number[] {
 }
 
 export function selectBooksForTrack(
-  books: readonly ChallengeBook[],
-  track: ChallengeBookTrack,
-): ChallengeBook[] {
+  books: readonly JourneyBook[],
+  track: JourneyBookTrack,
+): JourneyBook[] {
   return books.filter((book) => book.track === track);
 }
 
-// `dayOffset` is zero-based (day 1 of the challenge is offset 0), because every
+// `dayOffset` is zero-based (day 1 of a journey is offset 0), because every
 // rotation below is modular arithmetic and a one-based index would put day 1 in
 // the second slot.
 function selectBookForDay(
-  books: readonly ChallengeBook[],
-  track: ChallengeBookTrack,
+  books: readonly JourneyBook[],
+  track: JourneyBookTrack,
   dayOffset: number,
-): ChallengeBook | null {
+): JourneyBook | null {
   const trackBooks = selectBooksForTrack(books, track);
   if (trackBooks.length === 0) return null;
 
@@ -84,48 +86,70 @@ function selectBookForDay(
   return trackBooks[order[positionInCycle]];
 }
 
-export function isValidDayIndex(challenge: Challenge, dayIndex: number): boolean {
-  return Number.isInteger(dayIndex) && dayIndex >= 1 && dayIndex <= challenge.totalDays;
+export function isValidDayIndex(journey: Journey, dayIndex: number): boolean {
+  return Number.isInteger(dayIndex) && dayIndex >= 1 && dayIndex <= journey.totalDays;
 }
 
-export function clampDayIndex(challenge: Challenge, dayIndex: number): number {
+export function clampDayIndex(journey: Journey, dayIndex: number): number {
   if (!Number.isFinite(dayIndex)) return 1;
 
-  return Math.min(challenge.totalDays, Math.max(1, Math.round(dayIndex)));
+  return Math.min(journey.totalDays, Math.max(1, Math.round(dayIndex)));
 }
 
-export function getDateKeyForDayIndex(challenge: Challenge, dayIndex: number): string | null {
-  if (!isValidDayIndex(challenge, dayIndex)) return null;
-
-  return addChallengeDays(challenge.startDate, dayIndex - 1);
+// Dates come from the enrollment, never the journey — the same journey started
+// on two different dates is two different sets of dates over the same plan.
+export function getEndDateKey(journey: Journey, enrollment: JourneyEnrollment): string {
+  return addJourneyDays(enrollment.startDate, journey.totalDays - 1);
 }
 
-export function getDayIndexForDate(challenge: Challenge, date: Date): number | null {
-  const dayIndex = differenceInCalendarDays(date, parseISO(challenge.startDate)) + 1;
+export function getDateKeyForDayIndex(
+  journey: Journey,
+  enrollment: JourneyEnrollment,
+  dayIndex: number,
+): string | null {
+  if (!isValidDayIndex(journey, dayIndex)) return null;
 
-  return isValidDayIndex(challenge, dayIndex) ? dayIndex : null;
+  return addJourneyDays(enrollment.startDate, dayIndex - 1);
 }
 
-// Null before the challenge opens and after it closes, which the routes render
-// as their own states rather than pretending some day is current.
-export function getCurrentDayIndex(challenge: Challenge, now: Date = new Date()): number | null {
-  return getDayIndexForDate(challenge, now);
+export function getDayIndexForDate(
+  journey: Journey,
+  enrollment: JourneyEnrollment,
+  date: Date,
+): number | null {
+  const dayIndex = differenceInCalendarDays(date, parseISO(enrollment.startDate)) + 1;
+
+  return isValidDayIndex(journey, dayIndex) ? dayIndex : null;
+}
+
+// Null before the journey opens and after it closes, which the routes render as
+// their own states rather than pretending some day is current.
+export function getCurrentDayIndex(
+  journey: Journey,
+  enrollment: JourneyEnrollment,
+  now: Date = new Date(),
+): number | null {
+  return getDayIndexForDate(journey, enrollment, now);
 }
 
 function buildPhysicalActivities(
-  challenge: Challenge,
+  journey: Journey,
   dayIndex: number,
   dayOffset: number,
-): ChallengeActivity[] {
-  const rotationIndex = dayOffset % challenge.physicalRotation.length;
-  const scheduledIds = challenge.physicalRotation[rotationIndex];
+): JourneyActivity[] {
+  // A journey with no physical work has an empty rotation, and the modulo below
+  // would divide by zero.
+  if (journey.physicalRotation.length === 0) return [];
+
+  const rotationIndex = dayOffset % journey.physicalRotation.length;
+  const scheduledIds = journey.physicalRotation[rotationIndex];
 
   return scheduledIds.flatMap((activityId) => {
-    const physicalActivity = challenge.physicalActivities.find(
+    const physicalActivity = journey.physicalActivities.find(
       (activity) => activity.id === activityId,
     );
 
-    // Unreachable for a parsed fixture — `challengeSchema` refuses a rotation
+    // Unreachable for a parsed journey — `journeySchema` refuses a rotation
     // that names an unknown activity — but flatMap lets an unknown id drop out
     // rather than putting an undefined into the checklist.
     if (!physicalActivity) return [];
@@ -145,16 +169,15 @@ function buildPhysicalActivities(
 }
 
 function buildReadingActivity(
-  challenge: Challenge,
+  journey: Journey,
   dayIndex: number,
   dayOffset: number,
-  track: ChallengeBookTrack,
-  books: readonly ChallengeBook[],
-): ChallengeActivity[] {
-  const book = selectBookForDay(books, track, dayOffset);
+  track: JourneyBookTrack,
+): JourneyActivity[] {
+  const book = selectBookForDay(journey.books, track, dayOffset);
   if (!book) return [];
 
-  const pages = challenge.readingPagesPerSession;
+  const pages = journey.readingPagesPerSession;
 
   return [
     {
@@ -171,12 +194,25 @@ function buildReadingActivity(
   ];
 }
 
+function buildReflectionActivity(journey: Journey, dayIndex: number): JourneyActivity[] {
+  if (journey.reflectionLineCount <= 0) return [];
+
+  return [
+    {
+      id: `day-${dayIndex}-reflection`,
+      category: 'reflection' as const,
+      label: 'Daily reflection',
+      detail: `${journey.reflectionLineCount} lines: what moved, what stalled, what is next`,
+    },
+  ];
+}
+
 export function buildDayPlan(
-  challenge: Challenge,
-  books: readonly ChallengeBook[],
+  journey: Journey,
+  enrollment: JourneyEnrollment,
   dayIndex: number,
-): ChallengeDayPlan | null {
-  const date = getDateKeyForDayIndex(challenge, dayIndex);
+): JourneyDayPlan | null {
+  const date = getDateKeyForDayIndex(journey, enrollment, dayIndex);
   if (date === null) return null;
 
   const dayOffset = dayIndex - 1;
@@ -185,28 +221,21 @@ export function buildDayPlan(
     dayIndex,
     date,
     activities: [
-      ...buildPhysicalActivities(challenge, dayIndex, dayOffset),
-      ...buildReadingActivity(challenge, dayIndex, dayOffset, 'technical', books),
-      ...buildReadingActivity(challenge, dayIndex, dayOffset, 'growth', books),
-      {
-        id: `day-${dayIndex}-reflection`,
-        category: 'reflection' as const,
-        label: 'Daily reflection',
-        detail: `${challenge.reflectionLineCount} lines: what moved, what stalled, what is next`,
-      },
+      ...buildPhysicalActivities(journey, dayIndex, dayOffset),
+      ...buildReadingActivity(journey, dayIndex, dayOffset, 'technical'),
+      ...buildReadingActivity(journey, dayIndex, dayOffset, 'growth'),
+      ...buildReflectionActivity(journey, dayIndex),
     ],
   };
 }
 
 export function buildAllDayPlans(
-  challenge: Challenge,
-  books: readonly ChallengeBook[],
-): ChallengeDayPlan[] {
-  return Array.from({ length: challenge.totalDays }, (_, index) => index + 1).flatMap(
-    (dayIndex) => {
-      const plan = buildDayPlan(challenge, books, dayIndex);
+  journey: Journey,
+  enrollment: JourneyEnrollment,
+): JourneyDayPlan[] {
+  return Array.from({ length: journey.totalDays }, (_, index) => index + 1).flatMap((dayIndex) => {
+    const plan = buildDayPlan(journey, enrollment, dayIndex);
 
-      return plan ? [plan] : [];
-    },
-  );
+    return plan ? [plan] : [];
+  });
 }

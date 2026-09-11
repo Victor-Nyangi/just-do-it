@@ -1,21 +1,21 @@
 import { cn } from '@just-do-it/ui';
 
-type ChallengeProgressBarProps = {
+type JourneyProgressBarProps = {
   label: string;
   value: number;
   className?: string;
   tone?: 'primary' | 'accent';
 };
 
-// Every challenge route shows a percentage somewhere, and each one needs the
-// same `progressbar` role for the value to be readable without relying on the
-// bar's colour. Three consumers is what earned this its own component.
-export function ChallengeProgressBar({
+// Every journey route shows a percentage somewhere, and each one needs the same
+// `progressbar` role for the value to be readable without relying on the bar's
+// colour. Four consumers is what earned this its own component.
+export function JourneyProgressBar({
   label,
   value,
   className,
   tone = 'primary',
-}: ChallengeProgressBarProps) {
+}: JourneyProgressBarProps) {
   const clampedValue = Math.min(100, Math.max(0, Math.round(value)));
 
   return (

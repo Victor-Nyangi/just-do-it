@@ -1,28 +1,31 @@
 import { format, parseISO } from 'date-fns';
 import { CheckCheck, Flame, ListChecks, Trophy } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 import { Badge, Card, cn } from '@just-do-it/ui';
 import {
-  ChallengeNav,
-  ChallengeProgressBar,
-  selectChallengeStats,
+  JourneyNav,
+  JourneyNotFound,
+  JourneyProgressBar,
+  selectCompletionsForEnrollment,
   selectDaySummaries,
-  useChallenge,
-  useChallengeBooks,
-  useChallengeCompletions,
-  type ChallengeActivityCategory,
-  type ChallengeDayStatus,
-  type ChallengeDaySummary,
-} from '../features/challenge';
+  selectJourneyStats,
+  useJourneyById,
+  useJourneyCompletions,
+  useJourneyEnrollment,
+  type JourneyActivityCategory,
+  type JourneyDayStatus,
+  type JourneyDaySummary,
+} from '../features/journeys';
 
-const CATEGORY_LABELS: Readonly<Record<ChallengeActivityCategory, string>> = {
+const CATEGORY_LABELS: Readonly<Record<JourneyActivityCategory, string>> = {
   physical: 'Physical',
   technical_reading: 'Technical reading',
   growth_reading: 'Growth reading',
   reflection: 'Reflection',
 };
 
-const STATUS_LABELS: Readonly<Record<ChallengeDayStatus, string>> = {
+const STATUS_LABELS: Readonly<Record<JourneyDayStatus, string>> = {
   complete: 'Complete',
   partial: 'Partly done',
   in_progress: 'In progress',
@@ -32,7 +35,7 @@ const STATUS_LABELS: Readonly<Record<ChallengeDayStatus, string>> = {
 
 // Green for a finished day, red for one that got away, purple for the day in
 // hand — the palette's own semantics, so the map needs no extra tokens.
-const STATUS_DOT_CLASSES: Readonly<Record<ChallengeDayStatus, string>> = {
+const STATUS_DOT_CLASSES: Readonly<Record<JourneyDayStatus, string>> = {
   complete: 'border-[var(--primary)] bg-[var(--primary)]',
   partial: 'border-[var(--primary)] bg-[var(--primary-subtle)]',
   in_progress: 'border-[var(--accent)] bg-[var(--accent-subtle)]',
@@ -40,7 +43,7 @@ const STATUS_DOT_CLASSES: Readonly<Record<ChallengeDayStatus, string>> = {
   upcoming: 'border-[var(--border)] bg-[var(--surface-muted)]',
 };
 
-const LEGEND_ORDER: readonly ChallengeDayStatus[] = [
+const LEGEND_ORDER: readonly JourneyDayStatus[] = [
   'complete',
   'partial',
   'in_progress',
@@ -52,9 +55,9 @@ const LEGEND_ORDER: readonly ChallengeDayStatus[] = [
 // as a background colour. Spelling the status out matters most for the two that
 // would read identically from their counts alone: a day that was missed and the
 // day still being lived have both done nothing so far.
-function describeDay(summary: ChallengeDaySummary): string {
+function describeDay(summary: JourneyDaySummary): string {
   const date = format(parseISO(summary.date), 'd MMM yyyy');
-  const detail: Readonly<Record<ChallengeDayStatus, string>> = {
+  const detail: Readonly<Record<JourneyDayStatus, string>> = {
     complete: 'complete',
     partial: `${summary.completedCount} of ${summary.activityCount} done`,
     in_progress: 'in progress, nothing done yet',
@@ -90,14 +93,19 @@ function StatCard({
   );
 }
 
-export function ChallengeStreakPage() {
-  const now = new Date();
-  const challenge = useChallenge();
-  const books = useChallengeBooks();
-  const completions = useChallengeCompletions();
+export function JourneyStreakPage() {
+  const { enrollmentId = '' } = useParams<{ enrollmentId: string }>();
+  const enrollment = useJourneyEnrollment(enrollmentId);
+  const journey = useJourneyById(enrollment?.journeyId ?? '');
+  const allCompletions = useJourneyCompletions();
 
-  const stats = selectChallengeStats(challenge, books, completions, now);
-  const summaries = selectDaySummaries(challenge, books, completions, now);
+  if (!enrollment || !journey) return <JourneyNotFound />;
+
+  const now = new Date();
+  const enrolled = { enrollment, journey };
+  const completions = selectCompletionsForEnrollment(allCompletions, enrollment.id);
+  const stats = selectJourneyStats(enrolled, completions, now);
+  const summaries = selectDaySummaries(enrolled, completions, now);
   const activityPercent =
     stats.totalActivityCount === 0
       ? 0
@@ -106,17 +114,17 @@ export function ChallengeStreakPage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8 sm:py-12">
       <section className="mb-6">
-        <Badge tone="accent">{challenge.title}</Badge>
+        <Badge tone="accent">{journey.title}</Badge>
         <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Streak</h1>
         <p className="mt-2 max-w-2xl text-[var(--muted-foreground)]">
           {stats.currentDayIndex === null
-            ? `All ${challenge.totalDays} days, and how each one went.`
-            : `Day ${stats.currentDayIndex} of ${challenge.totalDays}, with ${stats.remainingDayCount} still to go.`}
+            ? `All ${journey.totalDays} days, and how each one went.`
+            : `Day ${stats.currentDayIndex} of ${journey.totalDays}, with ${stats.remainingDayCount} still to go.`}
         </p>
       </section>
 
       <div className="mb-8">
-        <ChallengeNav />
+        <JourneyNav enrollmentId={enrollment.id} />
       </div>
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -139,7 +147,7 @@ export function ChallengeStreakPage() {
           value={String(stats.completedDayCount)}
         />
         <StatCard
-          detail={`Of ${stats.totalActivityCount} across the challenge`}
+          detail={`Of ${stats.totalActivityCount} across the journey`}
           icon={ListChecks}
           label="Activities done"
           value={String(stats.completedActivityCount)}
@@ -151,21 +159,21 @@ export function ChallengeStreakPage() {
           <h2 className="font-bold">Overall progress</h2>
           <span className="text-sm font-semibold">{activityPercent}%</span>
         </div>
-        <ChallengeProgressBar label="Overall challenge progress" value={activityPercent} />
+        <JourneyProgressBar label="Overall journey progress" value={activityPercent} />
         <p className="text-sm text-[var(--muted-foreground)]">
           {stats.completedActivityCount} of {stats.totalActivityCount} activities ticked off.
         </p>
       </Card>
 
-      <section aria-labelledby="challenge-map-heading" className="space-y-4">
-        <h2 className="text-lg font-bold" id="challenge-map-heading">
+      <section aria-labelledby="journey-map-heading" className="space-y-4">
+        <h2 className="text-lg font-bold" id="journey-map-heading">
           Activity map
         </h2>
 
         <Card>
-          {/* Ten columns of a hundred days, capped so the dots stay map-sized
-              rather than growing to fill a wide card. Below that width the grid
-              simply shrinks, which is what keeps it square on a phone. */}
+          {/* Ten columns whatever the journey's length, capped so the dots stay
+              map-sized rather than growing to fill a wide card. Below that width
+              the grid simply shrinks, which is what keeps it square on a phone. */}
           <ol className="grid max-w-80 grid-cols-10 gap-1.5">
             {summaries.map((summary) => (
               <li
@@ -194,8 +202,8 @@ export function ChallengeStreakPage() {
         </Card>
       </section>
 
-      <section aria-labelledby="challenge-breakdown-heading" className="mt-8 space-y-4">
-        <h2 className="text-lg font-bold" id="challenge-breakdown-heading">
+      <section aria-labelledby="journey-breakdown-heading" className="mt-8 space-y-4">
+        <h2 className="text-lg font-bold" id="journey-breakdown-heading">
           By activity
         </h2>
 
@@ -214,7 +222,7 @@ export function ChallengeStreakPage() {
                     {entry.completedCount} of {entry.activityCount}
                   </span>
                 </div>
-                <ChallengeProgressBar
+                <JourneyProgressBar
                   label={`${CATEGORY_LABELS[entry.category]} progress`}
                   value={categoryPercent}
                 />

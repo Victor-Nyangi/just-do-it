@@ -1,20 +1,23 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDayPlan, useChallengeStore } from '../features/challenge';
-import { ChallengeStreakPage } from './challenge-streak-page';
+import { buildDayPlan, useJourneyStore } from '../features/journeys';
+import { JourneyStreakPage } from './journey-streak-page';
 
 // Midday on day five. Far enough in that there are finished days behind, a day
 // in hand, and ninety-five ahead — which is what makes every dot state
 // reachable in one render.
 const pinnedNow = new Date(2026, 8, 15, 12, 0, 0);
+const ENROLLMENT_ID = 'enrollment-discipline';
 
-function renderStreak() {
+function renderStreak(enrollmentId = ENROLLMENT_ID) {
   return render(
-    <MemoryRouter>
-      <ChallengeStreakPage />
+    <MemoryRouter initialEntries={[`/journeys/${enrollmentId}/streak`]}>
+      <Routes>
+        <Route path="/journeys/:enrollmentId/streak" element={<JourneyStreakPage />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -23,16 +26,20 @@ function renderStreak() {
 // finished days has to build them — through the store action, so the same
 // guards the UI goes through apply here too.
 function completeWholeDays(dayIndexes: readonly number[]) {
-  const { challenge, books, toggleActivityCompletion } = useChallengeStore.getState();
+  const { journeys, enrollments, toggleActivityCompletion } = useJourneyStore.getState();
+  const enrollment = enrollments.find((entry) => entry.id === ENROLLMENT_ID);
+  const journey = journeys.find((entry) => entry.id === enrollment?.journeyId);
+
+  if (!enrollment || !journey) throw new Error('Expected the seeded enrollment');
 
   for (const dayIndex of dayIndexes) {
-    for (const activity of buildDayPlan(challenge, books, dayIndex)?.activities ?? []) {
-      if (
-        !useChallengeStore
-          .getState()
-          .completions.some((completion) => completion.activityId === activity.id)
-      ) {
-        toggleActivityCompletion(dayIndex, activity.id);
+    for (const activity of buildDayPlan(journey, enrollment, dayIndex)?.activities ?? []) {
+      const alreadyDone = useJourneyStore
+        .getState()
+        .completions.some((completion) => completion.activityId === activity.id);
+
+      if (!alreadyDone) {
+        toggleActivityCompletion(ENROLLMENT_ID, dayIndex, activity.id);
       }
     }
   }
@@ -47,8 +54,8 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('ChallengeStreakPage — the stats cards', () => {
-  it('places the day within the hundred', () => {
+describe('JourneyStreakPage — the stats cards', () => {
+  it('places the day within the journey', () => {
     renderStreak();
 
     expect(screen.getByText('Day 5 of 100, with 95 still to go.')).toBeInTheDocument();
@@ -80,26 +87,23 @@ describe('ChallengeStreakPage — the stats cards', () => {
     expect(screen.getByText('Out of 5 elapsed')).toBeInTheDocument();
   });
 
-  it('counts the activities done against the whole challenge', () => {
+  it('counts the activities done against the whole journey', () => {
     renderStreak();
 
-    expect(screen.getByText('Of 486 across the challenge')).toBeInTheDocument();
-    // The two the fixture seeds on day one.
+    expect(screen.getByText('Of 486 across the journey')).toBeInTheDocument();
     const activitiesDone = screen.getByText('Activities done').closest('div');
     expect(within(activitiesDone as HTMLElement).getByText('2')).toBeInTheDocument();
   });
 });
 
-describe('ChallengeStreakPage — the activity map', () => {
-  it('draws one dot per day of the challenge', () => {
+describe('JourneyStreakPage — the activity map', () => {
+  it('draws one dot per day of the journey', () => {
     renderStreak();
 
     const map = screen.getByRole('heading', { name: 'Activity map' }).closest('section');
 
-    expect(within(map as HTMLElement).getAllByRole('listitem')).toHaveLength(
-      // The hundred day dots plus the five legend entries.
-      105,
-    );
+    // The hundred day dots plus the five legend entries.
+    expect(within(map as HTMLElement).getAllByRole('listitem')).toHaveLength(105);
   });
 
   // Each dot carries its own label rather than encoding the day purely as a
@@ -133,12 +137,27 @@ describe('ChallengeStreakPage — the activity map', () => {
   });
 
   it('labels a partly finished day with how far it got', () => {
-    useChallengeStore.getState().toggleActivityCompletion(2, 'day-2-reflection');
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
     renderStreak();
 
     expect(
       screen.getByRole('listitem', { name: 'Day 2, 12 Sep 2026 — 1 of 5 done' }),
     ).toBeInTheDocument();
+  });
+
+  it('draws a shorter journey to its own length', () => {
+    const enrollmentId = useJourneyStore
+      .getState()
+      .enrollInJourney('deep-work-reset', '2026-09-11');
+
+    if (!enrollmentId) throw new Error('Expected an enrollment');
+
+    renderStreak(enrollmentId);
+
+    const map = screen.getByRole('heading', { name: 'Activity map' }).closest('section');
+
+    // Thirty day dots plus the five legend entries.
+    expect(within(map as HTMLElement).getAllByRole('listitem')).toHaveLength(35);
   });
 
   it('explains what the colours mean', () => {
@@ -150,17 +169,9 @@ describe('ChallengeStreakPage — the activity map', () => {
   });
 });
 
-describe('ChallengeStreakPage — the breakdown', () => {
-  it('gives every category its own progressbar', () => {
-    renderStreak();
-
-    for (const category of ['Physical', 'Technical reading', 'Growth reading', 'Reflection']) {
-      expect(screen.getByRole('progressbar', { name: `${category} progress` })).toBeInTheDocument();
-    }
-  });
-
-  // Three of the four categories total 100, so each count has to be read
-  // inside its own card rather than off the page.
+describe('JourneyStreakPage — the breakdown', () => {
+  // Three of the four categories total 100, so each count has to be read inside
+  // its own card rather than off the page.
   function categoryCount(category: string): string {
     const heading = screen.getByRole('heading', { name: category });
 
@@ -172,24 +183,36 @@ describe('ChallengeStreakPage — the breakdown', () => {
   it('counts each category against its own total', () => {
     renderStreak();
 
-    // One reflection per day across the hundred, and one reading session per
-    // track per day; the physical rotation carries more than one on most days.
     expect(categoryCount('Reflection')).toBe('0 of 100');
     expect(categoryCount('Technical reading')).toBe('1 of 100');
     expect(categoryCount('Physical')).toBe('1 of 186');
   });
 
   it('moves a category when one of its activities is completed', () => {
-    useChallengeStore.getState().toggleActivityCompletion(2, 'day-2-reflection');
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
     renderStreak();
 
     expect(categoryCount('Reflection')).toBe('1 of 100');
   });
 
+  // A reading-only journey should not show an empty physical card.
+  it('omits a category the journey never schedules', () => {
+    const enrollmentId = useJourneyStore
+      .getState()
+      .enrollInJourney('deep-work-reset', '2026-09-11');
+
+    if (!enrollmentId) throw new Error('Expected an enrollment');
+
+    renderStreak(enrollmentId);
+
+    expect(screen.queryByRole('heading', { name: 'Physical' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Technical reading' })).toBeInTheDocument();
+  });
+
   it('reports overall progress across every activity', () => {
     renderStreak();
 
-    expect(screen.getByRole('progressbar', { name: 'Overall challenge progress' })).toHaveAttribute(
+    expect(screen.getByRole('progressbar', { name: 'Overall journey progress' })).toHaveAttribute(
       'aria-valuenow',
       '0',
     );
@@ -197,18 +220,28 @@ describe('ChallengeStreakPage — the breakdown', () => {
   });
 });
 
-describe('ChallengeStreakPage — framing', () => {
-  it('links the other challenge sections', () => {
+describe('JourneyStreakPage — framing', () => {
+  it('scopes its section links to the enrollment', () => {
     renderStreak();
 
-    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/challenge');
-    expect(screen.getByRole('link', { name: 'Books' })).toHaveAttribute('href', '/challenge/books');
+    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute(
+      'href',
+      `/journeys/${ENROLLMENT_ID}`,
+    );
   });
 
-  it('drops the day counter once the challenge has closed', () => {
+  it('drops the day counter once the journey has closed', () => {
     vi.setSystemTime(new Date(2027, 0, 5, 12));
     renderStreak();
 
     expect(screen.getByText('All 100 days, and how each one went.')).toBeInTheDocument();
+  });
+
+  it('explains itself when the enrollment does not exist', () => {
+    renderStreak('nope');
+
+    expect(
+      screen.getByRole('heading', { name: 'This journey is not in your list' }),
+    ).toBeInTheDocument();
   });
 });

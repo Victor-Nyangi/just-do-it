@@ -1,20 +1,23 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useChallengeStore } from '../features/challenge';
-import { ChallengeBooksPage } from './challenge-books-page';
+import { useJourneyStore } from '../features/journeys';
+import { JourneyBooksPage } from './journey-books-page';
 
 // Day one, midday. The page reads `new Date()` to decide which session counts
-// as next, so the clock has to be pinned. The fixture has one technical
-// session done — day one's, which rotated onto Micro Frontends in Action.
+// as next, so the clock has to be pinned. The fixture has one technical session
+// done — day one's, which rotated onto Micro Frontends in Action.
 const pinnedNow = new Date(2026, 8, 11, 12, 0, 0);
+const ENROLLMENT_ID = 'enrollment-discipline';
 
-function renderBooks() {
+function renderBooks(enrollmentId = ENROLLMENT_ID) {
   return render(
-    <MemoryRouter>
-      <ChallengeBooksPage />
+    <MemoryRouter initialEntries={[`/journeys/${enrollmentId}/books`]}>
+      <Routes>
+        <Route path="/journeys/:enrollmentId/books" element={<JourneyBooksPage />} />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -28,7 +31,7 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
-describe('ChallengeBooksPage — the two tracks', () => {
+describe('JourneyBooksPage — the two tracks', () => {
   it('separates technical reading from growth reading', () => {
     renderBooks();
 
@@ -86,9 +89,26 @@ describe('ChallengeBooksPage — the two tracks', () => {
       within(growth).queryByRole('heading', { name: 'Micro Frontends in Action' }),
     ).not.toBeInTheDocument();
   });
+
+  // A journey with one track should not render an empty section for the other.
+  it('omits a track the journey has no books for', () => {
+    const enrollmentId = useJourneyStore
+      .getState()
+      .enrollInJourney('deep-work-reset', '2026-09-11');
+
+    if (!enrollmentId) throw new Error('Expected an enrollment');
+
+    renderBooks(enrollmentId);
+
+    expect(screen.getByRole('heading', { name: 'Technical reading' })).toBeInTheDocument();
+    expect(
+      screen.queryByRole('heading', { name: 'Personal growth reading' }),
+    ).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Deep Work' })).toBeInTheDocument();
+  });
 });
 
-describe('ChallengeBooksPage — per-book progress', () => {
+describe('JourneyBooksPage — per-book progress', () => {
   // Micro Frontends in Action is 300 pages and day one's completed technical
   // session is worth ten of them, so 3%.
   it('turns a completed session into a percentage', () => {
@@ -114,16 +134,12 @@ describe('ChallengeBooksPage — per-book progress', () => {
     expect(screen.getAllByRole('progressbar')).toHaveLength(19);
   });
 
-  it('says when each book is next scheduled', () => {
-    renderBooks();
-
-    expect(screen.getAllByText(/^Day \d+$/).length).toBeGreaterThan(0);
-  });
-
   it('moves when another session for that book is completed', () => {
     // Day 3's technical slot rotated onto Domain-Driven Design Distilled: 176
     // pages, so one ten-page session is 6%.
-    useChallengeStore.getState().toggleActivityCompletion(3, 'day-3-technical-reading');
+    useJourneyStore
+      .getState()
+      .toggleActivityCompletion(ENROLLMENT_ID, 3, 'day-3-technical-reading');
     renderBooks();
 
     expect(
@@ -132,15 +148,23 @@ describe('ChallengeBooksPage — per-book progress', () => {
   });
 
   it('marks a book finished once its pages run out', () => {
-    // Day 3 and day 9 both rotate onto Domain-Driven Design Distilled, but no
-    // realistic number of sessions finishes a 176-page book here, so shrink the
-    // book instead and check the cap and the badge together.
-    useChallengeStore.setState((state) => ({
-      books: state.books.map((book) =>
-        book.id === 'ddd-distilled' ? { ...book, pageCount: 10 } : book,
+    // No realistic number of sessions finishes a 176-page book here, so shrink
+    // the book instead and check the cap and the badge together.
+    useJourneyStore.setState((state) => ({
+      journeys: state.journeys.map((journey) =>
+        journey.id === 'hundred-day-discipline'
+          ? {
+              ...journey,
+              books: journey.books.map((book) =>
+                book.id === 'ddd-distilled' ? { ...book, pageCount: 10 } : book,
+              ),
+            }
+          : journey,
       ),
     }));
-    useChallengeStore.getState().toggleActivityCompletion(3, 'day-3-technical-reading');
+    useJourneyStore
+      .getState()
+      .toggleActivityCompletion(ENROLLMENT_ID, 3, 'day-3-technical-reading');
     renderBooks();
 
     expect(
@@ -150,14 +174,13 @@ describe('ChallengeBooksPage — per-book progress', () => {
   });
 });
 
-describe('ChallengeBooksPage — framing', () => {
-  it('links the other challenge sections', () => {
+describe('JourneyBooksPage — framing', () => {
+  it('scopes its section links to the enrollment', () => {
     renderBooks();
 
-    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute('href', '/challenge');
-    expect(screen.getByRole('link', { name: 'Streak' })).toHaveAttribute(
+    expect(screen.getByRole('link', { name: 'Today' })).toHaveAttribute(
       'href',
-      '/challenge/streak',
+      `/journeys/${ENROLLMENT_ID}`,
     );
   });
 
@@ -168,5 +191,13 @@ describe('ChallengeBooksPage — framing', () => {
 
     // 736 + 176 + 400 + 300 + 462 + 190 = 2264, of which ten pages are read.
     expect(within(technical).getByText('10 of 2264 pages')).toBeInTheDocument();
+  });
+
+  it('explains itself when the enrollment does not exist', () => {
+    renderBooks('nope');
+
+    expect(
+      screen.getByRole('heading', { name: 'This journey is not in your list' }),
+    ).toBeInTheDocument();
   });
 });
