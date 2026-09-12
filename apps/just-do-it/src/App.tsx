@@ -12,7 +12,7 @@ import { JourneyStreakPage } from './routes/journey-streak-page';
 import { JourneysPage } from './routes/journeys-page';
 import { ListDetailPage } from './routes/list-detail-page';
 import { ListsPage } from './routes/lists-page';
-import { PlaceholderPage } from './routes/placeholder-page';
+import { SettingsPage } from './routes/settings-page';
 import { TasksPage } from './routes/tasks-page';
 import { TodayPage } from './routes/today-page';
 
@@ -37,7 +37,7 @@ export default function App() {
         <Route path="/books" element={<BooksPage />} />
         <Route path="/lists" element={<ListsPage />} />
         <Route path="/lists/:listId" element={<ListDetailPage />} />
-        <Route path="/settings" element={<PlaceholderPage title="Settings" />} />
+        <Route path="/settings" element={<SettingsPage />} />
       </Route>
       <Route path="*" element={<Navigate replace to="/today" />} />
     </Routes>
