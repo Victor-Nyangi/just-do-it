@@ -226,25 +226,63 @@ describe('JourneyStreakPage — the breakdown', () => {
   });
 });
 
+// The card compares the browser against the committed record, which grows by a
+// row every day the journey is lived. So these seed the store *from* that record
+// rather than from the shared baseline — "clean" then means clean by
+// construction, whatever day it is — and drive the count with activities the
+// record does not yet carry. The arithmetic itself is pinned against an explicit
+// baseline in journey-export.test.ts.
 describe('JourneyStreakPage — publishing progress', () => {
+  function seedFromCommittedRecord() {
+    useJourneyStore.setState({ completions: getInitialJourneyCompletions() });
+  }
+
+  // The first activities of a day that are not in the committed record yet, so
+  // ticking them is always a change to publish.
+  function uncommittedActivityIds(dayIndex: number, count: number): string[] {
+    const { journeys, enrollments, completions } = useJourneyStore.getState();
+    const enrollment = enrollments.find((entry) => entry.id === ENROLLMENT_ID);
+    const journey = journeys.find((entry) => entry.id === enrollment?.journeyId);
+
+    if (!enrollment || !journey) throw new Error('Expected the seeded enrollment');
+
+    const committed = new Set(completions.map((completion) => completion.activityId));
+    const ids = (buildDayPlan(journey, enrollment, dayIndex)?.activities ?? [])
+      .map((activity) => activity.id)
+      .filter((activityId) => !committed.has(activityId))
+      .slice(0, count);
+
+    if (ids.length < count) throw new Error('Expected untickled activities on this day');
+
+    return ids;
+  }
+
   it('reports a clean browser as matching the repo', () => {
+    seedFromCommittedRecord();
     renderStreak();
 
     expect(screen.getByText('Matches the repo')).toBeInTheDocument();
   });
 
   it('counts a local tick as something left to commit', () => {
-    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
+    seedFromCommittedRecord();
+
+    for (const activityId of uncommittedActivityIds(2, 1)) {
+      useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, activityId);
+    }
+
     renderStreak();
 
     expect(screen.getByText('1 uncommitted change')).toBeInTheDocument();
   });
 
-  it('counts an undone tick too, and pluralises', () => {
-    const { toggleActivityCompletion } = useJourneyStore.getState();
+  it('pluralises once there is more than one', () => {
+    seedFromCommittedRecord();
 
-    toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
-    toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-walk-1km');
+    for (const activityId of uncommittedActivityIds(2, 2)) {
+      useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, activityId);
+    }
+
     renderStreak();
 
     expect(screen.getByText('2 uncommitted changes')).toBeInTheDocument();

@@ -1,11 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { completeJourneyActivity, getJourneyDay, getJourneyStats } from './journey-api';
-import {
-  getInitialJourneyCompletions,
-  getInitialJourneyEnrollments,
-  getInitialJourneys,
-} from './journey-data';
+import { seedJourneyStore } from '../../test/journey-baseline';
 import { useJourneyStore } from './journey-store';
 
 const ENROLLMENT_ID = 'enrollment-discipline';
@@ -14,11 +10,7 @@ const ENROLLMENT_ID = 'enrollment-discipline';
 // endpoints, so this file is the closest thing the POC has to endpoint tests:
 // it pins the contracts a real GET/POST would have to keep.
 beforeEach(() => {
-  useJourneyStore.setState({
-    journeys: getInitialJourneys(),
-    enrollments: getInitialJourneyEnrollments(),
-    completions: getInitialJourneyCompletions(),
-  });
+  seedJourneyStore();
 });
 
 describe('getJourneyDay — GET /api/enrollments/[id]/day/[dayIndex]', () => {

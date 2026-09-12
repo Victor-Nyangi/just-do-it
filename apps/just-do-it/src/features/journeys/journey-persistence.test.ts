@@ -12,6 +12,7 @@ import {
   loadPersistedJourneyState,
   savePersistedJourneyState,
 } from './journey-persistence';
+import { seedJourneyStore } from '../../test/journey-baseline';
 import { useJourneyStore } from './journey-store';
 
 const STORAGE_KEY = 'just-do-it:journeys:v1';
@@ -177,7 +178,7 @@ describe('buildInitialJourneyState', () => {
 describe('the store writing through to storage', () => {
   beforeEach(() => {
     clearPersistedJourneyState();
-    useJourneyStore.setState(baseState());
+    seedJourneyStore();
   });
 
   it('persists a tick', () => {
