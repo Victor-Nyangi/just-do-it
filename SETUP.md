@@ -71,7 +71,7 @@ deploy:
 | Where                                                                   | What                                                                                         |
 | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
 | **Storage & Databases → D1 → Create database**                          | Create `just-do-it`; copy its **Database ID** into `wrangler.toml`                           |
-| `pnpm --filter @just-do-it/api deploy`                                  | This is what _creates_ the Worker — it does not exist in the dashboard until you deploy once |
+| `pnpm --filter @just-do-it/api run deploy`                              | This is what _creates_ the Worker — it does not exist in the dashboard until you deploy once |
 | **Workers & Pages → just-do-it-api → Settings → Variables and Secrets** | Add `CLERK_SECRET_KEY` as a **Secret**, not a plaintext variable                             |
 | **Workers & Pages → just-do-it-api → Logs**                             | Real-time logs. The fastest way to tell a bad token from a bad binding                       |
 | **D1 → just-do-it → Console**                                           | Run SQL directly. `SELECT * FROM completions;` confirms a tick actually landed               |
@@ -184,8 +184,15 @@ pnpm --filter @just-do-it/api exec wrangler secret put CLERK_SECRET_KEY
 ## 3. Deploy the Worker
 
 ```sh
-pnpm --filter @just-do-it/api deploy
+# From the repo root (or anywhere inside it — `--filter` resolves by package name).
+pnpm --filter @just-do-it/api run deploy
 ```
+
+> **`run` is not optional here.** `pnpm deploy` is a built-in pnpm command — "deploy a package from
+> a workspace to a target directory" — so the bare `pnpm --filter @just-do-it/api deploy` never
+> reaches the script and fails with `ERR_PNPM_INVALID_DEPLOY_TARGET`. Only `run deploy` runs
+> wrangler. The other scripts here have no such collision, so `db:migrate` and `dev` work either
+> way.
 
 Wrangler prints the URL, something like
 `https://just-do-it-api.<your-subdomain>.workers.dev`. Check it:
@@ -211,7 +218,7 @@ spaces needed, no trailing slash:
 ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,https://your-app.vercel.app"
 ```
 
-Then redeploy (`pnpm --filter @just-do-it/api deploy`).
+Then redeploy (`pnpm --filter @just-do-it/api run deploy`).
 
 **Vercel preview deployments get a different subdomain per branch**, so previews will not be able
 to call the API unless you add them. That is usually the right trade-off: previews talking to
@@ -324,6 +331,8 @@ it — Vite inlines these, so redeploy.
 
 ## Things that will bite
 
+- **`pnpm --filter @just-do-it/api deploy` without `run`.** `deploy` is a pnpm built-in, so the
+  bare form fails with `ERR_PNPM_INVALID_DEPLOY_TARGET` instead of deploying anything.
 - **Setting `ALLOWED_ORIGINS` in the Cloudflare dashboard.** The next `wrangler deploy` wipes it.
   Plaintext variables live in `wrangler.toml`; only secrets belong in the dashboard.
 - **Using `pk_live_` on a `*.vercel.app` URL.** It cannot work — production instances need DNS
