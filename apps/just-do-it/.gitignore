@@ -12,6 +12,12 @@ dist
 dist-ssr
 *.local
 
+# VITE_CLERK_PUBLISHABLE_KEY and VITE_API_URL live here locally — see SETUP.md.
+# `*.local` already covers .env.local, but a plain .env must not slip through.
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

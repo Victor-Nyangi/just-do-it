@@ -1,0 +1,23 @@
+name = "just-do-it-api"
+main = "src/index.ts"
+compatibility_date = "2026-08-22"
+# `nodejs_compat` is required by @clerk/backend, which reaches for a few node
+# built-ins even on the edge build.
+compatibility_flags = ["nodejs_compat"]
+
+# `database_id` is filled in by `wrangler d1 create just-do-it` — see SETUP.md.
+# The placeholder is deliberate: committing a real id is harmless (it is not a
+# secret) but it would differ per person setting this up.
+[[d1_databases]]
+binding = "DB"
+database_name = "just-do-it"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[vars]
+# Comma-separated. Vercel preview deployments get their own subdomain per
+# branch, so the production origin alone is not enough if you want previews to
+# talk to the API too.
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
+
+# CLERK_SECRET_KEY is a secret and must NOT live here.
+#   pnpm --filter @just-do-it/api exec wrangler secret put CLERK_SECRET_KEY
