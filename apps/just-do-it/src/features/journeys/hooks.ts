@@ -46,3 +46,7 @@ export function useLeaveJourney() {
 export function useCreateJourney() {
   return useJourneyStore((state) => state.createJourney);
 }
+
+export function useResetJourneysToCommitted() {
+  return useJourneyStore((state) => state.resetToCommittedState);
+}

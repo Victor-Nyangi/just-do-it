@@ -108,15 +108,36 @@ The app's real routes, enumerated from `apps/just-do-it/src/App.tsx` (`react-rou
 - `/books`
 - `/lists`
 - `/lists/:listId`
+- `/journeys`
+- `/journeys/:enrollmentId`
+- `/journeys/:enrollmentId/books`
+- `/journeys/:enrollmentId/streak`
+- `/challenge` (redirects client-side to `/journeys`)
 - `/settings` (still `<PlaceholderPage>`, but routed)
 - any other path redirects client-side to `/today`
+
+The journey routes are the ones that make the rewrite matter in practice: they are
+the deep links worth sharing, and `/journeys/:enrollmentId/streak` is the page a
+portfolio visitor is most likely to land on cold.
 
 All of these are pure client routes with no corresponding static file, so they all fall through
 to the rewrite and get the app shell, which then lets React Router resolve the real page —
 including a hard refresh or a typed-in URL on `/lists/:listId`.
 
-**What this does not prove:** `vite preview` (used locally to eyeball the app — `vite dev` doesn't
-work on this machine, see `CLAUDE.md`) implements SPA fallback natively regardless of
-`vercel.json`, so a working deep link under `vite preview` is not evidence the Vercel rewrite is
-correct. The rewrite above was verified by inspection against Vercel's documented rewrite
-semantics, not by an actual Vercel deployment — there is no live Vercel project to deploy to yet.
+**What this does not prove:** both `vite dev` and `vite preview` implement SPA fallback natively
+regardless of `vercel.json`, so a working deep link under either is not evidence that the Vercel
+rewrite is correct. The rewrite above was verified by inspection against Vercel's documented
+rewrite semantics, not against an actual deployment. (An earlier version of this note claimed
+`vite dev` does not run on this machine. It does — `pnpm --filter @just-do-it/app dev` serves
+fine, and the journey routes were driven through a real browser against both it and
+`vite preview`.)
+
+## What a deploy does and does not carry
+
+`src/data/*.json` is bundled into the JavaScript at build time, so the deployed site ships
+whatever was committed. Journey progress ticked in a browser lives in that browser's
+`localStorage` and never reaches the repo on its own — a static site has no way to write back.
+The streak page's **Publish today's progress** card closes that gap by hand: it emits the exact
+contents of `apps/just-do-it/src/data/journey-completions.json`, and committing that is what
+makes a day's progress public and carries it to another device. A visitor who has never ticked
+anything sees exactly the committed record, which is the intended showcase state.

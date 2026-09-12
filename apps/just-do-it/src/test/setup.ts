@@ -35,6 +35,9 @@ if (typeof document !== 'undefined') {
     goals.useGoalStore.setState({ goals: goals.getInitialGoals() });
     books.useBookStore.setState({ books: books.getInitialBooks() });
     lists.useListStore.setState({ lists: lists.getInitialLists() });
+    // Journeys are the one domain that persists to localStorage, and jsdom
+    // shares that store across every test in a file.
+    journeys.clearPersistedJourneyState();
     journeys.useJourneyStore.setState({
       journeys: journeys.getInitialJourneys(),
       enrollments: journeys.getInitialJourneyEnrollments(),
