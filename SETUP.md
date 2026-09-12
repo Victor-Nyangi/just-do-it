@@ -333,6 +333,11 @@ it — Vite inlines these, so redeploy.
 
 - **`pnpm --filter @just-do-it/api deploy` without `run`.** `deploy` is a pnpm built-in, so the
   bare form fails with `ERR_PNPM_INVALID_DEPLOY_TARGET` instead of deploying anything.
+- **Running it from outside the repository.** `--filter` matching nothing is not an error: pnpm
+  prints `No projects matched the filters` and **exits 0**, which in a script or a hurried
+  terminal reads exactly like a deploy that worked. Run it from the repo root. (Anywhere inside
+  the repo is fine, and so, as it happens, is the repo's parent — but neither is worth relying
+  on.)
 - **Setting `ALLOWED_ORIGINS` in the Cloudflare dashboard.** The next `wrangler deploy` wipes it.
   Plaintext variables live in `wrangler.toml`; only secrets belong in the dashboard.
 - **Using `pk_live_` on a `*.vercel.app` URL.** It cannot work — production instances need DNS
