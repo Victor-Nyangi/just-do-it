@@ -366,6 +366,11 @@ database was created both in the dashboard and by `wrangler d1 create`.
   terminal reads exactly like a deploy that worked. Run it from the repo root. (Anywhere inside
   the repo is fine, and so, as it happens, is the repo's parent — but neither is worth relying
   on.)
+- **A dev server on an unexpected port.** `ALLOWED_ORIGINS` lists exact origins, so a server on
+  5174 instead of 5173 is blocked — as an opaque CORS error plus a rejected token, neither of
+  which mentions the port. `vite.config.ts` pins 5173/4173 with `strictPort`, so a clash now
+  fails with "Port 5173 is already in use" instead of drifting. If you genuinely need a second
+  server, add its origin to the list rather than removing `strictPort`.
 - **A secret named anything but `CLERK_SECRET_KEY`.** The Worker reads exactly that name; a
   near miss leaves it undefined and every request 401s with a valid token. Check with
   `wrangler secret list` — the name is all it shows, which is the point.
