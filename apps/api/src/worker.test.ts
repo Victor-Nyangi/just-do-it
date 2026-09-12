@@ -1,6 +1,7 @@
 import { env } from 'cloudflare:test';
 import { beforeEach, describe, expect, it } from 'vitest';
 
+import { parseAllowedOrigins } from './http';
 import { handleRequest } from './index';
 import { resetDatabase } from './test-setup';
 import type { Env, TokenVerifier } from './types';
@@ -72,6 +73,27 @@ describe('authentication', () => {
     };
 
     expect(body.error).toBe('Invalid or expired token');
+  });
+});
+
+describe('allowed origins', () => {
+  // One list feeds two things: which origins CORS lets call the Worker, and
+  // which origins a Clerk token may have been minted for (`authorizedParties`).
+  // They must not drift, which is why they parse in one place.
+  it('parses the comma-separated list, tolerating whitespace', () => {
+    expect(
+      parseAllowedOrigins({ ALLOWED_ORIGINS: ' https://a.example , https://b.example ' } as never),
+    ).toEqual(['https://a.example', 'https://b.example']);
+  });
+
+  it('drops empty entries rather than allowing an empty origin', () => {
+    expect(parseAllowedOrigins({ ALLOWED_ORIGINS: 'https://a.example,,' } as never)).toEqual([
+      'https://a.example',
+    ]);
+  });
+
+  it('yields nothing for an empty setting, rather than one empty string', () => {
+    expect(parseAllowedOrigins({ ALLOWED_ORIGINS: '' } as never)).toEqual([]);
   });
 });
 
