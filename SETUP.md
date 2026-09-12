@@ -23,7 +23,22 @@ pnpm --filter @just-do-it/api exec wrangler login     # opens a browser
 pnpm --filter @just-do-it/api exec wrangler d1 create just-do-it
 ```
 
-The last command prints a block like:
+`wrangler d1 create` picks the region nearest to wherever you run it, which is usually what you
+want. To override, pass a location hint — `weur`, `eeur`, `wnam`, `enam`, `apac` or `oc`:
+
+```sh
+pnpm --filter @just-do-it/api exec wrangler d1 create just-do-it --location weur
+```
+
+**The hint sets where the write leader lives, and it is effectively permanent** — D1 is built on
+Durable Objects, which do not relocate after creation. There is no Africa or Middle East region,
+so `weur` is the usual pick for anywhere routing through Europe; `eeur` only wins from inside
+Eastern Europe. For a single-user tracker the difference is tens of milliseconds behind an
+optimistic UI, so this is worth thirty seconds of thought and no more. Read replication does not
+change the calculus: it is beta, needs the D1 Sessions API which this Worker does not use, and
+every write goes to the primary regardless.
+
+The create command prints a block like:
 
 ```toml
 [[d1_databases]]
