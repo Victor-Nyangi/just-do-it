@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -217,6 +218,73 @@ describe('JourneyStreakPage — the breakdown', () => {
       '0',
     );
     expect(screen.getByText('2 of 486 activities ticked off.')).toBeInTheDocument();
+  });
+});
+
+describe('JourneyStreakPage — publishing progress', () => {
+  it('reports a clean browser as matching the repo', () => {
+    renderStreak();
+
+    expect(screen.getByText('Matches the repo')).toBeInTheDocument();
+  });
+
+  it('counts a local tick as something left to commit', () => {
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
+    renderStreak();
+
+    expect(screen.getByText('1 uncommitted change')).toBeInTheDocument();
+  });
+
+  it('counts an undone tick too, and pluralises', () => {
+    const { toggleActivityCompletion } = useJourneyStore.getState();
+
+    toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
+    toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-walk-1km');
+    renderStreak();
+
+    expect(screen.getByText('2 uncommitted changes')).toBeInTheDocument();
+  });
+
+  // The button is the daily loop: copy, paste over the file, commit.
+  // `userEvent.setup()` installs its own clipboard stub, so the copy is read
+  // back through that rather than through a spy — overriding navigator.clipboard
+  // beforehand just gets replaced by setup().
+  it('copies the file contents to the clipboard', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
+    renderStreak();
+
+    await user.click(screen.getByRole('button', { name: /Copy file contents/ }));
+
+    const written = JSON.parse(await navigator.clipboard.readText());
+
+    expect(written.map((entry: { activityId: string }) => entry.activityId)).toEqual([
+      'day-1-technical-reading',
+      'day-1-walk-1km',
+      'day-2-reflection',
+    ]);
+  });
+
+  it('confirms the copy on the button itself', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+
+    renderStreak();
+    await user.click(screen.getByRole('button', { name: /Copy file contents/ }));
+
+    expect(screen.getByRole('button', { name: /Copied/ })).toBeInTheDocument();
+  });
+
+  it('resets back to the committed record', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 2, 'day-2-reflection');
+    renderStreak();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Discard local changes and reload the committed record' }),
+    );
+
+    expect(screen.getByText('Matches the repo')).toBeInTheDocument();
   });
 });
 

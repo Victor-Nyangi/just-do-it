@@ -1,4 +1,5 @@
 export { JourneyNotFound } from './components/journey-not-found';
+export { JourneyExportCard } from './components/journey-export-card';
 export { JourneyNav } from './components/journey-nav';
 export { JourneyProgressBar } from './components/journey-progress-bar';
 export { completeJourneyActivity, getJourneyDay, getJourneyStats } from './journey-api';
@@ -24,6 +25,18 @@ export {
   validatedJourneyFixture,
 } from './journey-data';
 export {
+  buildCompletionsFileContents,
+  countUncommittedChanges,
+  sortCompletionsForExport,
+} from './journey-export';
+export {
+  buildInitialJourneyState,
+  clearPersistedJourneyState,
+  loadPersistedJourneyState,
+  savePersistedJourneyState,
+} from './journey-persistence';
+export type { PersistedJourneyState } from './journey-persistence';
+export {
   buildAllDayPlans,
   buildDayPlan,
   clampDayIndex,
@@ -48,7 +61,7 @@ export {
   selectEnrolledJourneys,
   selectJourneyStats,
 } from './journey-selectors';
-export { useJourneyStore } from './journey-store';
+export { toCompletionId, useJourneyStore } from './journey-store';
 export {
   useCreateJourney,
   useJourneyById,
@@ -58,6 +71,7 @@ export {
   useJourneyEnrollments,
   useJourneys,
   useLeaveJourney,
+  useResetJourneysToCommitted,
   useToggleJourneyActivity,
 } from './hooks';
 export type {

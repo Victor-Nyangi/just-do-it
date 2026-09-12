@@ -30,7 +30,7 @@ describe('the journey store', () => {
 
     expect(state.journeys).toHaveLength(2);
     expect(state.enrollments).toHaveLength(1);
-    expect(completionIds()).toEqual(['day-1-walk-1km', 'day-1-technical-reading']);
+    expect(completionIds()).toEqual(['day-1-technical-reading', 'day-1-walk-1km']);
   });
 });
 
@@ -45,6 +45,31 @@ describe('toggleActivityCompletion', () => {
     useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-walk-1km');
 
     expect(completionIds()).toEqual(['day-1-technical-reading']);
+  });
+
+  // The id is derived from (enrollment, day, activity) rather than being a
+  // UUID, so exporting the same state twice is byte-identical. That is what
+  // keeps a day's commit diff to the lines that changed.
+  it('gives a completion an id derived from what it is', () => {
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-reflection');
+
+    expect(
+      useJourneyStore
+        .getState()
+        .completions.find((completion) => completion.activityId === 'day-1-reflection')?.id,
+    ).toBe('enrollment-discipline:1:day-1-reflection');
+  });
+
+  it('re-ticking a box reuses the same id rather than making a second row', () => {
+    const { toggleActivityCompletion } = useJourneyStore.getState();
+
+    toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-reflection');
+    toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-reflection');
+    toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-reflection');
+
+    expect(
+      useJourneyStore.getState().completions.filter((entry) => entry.dayIndex === 1),
+    ).toHaveLength(3);
   });
 
   it('records when the activity was finished, against its enrollment', () => {

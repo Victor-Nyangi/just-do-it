@@ -64,15 +64,17 @@ describe('the journey fixtures', () => {
     expect(getInitialJourneys()[0]).not.toHaveProperty('startDate');
   });
 
+  // Stored in canonical export order, which is what stops the first commit of
+  // an unchanged day from diffing the whole file. See journey-export.test.ts.
   it('scopes the seeded completions to an enrollment', () => {
     expect(getInitialJourneyCompletions()).toEqual([
       expect.objectContaining({
         enrollmentId: 'enrollment-discipline',
-        activityId: 'day-1-walk-1km',
+        activityId: 'day-1-technical-reading',
       }),
       expect.objectContaining({
         enrollmentId: 'enrollment-discipline',
-        activityId: 'day-1-technical-reading',
+        activityId: 'day-1-walk-1km',
       }),
     ]);
   });

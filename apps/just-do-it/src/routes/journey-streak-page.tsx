@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 
 import { Badge, Card, cn } from '@just-do-it/ui';
 import {
+  JourneyExportCard,
   JourneyNav,
   JourneyNotFound,
   JourneyProgressBar,
@@ -200,6 +201,10 @@ export function JourneyStreakPage() {
             ))}
           </ul>
         </Card>
+      </section>
+
+      <section className="mt-8">
+        <JourneyExportCard />
       </section>
 
       <section aria-labelledby="journey-breakdown-heading" className="mt-8 space-y-4">
