@@ -73,6 +73,24 @@ describe('SettingsPage — the API check', () => {
   });
 });
 
+describe('SettingsPage — sync status', () => {
+  // With no API URL there is nothing to sync to, and that is not a failure —
+  // it is the local-only design working as intended.
+  it('reports progress as local rather than as an error', () => {
+    renderSettings();
+
+    expect(within(row('Journey progress')).getByText('this browser only')).toBeInTheDocument();
+  });
+
+  it('says why nothing is syncing', () => {
+    renderSettings();
+
+    expect(
+      within(row('Journey progress')).getByText(/expected unless there is both/),
+    ).toBeInTheDocument();
+  });
+});
+
 describe('SettingsPage — where progress lives', () => {
   it('points a signed-out visitor at the commit-to-publish loop', () => {
     renderSettings();

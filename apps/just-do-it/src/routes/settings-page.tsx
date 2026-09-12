@@ -8,11 +8,10 @@ import {
   isClerkConfigured,
   useAuthSnapshot,
 } from '../features/auth';
+import { apiUrl, useSyncStatus } from '../features/sync';
 
-// Read here rather than in a module of its own: nothing else consumes it yet,
-// and it moves into the sync layer when that exists.
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const apiUrl = typeof rawApiUrl === 'string' ? rawApiUrl.trim().replace(/\/$/, '') : '';
+// `apiUrl` comes from `features/sync` rather than being read again here, so
+// this page cannot disagree with the layer actually making the requests.
 
 type CheckTone = 'ok' | 'warn' | 'idle';
 
@@ -63,8 +62,16 @@ function describeKey(publishableKey: string): string {
   return `${publishableKey.slice(0, 11)}…`;
 }
 
+const SYNC_LABELS: Readonly<Record<string, string>> = {
+  local: 'this browser only',
+  loading: 'loading…',
+  synced: 'from the API',
+  failed: 'failed',
+};
+
 export function SettingsPage() {
   const auth = useAuthSnapshot();
+  const sync = useSyncStatus();
   const [health, setHealth] = useState<HealthState>({ status: 'idle' });
 
   const instance = describeClerkInstance(clerkPublishableKey);
@@ -173,6 +180,18 @@ export function SettingsPage() {
                       : 'not run'
               }
             />
+            <CheckRow
+              detail={
+                sync.status === 'failed'
+                  ? (sync.error ?? undefined)
+                  : sync.status === 'local'
+                    ? 'Nothing is being synced. That is expected unless there is both an API URL and a signed-in session.'
+                    : undefined
+              }
+              label="Journey progress"
+              tone={sync.status === 'synced' ? 'ok' : sync.status === 'failed' ? 'warn' : 'idle'}
+              value={SYNC_LABELS[sync.status] ?? sync.status}
+            />
           </ul>
         </div>
 
@@ -187,9 +206,11 @@ export function SettingsPage() {
       <Card variant="subtle">
         <h2 className="font-bold">Where your progress lives</h2>
         <p className="mt-2 text-sm text-[var(--muted-foreground)]">
-          {auth.signedIn
-            ? 'Signed in. Once the sync layer lands, journey progress will come from the API rather than this browser.'
-            : 'Signed out. Journey progress is kept in this browser and published by committing the exported file — see the streak page.'}
+          {sync.status === 'synced'
+            ? 'Signed in and syncing. Journey progress comes from the API, and this browser’s local record is left untouched — signing out returns to it.'
+            : auth.signedIn
+              ? 'Signed in, but not syncing. Without a Worker URL, progress is still kept in this browser only.'
+              : 'Signed out. Journey progress is kept in this browser and published by committing the exported file — see the streak page.'}
         </p>
       </Card>
     </div>
