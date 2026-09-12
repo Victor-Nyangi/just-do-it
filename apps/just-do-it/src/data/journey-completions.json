@@ -1,16 +1,1 @@
-[
-  {
-    "id": "enrollment-discipline:1:day-1-technical-reading",
-    "enrollmentId": "enrollment-discipline",
-    "dayIndex": 1,
-    "activityId": "day-1-technical-reading",
-    "completedAt": "2026-09-12T08:05:00.000Z"
-  },
-  {
-    "id": "enrollment-discipline:1:day-1-walk-1km",
-    "enrollmentId": "enrollment-discipline",
-    "dayIndex": 1,
-    "activityId": "day-1-walk-1km",
-    "completedAt": "2026-09-12T07:20:00.000Z"
-  }
-]
+[]
