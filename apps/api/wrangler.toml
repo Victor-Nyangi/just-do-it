@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "just-do-it"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "126f330e-d988-4921-abeb-7a5d5566a73a"
 
 [vars]
 # Comma-separated. Vercel preview deployments get their own subdomain per
