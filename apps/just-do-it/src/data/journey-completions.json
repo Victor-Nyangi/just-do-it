@@ -1,1 +1,9 @@
-[]
+[
+  {
+    "id": "enrollment-discipline:1:day-1-push-ups-50",
+    "enrollmentId": "enrollment-discipline",
+    "dayIndex": 1,
+    "activityId": "day-1-push-ups-50",
+    "completedAt": "2026-09-12T14:48:35.861Z"
+  }
+]
