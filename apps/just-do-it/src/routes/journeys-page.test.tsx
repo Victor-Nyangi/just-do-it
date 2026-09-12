@@ -9,7 +9,7 @@ import { JourneysPage } from './journeys-page';
 
 // Day one of the seeded enrollment, midday. The page reads `new Date()` both
 // for each card's progress and to default the start-date field.
-const pinnedNow = new Date(2026, 8, 11, 12, 0, 0);
+const pinnedNow = new Date(2026, 8, 12, 12, 0, 0);
 
 function renderJourneys() {
   return render(
@@ -60,7 +60,7 @@ describe('JourneysPage — what is running', () => {
   it('shows the window the enrollment actually runs over', () => {
     renderJourneys();
 
-    expect(within(runningSection()).getByText(/11 Sep 2026\s*–\s*19 Dec 2026/)).toBeInTheDocument();
+    expect(within(runningSection()).getByText(/12 Sep 2026\s*–\s*20 Dec 2026/)).toBeInTheDocument();
   });
 
   it('links each running journey to its own day page', () => {
@@ -133,7 +133,7 @@ describe('JourneysPage — starting a journey', () => {
   it('defaults the start date to today', () => {
     renderJourneys();
 
-    expect(screen.getByLabelText('Start on')).toHaveValue('2026-09-11');
+    expect(screen.getByLabelText('Start on')).toHaveValue('2026-09-12');
   });
 
   it('reports a journey that has not begun as not running', async () => {

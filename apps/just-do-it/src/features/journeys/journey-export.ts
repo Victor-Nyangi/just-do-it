@@ -1,5 +1,9 @@
-import { validatedJourneyCompletionFixture } from './journey-data';
-import type { JourneyCompletion } from './types';
+import {
+  validatedJourneyCompletionFixture,
+  validatedJourneyEnrollmentFixture,
+} from './journey-data';
+import { toCompletionId } from './journey-store';
+import type { JourneyCompletion, JourneyEnrollment } from './types';
 
 // The deployed app cannot write to the repository — it is a static bundle, and
 // `journey-completions.json` is baked into the JavaScript at build time. So the
@@ -37,14 +41,61 @@ export function buildCompletionsFileContents(completions: readonly JourneyComple
   return `${JSON.stringify(sortCompletionsForExport(completions), null, 2)}\n`;
 }
 
+// The repo commits one enrollment per published journey, and
+// `journey-completions.json` is keyed on that enrollment's id. The enrollment a
+// browser is actually running almost never carries it: the server generates the
+// id when signed in, and `crypto.randomUUID()` does when a second run is started
+// locally. Exporting those rows as-is writes completions pointing at an
+// enrollment the repo has never heard of, which `journey-data.ts` refuses at
+// module load — so the paste would not fail a test, it would white-screen the
+// deployed app on boot.
+export function selectCommittedEnrollmentForJourney(
+  journeyId: string,
+): JourneyEnrollment | undefined {
+  return validatedJourneyEnrollmentFixture.find((entry) => entry.journeyId === journeyId);
+}
+
+// Re-keying is a rename rather than a reinterpretation: an activity id depends
+// only on the journey and the day index — the enrollment supplies the calendar
+// date and nothing else — so day four of this run means exactly what day four of
+// the committed run means. The ids are re-derived through `toCompletionId` so
+// they stay the deterministic triple the export order and the D1 primary key
+// both rely on.
+export function rekeyCompletionsForExport(
+  completions: readonly JourneyCompletion[],
+  sourceEnrollmentId: string,
+  committedEnrollmentId: string,
+): JourneyCompletion[] {
+  return completions
+    .filter((completion) => completion.enrollmentId === sourceEnrollmentId)
+    .map((completion) => ({
+      ...completion,
+      id: toCompletionId(committedEnrollmentId, completion.dayIndex, completion.activityId),
+      enrollmentId: committedEnrollmentId,
+    }));
+}
+
 // How far this browser has drifted from what is committed, counted in both
 // directions: a tick that is not in the repo yet, and a tick the repo has that
-// has since been undone here. Zero means there is nothing to commit.
-export function countUncommittedChanges(completions: readonly JourneyCompletion[]): number {
-  const committedIds = new Set(
-    validatedJourneyCompletionFixture.map((completion) => completion.id),
-  );
-  const currentIds = new Set(completions.map((completion) => completion.id));
+// has since been undone here. Zero means there is nothing to commit. Pass the
+// enrollment id when counting a single run's drift, so that a second journey
+// started locally does not read as a hundred missing commits.
+export function countUncommittedChanges(
+  completions: readonly JourneyCompletion[],
+  enrollmentId?: string,
+): number {
+  const committed =
+    enrollmentId === undefined
+      ? validatedJourneyCompletionFixture
+      : validatedJourneyCompletionFixture.filter(
+          (completion) => completion.enrollmentId === enrollmentId,
+        );
+  const current =
+    enrollmentId === undefined
+      ? completions
+      : completions.filter((completion) => completion.enrollmentId === enrollmentId);
+  const committedIds = new Set(committed.map((completion) => completion.id));
+  const currentIds = new Set(current.map((completion) => completion.id));
 
   let changed = 0;
 

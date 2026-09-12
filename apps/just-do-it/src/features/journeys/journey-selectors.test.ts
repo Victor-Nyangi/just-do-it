@@ -23,7 +23,7 @@ const enrolled: EnrolledJourney = { enrollment, journey: discipline };
 
 // Midday on day 5, inside the window. Midday rather than midnight so that a
 // clock creeping forward in a DOM test cannot roll the date over.
-const dayFive = new Date(2026, 8, 15, 12);
+const dayFive = new Date(2026, 8, 16, 12);
 
 function planFor(dayIndex: number) {
   const plan = buildDayPlan(discipline, enrollment, dayIndex);
