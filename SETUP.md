@@ -14,7 +14,8 @@ Clerk's free tier is 10,000 monthly active users. This app is one user.
 
 ## 1. Cloudflare — create the database
 
-You need a Cloudflare account (free, no card).
+All of this is CLI already — there is no dashboard step. You need a Cloudflare account (free, no
+card).
 
 ```sh
 pnpm install
@@ -45,12 +46,50 @@ pnpm --filter @just-do-it/api db:migrate:local    # local, for `wrangler dev`
 
 ## 2. Clerk — create the application
 
+Clerk shipped an official CLI in April 2026, so this step does not have to be done in the
+dashboard.
+
+```sh
+npm install -g clerk        # or: brew install clerk/stable/clerk
+clerk login
+clerk apps                  # create / list / select an application
+clerk env pull              # writes the keys into a local env file
+```
+
+Useful too: `clerk link` ties this directory to an application, `clerk doctor` checks the
+integration, and `clerk api` reaches the Backend API directly.
+
+**Three things to check after `clerk env pull`:**
+
+1. **The publishable key must be named `VITE_CLERK_PUBLISHABLE_KEY`.** Vite only exposes
+   variables with the `VITE_` prefix to browser code; anything else is invisible at runtime and
+   fails silently. Rename it if the CLI wrote a bare `CLERK_PUBLISHABLE_KEY`.
+2. **Move the secret key out.** If the pull wrote `CLERK_SECRET_KEY` into the app's env file, it
+   belongs to the Worker instead — `wrangler secret put CLERK_SECRET_KEY`, then delete the line.
+   It is not bundled (no `VITE_` prefix, so Vite never exposes it) and `.gitignore` covers
+   `.env*`, but a full-access credential should not sit in the frontend's config regardless.
+3. **Never let a secret key get a `VITE_` prefix.** That is the one mistake that turns it public.
+
+> `clerk init` also exists and goes further — it detects the framework, installs the SDK, and
+> scaffolds the provider wiring. That is a reasonable shortcut, but it will edit `main.tsx` and
+> add a dependency, which overlaps with the frontend work still to come. Either run it and expect
+> the generated code to be reshaped to match this repo's conventions, or stop at `clerk env pull`
+> and leave the wiring alone.
+
+**`clerk deploy` does not remove the DNS requirement.** It walks an application from development
+to production, but a production instance still needs a domain you control — see below.
+
+<details>
+<summary>Dashboard equivalent</summary>
+
 1. Sign up at [clerk.com](https://clerk.com) and create an application.
 2. Choose sign-in methods. Since this is your personal tracker, **GitHub or Google alone is
    plenty** — you do not need email/password.
 3. From **API keys**, copy both:
    - **Publishable key** (`pk_test_…` / `pk_live_…`) — safe in the browser, goes to Vercel.
    - **Secret key** (`sk_test_…` / `sk_live_…`) — **never** in the browser or in git.
+
+</details>
 
 ### Development instance or production instance?
 
@@ -142,6 +181,25 @@ are covered.
 
 ## 5. Vercel — environment variables
 
+```sh
+npm install -g vercel
+vercel link                                       # once, to connect this directory
+vercel env add VITE_CLERK_PUBLISHABLE_KEY production
+vercel env add VITE_API_URL production
+vercel env ls                                     # confirm
+vercel --prod --force                             # env changes do NOT redeploy on their own
+```
+
+That last line is the one people miss. Adding a variable never redeploys anything, and Vite bakes
+these in **at build time** — so an existing deployment keeps the values it was built with until
+you force a new build or push a commit.
+
+Add `preview` alongside `production` on either command only if you want preview deployments
+talking to the real API; see the note about preview origins above.
+
+<details>
+<summary>Dashboard equivalent</summary>
+
 In the Vercel project → **Settings → Environment Variables**, add both:
 
 | Name                         | Value                                     | Notes                                             |
@@ -152,6 +210,8 @@ In the Vercel project → **Settings → Environment Variables**, add both:
 Vite only exposes variables prefixed `VITE_`, and **inlines them at build time** — so after
 adding or changing either one you must trigger a redeploy. Changing a variable does not update
 an existing deployment.
+
+</details>
 
 > `DEPLOY.md` currently says this project has no environment variables. That was true before the
 > API existed; these two are the first.
@@ -182,7 +242,9 @@ VITE_API_URL=http://localhost:8787
 - [ ] `wrangler login` done
 - [ ] D1 created, `database_id` pasted into `wrangler.toml` and committed
 - [ ] Migrations applied, remote and local
-- [ ] Clerk application created, sign-in method chosen
+- [ ] Clerk application created (`clerk apps`, or the dashboard), sign-in method chosen
+- [ ] Publishable key named `VITE_CLERK_PUBLISHABLE_KEY` — a bare `CLERK_PUBLISHABLE_KEY` is
+      invisible to Vite
 - [ ] `CLERK_SECRET_KEY` set via `wrangler secret put` (**not** committed)
 - [ ] Worker deployed, `/api/health` returns `{"ok":true}`
 - [ ] `ALLOWED_ORIGINS` includes the Vercel production origin, redeployed
