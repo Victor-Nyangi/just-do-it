@@ -13,15 +13,14 @@ import {
   selectJourneyStats,
   toJourneyDateKey,
   useCreateJourney,
-  useEnrollInJourney,
   useJourneyCompletions,
   useJourneyEnrollments,
   useJourneys,
-  useLeaveJourney,
   type EnrolledJourney,
   type Journey,
   type JourneyCompletion,
 } from '../features/journeys';
+import { useSyncedEnrollInJourney, useSyncedLeaveJourney } from '../features/sync';
 
 function formatJourneyDate(dateKey: string): string {
   return format(parseISO(dateKey), 'd MMM yyyy');
@@ -114,8 +113,8 @@ export function JourneysPage() {
   const journeys = useJourneys();
   const enrollments = useJourneyEnrollments();
   const completions = useJourneyCompletions();
-  const enrollInJourney = useEnrollInJourney();
-  const leaveJourney = useLeaveJourney();
+  const enrollInJourney = useSyncedEnrollInJourney();
+  const leaveJourney = useSyncedLeaveJourney();
   const createJourney = useCreateJourney();
 
   const [startDate, setStartDate] = useState(() => toJourneyDateKey(new Date()));
@@ -221,7 +220,7 @@ export function JourneysPage() {
                 <div className="mt-auto">
                   <Button
                     aria-label={`Start ${journey.title}`}
-                    onClick={() => enrollInJourney(journey.id, startDate)}
+                    onClick={() => void enrollInJourney(journey.id, startDate)}
                   >
                     <Play aria-hidden="true" className="mr-2 size-4" />
                     Start

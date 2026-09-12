@@ -15,7 +15,7 @@ import { buildDayPlan } from './journey-plan';
 import { selectEnrolledJourney } from './journey-selectors';
 import type { Journey, JourneyCompletion, JourneyEnrollment, JourneyInput } from './types';
 
-type JourneyStoreState = {
+export type JourneyStoreState = {
   journeys: Journey[];
   enrollments: JourneyEnrollment[];
   completions: JourneyCompletion[];
@@ -29,6 +29,11 @@ type JourneyStoreState = {
   leaveJourney: (enrollmentId: string) => void;
   createJourney: (input: JourneyInput) => string;
   resetToCommittedState: () => void;
+  // Both of these exist for the sync layer, which owns the server round trip.
+  // `features/journeys` deliberately knows nothing about auth or the API — it
+  // just accepts rows that came from somewhere authoritative.
+  adoptServerState: (enrollments: JourneyEnrollment[], completions: JourneyCompletion[]) => void;
+  adoptEnrollment: (enrollment: JourneyEnrollment) => void;
 };
 
 // A completion's natural key is (enrollment, day, activity) — the same triple
@@ -157,6 +162,26 @@ export const useJourneyStore = create<JourneyStoreState>()((set) => ({
     set((state) => ({ journeys: [...state.journeys, buildJourneyRecord(journeyId, input)] }));
 
     return journeyId;
+  },
+  // Replaces what a person has done with what the server says they have done.
+  // Journey *definitions* are untouched: the repo stays authoritative for what
+  // a journey is, exactly as it is for localStorage.
+  adoptServerState: (enrollments, completions) => {
+    set(() => ({
+      enrollments: enrollments.map((enrollment) => journeyEnrollmentSchema.parse(enrollment)),
+      completions: completions.map((completion) => journeyCompletionSchema.parse(completion)),
+    }));
+  },
+  // The server owns enrollment identity, so a signed-in enrol round-trips and
+  // comes back here rather than being invented locally.
+  adoptEnrollment: (enrollment) => {
+    set((state) => {
+      const parsed = journeyEnrollmentSchema.parse(enrollment);
+
+      if (state.enrollments.some((existing) => existing.id === parsed.id)) return state;
+
+      return { enrollments: [...state.enrollments, parsed] };
+    });
   },
   // Throws away everything this browser remembers and goes back to what is
   // committed in the repo. The escape hatch for local state that has drifted

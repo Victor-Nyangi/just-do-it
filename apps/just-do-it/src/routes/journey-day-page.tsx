@@ -18,11 +18,11 @@ import {
   useJourneyById,
   useJourneyCompletions,
   useJourneyEnrollment,
-  useToggleJourneyActivity,
   type EnrolledJourney,
   type JourneyActivityCategory,
   type JourneyCompletion,
 } from '../features/journeys';
+import { useSyncedToggleActivity } from '../features/sync';
 
 const CATEGORY_LABELS: Readonly<Record<JourneyActivityCategory, string>> = {
   physical: 'Physical',
@@ -51,7 +51,7 @@ function JourneyDayView({
 }) {
   const { enrollment, journey } = enrolled;
   const now = new Date();
-  const toggleActivity = useToggleJourneyActivity();
+  const toggleActivity = useSyncedToggleActivity();
 
   const currentDayIndex = getCurrentDayIndex(journey, enrollment, now);
   // Outside the window there is no current day, so the page opens on whichever
