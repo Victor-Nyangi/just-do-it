@@ -3,7 +3,8 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getInitialJourneyCompletions, useJourneyStore } from '../journeys';
+import { EXAMPLE_JOURNEY_COMPLETIONS } from '../../test/journey-baseline';
+import { useJourneyStore } from '../journeys';
 import { useSyncedEnrollInJourney, useSyncedLeaveJourney, useSyncedToggleActivity } from './hooks';
 import { JourneySync } from './journey-sync';
 
@@ -117,7 +118,7 @@ describe('JourneySync with no API configured', () => {
     );
 
     expect(screen.getByText('The app')).toBeInTheDocument();
-    expect(useJourneyStore.getState().completions).toEqual(getInitialJourneyCompletions());
+    expect(useJourneyStore.getState().completions).toEqual(EXAMPLE_JOURNEY_COMPLETIONS);
   });
 
   it('does not try to hydrate', () => {

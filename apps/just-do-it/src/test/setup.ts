@@ -1,5 +1,7 @@
 import { afterEach, beforeEach } from 'vitest';
 
+import { EXAMPLE_JOURNEY_COMPLETIONS } from './journey-baseline';
+
 // Vitest allows one setup file per project, and this one is shared by both
 // environments — the DOM suites opt into jsdom per file with a
 // `// @vitest-environment jsdom` docblock, everything else stays on node. So
@@ -36,12 +38,15 @@ if (typeof document !== 'undefined') {
     books.useBookStore.setState({ books: books.getInitialBooks() });
     lists.useListStore.setState({ lists: lists.getInitialLists() });
     // Journeys are the one domain that persists to localStorage, and jsdom
-    // shares that store across every test in a file.
+    // shares that store across every test in a file. Completions come from a
+    // fixed baseline rather than `journey-completions.json`, which is a live
+    // record that changes every day the journey is lived — see
+    // `journey-baseline.ts`.
     journeys.clearPersistedJourneyState();
     journeys.useJourneyStore.setState({
       journeys: journeys.getInitialJourneys(),
       enrollments: journeys.getInitialJourneyEnrollments(),
-      completions: journeys.getInitialJourneyCompletions(),
+      completions: EXAMPLE_JOURNEY_COMPLETIONS.map((completion) => ({ ...completion })),
     });
   });
 

@@ -1,10 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import {
-  getInitialJourneyCompletions,
-  getInitialJourneyEnrollments,
-  getInitialJourneys,
-} from './journey-data';
+import { EXAMPLE_JOURNEY_COMPLETIONS, seedJourneyStore } from '../../test/journey-baseline';
+import { getInitialJourneyCompletions } from './journey-data';
 import { useJourneyStore } from './journey-store';
 
 const ENROLLMENT_ID = 'enrollment-discipline';
@@ -13,11 +10,7 @@ const ENROLLMENT_ID = 'enrollment-discipline';
 // reset — that is gated behind a document. This store is a module singleton, so
 // the reset has to happen here.
 beforeEach(() => {
-  useJourneyStore.setState({
-    journeys: getInitialJourneys(),
-    enrollments: getInitialJourneyEnrollments(),
-    completions: getInitialJourneyCompletions(),
-  });
+  seedJourneyStore();
 });
 
 function completionIds(): string[] {
@@ -30,7 +23,22 @@ describe('the journey store', () => {
 
     expect(state.journeys).toHaveLength(2);
     expect(state.enrollments).toHaveLength(1);
-    expect(completionIds()).toEqual(['day-1-technical-reading', 'day-1-walk-1km']);
+    expect(completionIds()).toEqual(
+      EXAMPLE_JOURNEY_COMPLETIONS.map((completion) => completion.activityId),
+    );
+  });
+
+  // The committed record is whatever the journey has actually reached, so this
+  // asserts the wiring rather than the contents: every seeded completion has to
+  // belong to a seeded enrollment, however many there are on the day.
+  it('seeds its real completions from the committed record', () => {
+    const enrollmentIds = new Set(
+      useJourneyStore.getState().enrollments.map((enrollment) => enrollment.id),
+    );
+
+    for (const completion of getInitialJourneyCompletions()) {
+      expect(enrollmentIds).toContain(completion.enrollmentId);
+    }
   });
 });
 

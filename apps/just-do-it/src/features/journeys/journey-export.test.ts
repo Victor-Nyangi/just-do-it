@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { EXAMPLE_JOURNEY_COMPLETIONS } from '../../test/journey-baseline';
 import { getInitialJourneyCompletions, getInitialJourneyEnrollments } from './journey-data';
 import {
   buildCompletionsFileContents,
@@ -99,38 +100,53 @@ describe('buildCompletionsFileContents', () => {
   });
 });
 
+// These pass their own committed baseline rather than reading the live record,
+// which changes every day the journey is lived.
 describe('countUncommittedChanges', () => {
+  const committed = EXAMPLE_JOURNEY_COMPLETIONS;
+
   it('counts nothing when the state matches the repo', () => {
-    expect(countUncommittedChanges(getInitialJourneyCompletions())).toBe(0);
+    expect(countUncommittedChanges(committed, undefined, committed)).toBe(0);
   });
 
   it('counts a tick the repo does not have yet', () => {
     expect(
-      countUncommittedChanges([
-        ...getInitialJourneyCompletions(),
-        completion(2, 'day-2-reflection'),
-      ]),
+      countUncommittedChanges(
+        [...committed, completion(2, 'day-2-reflection')],
+        undefined,
+        committed,
+      ),
     ).toBe(1);
   });
 
   // Undoing something the repo already records is just as much a change to
   // commit as adding one.
   it('counts a committed tick that has since been undone', () => {
-    expect(countUncommittedChanges(getInitialJourneyCompletions().slice(1))).toBe(1);
+    expect(countUncommittedChanges(committed.slice(1), undefined, committed)).toBe(1);
   });
 
   it('counts both directions at once', () => {
     expect(
-      countUncommittedChanges([
-        ...getInitialJourneyCompletions().slice(1),
-        completion(2, 'day-2-reflection'),
-        completion(3, 'day-3-reflection'),
-      ]),
+      countUncommittedChanges(
+        [
+          ...committed.slice(1),
+          completion(2, 'day-2-reflection'),
+          completion(3, 'day-3-reflection'),
+        ],
+        undefined,
+        committed,
+      ),
     ).toBe(3);
   });
 
   it('does not care what order the completions arrive in', () => {
-    expect(countUncommittedChanges([...getInitialJourneyCompletions()].reverse())).toBe(0);
+    expect(countUncommittedChanges([...committed].reverse(), undefined, committed)).toBe(0);
+  });
+
+  // The default baseline is the live record, and a browser showing exactly what
+  // is committed has nothing to publish — whatever day the journey has reached.
+  it('defaults to the committed record and reports it as clean', () => {
+    expect(countUncommittedChanges(getInitialJourneyCompletions())).toBe(0);
   });
 });
 
@@ -187,7 +203,7 @@ describe('rekeyCompletionsForExport', () => {
   });
 
   it('is a no-op on a run that already carries the committed id', () => {
-    const committed = getInitialJourneyCompletions();
+    const committed = [...EXAMPLE_JOURNEY_COMPLETIONS];
 
     expect(
       rekeyCompletionsForExport(committed, 'enrollment-discipline', 'enrollment-discipline'),
@@ -197,7 +213,7 @@ describe('rekeyCompletionsForExport', () => {
   // Which is what makes the whole round trip safe: re-key, then export, and the
   // committed file comes back byte-identical when nothing was ticked.
   it('round-trips a live run back to the committed file contents', () => {
-    const live = getInitialJourneyCompletions().map((entry) => ({
+    const live = EXAMPLE_JOURNEY_COMPLETIONS.map((entry) => ({
       ...entry,
       id: `live:${entry.dayIndex}:${entry.activityId}`,
       enrollmentId: 'live',
@@ -207,18 +223,21 @@ describe('rekeyCompletionsForExport', () => {
       buildCompletionsFileContents(
         rekeyCompletionsForExport(live, 'live', 'enrollment-discipline'),
       ),
-    ).toBe(buildCompletionsFileContents(getInitialJourneyCompletions()));
+    ).toBe(buildCompletionsFileContents(EXAMPLE_JOURNEY_COMPLETIONS));
   });
 });
 
 describe('countUncommittedChanges scoped to an enrollment', () => {
+  const committed = EXAMPLE_JOURNEY_COMPLETIONS;
+
   // Without the scope, a second journey started locally reads as a pile of
   // changes to commit even though the repo publishes no run of it.
   it('ignores completions belonging to another enrollment', () => {
     expect(
       countUncommittedChanges(
-        [...getInitialJourneyCompletions(), completion(1, 'day-1-reflection', 'another-run')],
+        [...committed, completion(1, 'day-1-reflection', 'another-run')],
         'enrollment-discipline',
+        committed,
       ),
     ).toBe(0);
   });
@@ -226,8 +245,9 @@ describe('countUncommittedChanges scoped to an enrollment', () => {
   it('still counts both directions within the enrollment', () => {
     expect(
       countUncommittedChanges(
-        [...getInitialJourneyCompletions().slice(1), completion(2, 'day-2-reflection')],
+        [...committed.slice(1), completion(2, 'day-2-reflection')],
         'enrollment-discipline',
+        committed,
       ),
     ).toBe(2);
   });

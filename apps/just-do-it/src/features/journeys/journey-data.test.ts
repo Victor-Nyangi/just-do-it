@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { EXAMPLE_JOURNEY_COMPLETIONS } from '../../test/journey-baseline';
+
 import {
   journeyCollectionSchema,
   journeyCompletionCollectionSchema,
@@ -64,19 +66,29 @@ describe('the journey fixtures', () => {
     expect(getInitialJourneys()[0]).not.toHaveProperty('startDate');
   });
 
-  // Stored in canonical export order, which is what stops the first commit of
-  // an unchanged day from diffing the whole file. See journey-export.test.ts.
-  it('scopes the seeded completions to an enrollment', () => {
-    expect(getInitialJourneyCompletions()).toEqual([
-      expect.objectContaining({
-        enrollmentId: 'enrollment-discipline',
-        activityId: 'day-1-technical-reading',
-      }),
-      expect.objectContaining({
-        enrollmentId: 'enrollment-discipline',
-        activityId: 'day-1-walk-1km',
-      }),
-    ]);
+  // `journey-completions.json` is a live record rather than a fixture — it gains
+  // a row every day the journey is lived — so this pins the invariants that must
+  // hold whatever it currently says, not the rows it happens to hold today. The
+  // canonical export order it is also kept in is guarded by journey-export.test.ts.
+  it('scopes every seeded completion to a seeded enrollment', () => {
+    const enrollmentIds = new Set(
+      getInitialJourneyEnrollments().map((enrollment) => enrollment.id),
+    );
+
+    for (const completion of getInitialJourneyCompletions()) {
+      expect(enrollmentIds).toContain(completion.enrollmentId);
+      expect(completion.id).toBe(
+        `${completion.enrollmentId}:${completion.dayIndex}:${completion.activityId}`,
+      );
+    }
+  });
+
+  // The baseline the test suite seeds from is hand-written rather than parsed,
+  // so nothing else would catch it drifting into a shape the app rejects.
+  it('accepts the baseline the test suite seeds from', () => {
+    expect(
+      journeyCompletionCollectionSchema.safeParse([...EXAMPLE_JOURNEY_COMPLETIONS]).success,
+    ).toBe(true);
   });
 
   // getInitial* clones rather than handing out the parsed fixture, so a store

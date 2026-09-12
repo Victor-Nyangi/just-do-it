@@ -80,16 +80,20 @@ export function rekeyCompletionsForExport(
 // has since been undone here. Zero means there is nothing to commit. Pass the
 // enrollment id when counting a single run's drift, so that a second journey
 // started locally does not read as a hundred missing commits.
+//
+// `committedCompletions` is injectable for the same reason selectors take an
+// injectable `now`: the default is the live record, which changes every day the
+// journey is lived, and a test that pinned its own expectations to whatever was
+// committed that morning would fail on the next commit.
 export function countUncommittedChanges(
   completions: readonly JourneyCompletion[],
   enrollmentId?: string,
+  committedCompletions: readonly JourneyCompletion[] = validatedJourneyCompletionFixture,
 ): number {
   const committed =
     enrollmentId === undefined
-      ? validatedJourneyCompletionFixture
-      : validatedJourneyCompletionFixture.filter(
-          (completion) => completion.enrollmentId === enrollmentId,
-        );
+      ? committedCompletions
+      : committedCompletions.filter((completion) => completion.enrollmentId === enrollmentId);
   const current =
     enrollmentId === undefined
       ? completions
