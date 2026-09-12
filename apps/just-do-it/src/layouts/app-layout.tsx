@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 
 import { Button, cn } from '@just-do-it/ui';
+import { SignInControl } from '../features/auth';
 import { CommandPalette } from '../features/command-palette';
 
 const navigation = [
@@ -137,9 +138,7 @@ export function AppLayout() {
                 <Moon aria-hidden="true" className="size-5" />
               )}
             </Button>
-            <div className="flex size-9 items-center justify-center rounded-full bg-[var(--accent-subtle)] text-sm font-bold text-[var(--accent)]">
-              V
-            </div>
+            <SignInControl />
           </div>
         </header>
         <Outlet />

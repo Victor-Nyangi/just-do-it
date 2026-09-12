@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.61.3",
     "@just-do-it/ui": "workspace:*",
     "@tailwindcss/vite": "^4.1.18",
     "clsx": "^2.1.1",

@@ -237,6 +237,26 @@ VITE_API_URL=http://localhost:8787
 
 ---
 
+## 7. Verifying it
+
+The app has a diagnostics page at **`/settings`**. It reports what the build was configured with
+and whether the pieces can reach each other, which is faster than guessing from a blank screen:
+
+| Row          | What a healthy setup shows                                          |
+| ------------ | ------------------------------------------------------------------- |
+| Clerk key    | the `pk_…` prefix, not "not set"                                    |
+| Instance     | `development` on a `*.vercel.app` URL                               |
+| Clerk loaded | `yes` — if it stays "still loading", the browser cannot reach Clerk |
+| Signed in    | your email once you have signed in                                  |
+| Worker URL   | your `workers.dev` URL                                              |
+| Health check | `reachable`, after pressing **Check the API**                       |
+
+A failed health check names both causes it could be, because the browser reports them
+identically: the Worker is unreachable, or this origin is missing from its `ALLOWED_ORIGINS`.
+
+"not set" on a row whose variable you have definitely set almost always means the build predates
+it — Vite inlines these, so redeploy.
+
 ## Checklist
 
 - [ ] `wrangler login` done
@@ -249,6 +269,7 @@ VITE_API_URL=http://localhost:8787
 - [ ] Worker deployed, `/api/health` returns `{"ok":true}`
 - [ ] `ALLOWED_ORIGINS` includes the Vercel production origin, redeployed
 - [ ] `VITE_CLERK_PUBLISHABLE_KEY` and `VITE_API_URL` set in Vercel, then redeployed
+- [ ] `/settings` shows the Clerk key, `Clerk loaded: yes`, and a reachable health check
 
 ---
 
