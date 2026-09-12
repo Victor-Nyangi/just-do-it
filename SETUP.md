@@ -329,6 +329,31 @@ it — Vite inlines these, so redeploy.
 
 ---
 
+## Troubleshooting
+
+**`no such table: completions: SQLITE_ERROR`**
+
+The migrations have not reached the database you are querying. D1 keeps two entirely separate
+databases — a local SQLite file under `.wrangler/`, and the real remote one — and
+`wrangler d1 migrations apply` **defaults to local**. The dashboard console always reads remote.
+
+```sh
+# What does the remote database think?
+pnpm --filter @just-do-it/api exec wrangler d1 migrations list just-do-it --remote
+
+# Apply them for real (db:migrate passes --remote; db:migrate:local does not)
+pnpm --filter @just-do-it/api run db:migrate
+
+# Verify — this should list completions, enrollments and d1_migrations
+pnpm --filter @just-do-it/api exec wrangler d1 execute just-do-it --remote \
+  --command "SELECT name FROM sqlite_master WHERE type='table'"
+```
+
+If the remote migrations list says everything is applied but the dashboard still cannot see the
+table, you are looking at **two different databases**. Check that `database_id` in
+`wrangler.toml` matches the ID shown on the D1 page you are querying — they diverge easily if the
+database was created both in the dashboard and by `wrangler d1 create`.
+
 ## Things that will bite
 
 - **`pnpm --filter @just-do-it/api deploy` without `run`.** `deploy` is a pnpm built-in, so the

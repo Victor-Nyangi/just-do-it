@@ -21,3 +21,23 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
 
 # CLERK_SECRET_KEY is a secret and must NOT live here.
 #   pnpm --filter @just-do-it/api exec wrangler secret put CLERK_SECRET_KEY
+
+# Workers Logs. Without this you still get real-time logs (`wrangler tail`, or
+# the dashboard's live view), but nothing is kept — so a request that failed
+# while you were not watching is gone. `enabled` is the line doing the work;
+# `persist` already defaults to true on new Workers.
+#
+# Sampling every request is right for a single-user tracker and would not be for
+# anything with traffic.
+[observability.logs]
+enabled = true
+head_sampling_rate = 1
+invocation_logs = true
+persist = true
+
+# Tracing is off: it costs more to keep and there is no multi-service call graph
+# here to untangle. Turn it on if the Worker ever fans out to other services.
+[observability.traces]
+enabled = false
+head_sampling_rate = 1
+persist = true
