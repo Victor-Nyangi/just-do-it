@@ -220,6 +220,9 @@ ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,https://your-app.
 
 Then redeploy (`pnpm --filter @just-do-it/api run deploy`).
 
+A trailing slash is tolerated — the Worker strips one before comparing, because an `Origin` header
+never carries one while a URL copied from a browser bar always does. Case is normalised too.
+
 **Vercel preview deployments get a different subdomain per branch**, so previews will not be able
 to call the API unless you add them. That is usually the right trade-off: previews talking to
 your real data is rarely what you want.
@@ -363,6 +366,9 @@ database was created both in the dashboard and by `wrangler d1 create`.
   terminal reads exactly like a deploy that worked. Run it from the repo root. (Anywhere inside
   the repo is fine, and so, as it happens, is the repo's parent — but neither is worth relying
   on.)
+- **A secret named anything but `CLERK_SECRET_KEY`.** The Worker reads exactly that name; a
+  near miss leaves it undefined and every request 401s with a valid token. Check with
+  `wrangler secret list` — the name is all it shows, which is the point.
 - **Setting `ALLOWED_ORIGINS` in the Cloudflare dashboard.** The next `wrangler deploy` wipes it.
   Plaintext variables live in `wrangler.toml`; only secrets belong in the dashboard.
 - **Using `pk_live_` on a `*.vercel.app` URL.** It cannot work — production instances need DNS

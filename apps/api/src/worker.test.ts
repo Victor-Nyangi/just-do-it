@@ -95,6 +95,67 @@ describe('allowed origins', () => {
   it('yields nothing for an empty setting, rather than one empty string', () => {
     expect(parseAllowedOrigins({ ALLOWED_ORIGINS: '' } as never)).toEqual([]);
   });
+
+  // An `Origin` header never carries a trailing slash, but the URL copied out
+  // of a browser bar always does. Left as an exact match, the config entry
+  // silently matches nothing and the failure shows up as an opaque CORS error
+  // plus a rejected token — two symptoms, no clue.
+  it('strips a trailing slash, which an Origin header never has', () => {
+    expect(parseAllowedOrigins({ ALLOWED_ORIGINS: 'https://app.example/' } as never)).toEqual([
+      'https://app.example',
+    ]);
+  });
+
+  it('lower-cases, since scheme and host are case-insensitive', () => {
+    expect(parseAllowedOrigins({ ALLOWED_ORIGINS: 'HTTPS://App.Example' } as never)).toEqual([
+      'https://app.example',
+    ]);
+  });
+});
+
+describe('CORS with an awkwardly written origin', () => {
+  // The whole point of the normalising: this is the config people actually
+  // write, pasted straight out of a browser.
+  it('accepts a request whose allowed entry was written with a trailing slash', async () => {
+    const response = await handleRequest(
+      new Request('https://api.example/api/health', {
+        headers: { Origin: 'https://app.example' },
+      }),
+      { ...(env as unknown as Env), ALLOWED_ORIGINS: 'https://app.example/' },
+      fakeVerifier as TokenVerifier,
+      NOW,
+    );
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://app.example');
+  });
+
+  // Echoed back exactly as sent, not as configured — the header has to match
+  // the request's own origin.
+  it('echoes the origin the browser sent, not the configured spelling', async () => {
+    const response = await handleRequest(
+      new Request('https://api.example/api/health', {
+        headers: { Origin: 'https://App.Example' },
+      }),
+      { ...(env as unknown as Env), ALLOWED_ORIGINS: 'https://app.example' },
+      fakeVerifier as TokenVerifier,
+      NOW,
+    );
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://App.Example');
+  });
+
+  it('still refuses an origin that is genuinely not on the list', async () => {
+    const response = await handleRequest(
+      new Request('https://api.example/api/health', {
+        headers: { Origin: 'https://evil.example' },
+      }),
+      { ...(env as unknown as Env), ALLOWED_ORIGINS: 'https://app.example/' },
+      fakeVerifier as TokenVerifier,
+      NOW,
+    );
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBeNull();
+  });
 });
 
 describe('CORS', () => {
