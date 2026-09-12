@@ -27,6 +27,8 @@ export {
 export {
   buildCompletionsFileContents,
   countUncommittedChanges,
+  rekeyCompletionsForExport,
+  selectCommittedEnrollmentForJourney,
   sortCompletionsForExport,
 } from './journey-export';
 export {

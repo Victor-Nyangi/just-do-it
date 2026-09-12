@@ -9,7 +9,7 @@ import { JourneyBooksPage } from './journey-books-page';
 // Day one, midday. The page reads `new Date()` to decide which session counts
 // as next, so the clock has to be pinned. The fixture has one technical session
 // done — day one's, which rotated onto Micro Frontends in Action.
-const pinnedNow = new Date(2026, 8, 11, 12, 0, 0);
+const pinnedNow = new Date(2026, 8, 12, 12, 0, 0);
 const ENROLLMENT_ID = 'enrollment-discipline';
 
 function renderBooks(enrollmentId = ENROLLMENT_ID) {
@@ -94,7 +94,7 @@ describe('JourneyBooksPage — the two tracks', () => {
   it('omits a track the journey has no books for', () => {
     const enrollmentId = useJourneyStore
       .getState()
-      .enrollInJourney('deep-work-reset', '2026-09-11');
+      .enrollInJourney('deep-work-reset', '2026-09-12');
 
     if (!enrollmentId) throw new Error('Expected an enrollment');
 

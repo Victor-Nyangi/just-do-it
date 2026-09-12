@@ -59,7 +59,7 @@ describe('the journey fixtures', () => {
 
     expect(enrollment).toMatchObject({
       journeyId: 'hundred-day-discipline',
-      startDate: '2026-09-11',
+      startDate: '2026-09-12',
     });
     expect(getInitialJourneys()[0]).not.toHaveProperty('startDate');
   });

@@ -14,7 +14,7 @@ import { JourneyDayPage } from './journey-day-page';
 //
 // Day one carries five activities, two of which the fixture has already
 // completed: the walk and the technical reading.
-const pinnedNow = new Date(2026, 8, 11, 12, 0, 0);
+const pinnedNow = new Date(2026, 8, 12, 12, 0, 0);
 const ENROLLMENT_ID = 'enrollment-discipline';
 
 // The route takes a dynamic segment, so it has to be mounted through
@@ -54,7 +54,7 @@ describe('JourneyDayPage — the day', () => {
   it('names the date in full', () => {
     renderDay();
 
-    expect(screen.getByText('Friday, 11 September 2026')).toBeInTheDocument();
+    expect(screen.getByText('Saturday, 12 September 2026')).toBeInTheDocument();
   });
 
   it('shows how much of the day is done', () => {
@@ -194,7 +194,7 @@ describe('JourneyDayPage — another journey entirely', () => {
   it('renders a journey with no physical work and one reading track', () => {
     const enrollmentId = useJourneyStore
       .getState()
-      .enrollInJourney('deep-work-reset', '2026-09-11');
+      .enrollInJourney('deep-work-reset', '2026-09-12');
 
     if (!enrollmentId) throw new Error('Expected an enrollment');
 
@@ -213,7 +213,7 @@ describe('JourneyDayPage — outside the window', () => {
     renderDay();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Day 1 of 100' })).toBeInTheDocument();
-    expect(screen.getByText(/opens on Friday, 11 September 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/opens on Saturday, 12 September 2026/)).toBeInTheDocument();
   });
 
   it('opens on the last day once the journey has closed', () => {
@@ -221,7 +221,7 @@ describe('JourneyDayPage — outside the window', () => {
     renderDay();
 
     expect(screen.getByRole('heading', { level: 1, name: 'Day 100 of 100' })).toBeInTheDocument();
-    expect(screen.getByText(/closed on Saturday, 19 December 2026/)).toBeInTheDocument();
+    expect(screen.getByText(/closed on Sunday, 20 December 2026/)).toBeInTheDocument();
   });
 
   // Reachable by editing the URL, and by leaving a journey while looking at it.

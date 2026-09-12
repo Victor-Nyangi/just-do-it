@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getInitialJourneyCompletions } from './journey-data';
+import { getInitialJourneyCompletions, getInitialJourneyEnrollments } from './journey-data';
 import {
   buildCompletionsFileContents,
   countUncommittedChanges,
+  rekeyCompletionsForExport,
+  selectCommittedEnrollmentForJourney,
   sortCompletionsForExport,
 } from './journey-export';
 import type { JourneyCompletion } from './types';
@@ -129,5 +131,104 @@ describe('countUncommittedChanges', () => {
 
   it('does not care what order the completions arrive in', () => {
     expect(countUncommittedChanges([...getInitialJourneyCompletions()].reverse())).toBe(0);
+  });
+});
+
+describe('selectCommittedEnrollmentForJourney', () => {
+  it('finds the enrollment the repo publishes a journey under', () => {
+    expect(selectCommittedEnrollmentForJourney('hundred-day-discipline')).toEqual(
+      getInitialJourneyEnrollments()[0],
+    );
+  });
+
+  // A journey someone started themselves has no committed run to paste over,
+  // and the card has to say so rather than emit a file that points nowhere.
+  it('finds nothing for a journey the repo does not publish a run of', () => {
+    expect(selectCommittedEnrollmentForJourney('deep-work-reset')).toBeUndefined();
+  });
+});
+
+describe('rekeyCompletionsForExport', () => {
+  // This is the guard on the whole publish loop. Signed in, the store holds the
+  // server's enrollment id; exporting that as-is writes a file whose completions
+  // point at an enrollment `journey-data.ts` has never seen, and it throws at
+  // module load rather than at render — so the paste white-screens the app.
+  it('moves a live run onto the committed enrollment id', () => {
+    const rekeyed = rekeyCompletionsForExport(
+      [completion(1, 'day-1-walk-1km', 'server-generated-uuid')],
+      'server-generated-uuid',
+      'enrollment-discipline',
+    );
+
+    expect(rekeyed).toEqual([
+      {
+        id: 'enrollment-discipline:1:day-1-walk-1km',
+        enrollmentId: 'enrollment-discipline',
+        dayIndex: 1,
+        activityId: 'day-1-walk-1km',
+        completedAt: '2026-09-12T09:00:00.000Z',
+      },
+    ]);
+  });
+
+  // A second journey running alongside has its own days and its own activity
+  // ids, and no committed enrollment to hang them off.
+  it('leaves every other enrollment out', () => {
+    const rekeyed = rekeyCompletionsForExport(
+      [
+        completion(1, 'day-1-walk-1km', 'live'),
+        completion(1, 'day-1-reflection', 'another-journey-run'),
+      ],
+      'live',
+      'enrollment-discipline',
+    );
+
+    expect(rekeyed.map((entry) => entry.activityId)).toEqual(['day-1-walk-1km']);
+  });
+
+  it('is a no-op on a run that already carries the committed id', () => {
+    const committed = getInitialJourneyCompletions();
+
+    expect(
+      rekeyCompletionsForExport(committed, 'enrollment-discipline', 'enrollment-discipline'),
+    ).toEqual(committed);
+  });
+
+  // Which is what makes the whole round trip safe: re-key, then export, and the
+  // committed file comes back byte-identical when nothing was ticked.
+  it('round-trips a live run back to the committed file contents', () => {
+    const live = getInitialJourneyCompletions().map((entry) => ({
+      ...entry,
+      id: `live:${entry.dayIndex}:${entry.activityId}`,
+      enrollmentId: 'live',
+    }));
+
+    expect(
+      buildCompletionsFileContents(
+        rekeyCompletionsForExport(live, 'live', 'enrollment-discipline'),
+      ),
+    ).toBe(buildCompletionsFileContents(getInitialJourneyCompletions()));
+  });
+});
+
+describe('countUncommittedChanges scoped to an enrollment', () => {
+  // Without the scope, a second journey started locally reads as a pile of
+  // changes to commit even though the repo publishes no run of it.
+  it('ignores completions belonging to another enrollment', () => {
+    expect(
+      countUncommittedChanges(
+        [...getInitialJourneyCompletions(), completion(1, 'day-1-reflection', 'another-run')],
+        'enrollment-discipline',
+      ),
+    ).toBe(0);
+  });
+
+  it('still counts both directions within the enrollment', () => {
+    expect(
+      countUncommittedChanges(
+        [...getInitialJourneyCompletions().slice(1), completion(2, 'day-2-reflection')],
+        'enrollment-discipline',
+      ),
+    ).toBe(2);
   });
 });

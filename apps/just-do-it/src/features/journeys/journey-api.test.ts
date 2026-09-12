@@ -29,7 +29,7 @@ describe('getJourneyDay — GET /api/enrollments/[id]/day/[dayIndex]', () => {
       enrollmentId: ENROLLMENT_ID,
       journeyId: 'hundred-day-discipline',
       dayIndex: 1,
-      date: '2026-09-11',
+      date: '2026-09-12',
       completedCount: 2,
       activityCount: 5,
       complete: false,
@@ -61,7 +61,7 @@ describe('getJourneyDay — GET /api/enrollments/[id]/day/[dayIndex]', () => {
   it('bounds a shorter journey by its own length', () => {
     const enrollmentId = useJourneyStore
       .getState()
-      .enrollInJourney('deep-work-reset', '2026-09-11');
+      .enrollInJourney('deep-work-reset', '2026-09-12');
 
     if (!enrollmentId) throw new Error('Expected an enrollment');
 
@@ -105,7 +105,7 @@ describe('completeJourneyActivity — POST /api/enrollments/[id]/day/[dayIndex]/
 
 describe('getJourneyStats — GET /api/enrollments/[id]/stats', () => {
   it('returns the streak, the total done, and the activity count', () => {
-    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 11, 12))).toMatchObject({
+    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 12, 12))).toMatchObject({
       currentDayIndex: 1,
       currentStreak: 0,
       completedActivityCount: 2,
@@ -116,7 +116,7 @@ describe('getJourneyStats — GET /api/enrollments/[id]/stats', () => {
   it('moves once an activity is completed through the API', () => {
     completeJourneyActivity(ENROLLMENT_ID, 2, 'day-2-reflection');
 
-    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 12, 12))?.completedActivityCount).toBe(
+    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 13, 12))?.completedActivityCount).toBe(
       3,
     );
   });
@@ -130,7 +130,7 @@ describe('getJourneyStats — GET /api/enrollments/[id]/stats', () => {
       }
     }
 
-    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 11, 12))).toMatchObject({
+    expect(getJourneyStats(ENROLLMENT_ID, new Date(2026, 8, 12, 12))).toMatchObject({
       currentStreak: 1,
       completedDayCount: 1,
     });

@@ -2,27 +2,61 @@ import { Check, Copy, RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 
 import { Badge, Button, Card } from '@just-do-it/ui';
-import { buildCompletionsFileContents, countUncommittedChanges } from '../journey-export';
+import {
+  buildCompletionsFileContents,
+  countUncommittedChanges,
+  rekeyCompletionsForExport,
+  selectCommittedEnrollmentForJourney,
+} from '../journey-export';
 import { useJourneyCompletions, useResetJourneysToCommitted } from '../hooks';
+import type { JourneyEnrollment } from '../types';
 
 const COMPLETIONS_FILE_PATH = 'apps/just-do-it/src/data/journey-completions.json';
 
-export function JourneyExportCard() {
+export function JourneyExportCard({ enrollment }: { enrollment: JourneyEnrollment }) {
   const completions = useJourneyCompletions();
   const resetToCommitted = useResetJourneysToCommitted();
   const [copied, setCopied] = useState(false);
 
-  const uncommittedCount = countUncommittedChanges(completions);
+  // The run on screen and the run the repo publishes are two different rows
+  // with two different ids — see `rekeyCompletionsForExport`. Everything below
+  // is computed against the committed identity, so what the badge counts and
+  // what the button copies are the same thing.
+  const committedEnrollment = selectCommittedEnrollmentForJourney(enrollment.journeyId);
+  const exportableCompletions = committedEnrollment
+    ? rekeyCompletionsForExport(completions, enrollment.id, committedEnrollment.id)
+    : [];
+  const uncommittedCount = committedEnrollment
+    ? countUncommittedChanges(exportableCompletions, committedEnrollment.id)
+    : 0;
+  const startDateDiffers =
+    committedEnrollment !== undefined && committedEnrollment.startDate !== enrollment.startDate;
 
   async function copyFileContents() {
     try {
-      await navigator.clipboard.writeText(buildCompletionsFileContents(completions));
+      await navigator.clipboard.writeText(buildCompletionsFileContents(exportableCompletions));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch {
       // A denied clipboard permission is not worth an error state; the reset
       // and the explanation below still work.
     }
+  }
+
+  // A journey with no committed enrollment is someone's own run rather than the
+  // published one. There is nothing to paste it over, and inventing an
+  // enrollment row for it is a different feature.
+  if (!committedEnrollment) {
+    return (
+      <Card className="space-y-2" variant="subtle">
+        <h2 className="font-bold">Publish today&rsquo;s progress</h2>
+        <p className="max-w-xl text-sm text-[var(--muted-foreground)]">
+          This run is yours alone — the repository publishes only the seeded journeys, so there is
+          no committed record for it to update. Ticks are still saved in this browser, and synced to
+          your account when you are signed in.
+        </p>
+      </Card>
+    );
   }
 
   return (
@@ -46,6 +80,15 @@ export function JourneyExportCard() {
           </Badge>
         )}
       </div>
+
+      {startDateDiffers ? (
+        <p className="text-sm text-[var(--warning)]">
+          This run started on {enrollment.startDate}, but the published record starts on{' '}
+          {committedEnrollment.startDate}. Days are copied across by number, so day one here becomes
+          day one there — set the two to the same date if you want them to mean the same calendar
+          day.
+        </p>
+      ) : null}
 
       <div className="flex flex-wrap gap-2">
         <Button

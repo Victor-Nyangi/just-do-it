@@ -204,7 +204,7 @@ export function JourneyStreakPage() {
       </section>
 
       <section className="mt-8">
-        <JourneyExportCard />
+        <JourneyExportCard enrollment={enrollment} />
       </section>
 
       <section aria-labelledby="journey-breakdown-heading" className="mt-8 space-y-4">

@@ -32,7 +32,7 @@ function bookIdForCategory(dayIndex: number, category: string): string | undefin
 describe('day index and date mapping', () => {
   it('puts day one on the enrollment start date', () => {
     expect(getDateKeyForDayIndex(discipline, enrollment, 1)).toBe(enrollment.startDate);
-    expect(getEndDateKey(discipline, enrollment)).toBe('2026-12-19');
+    expect(getEndDateKey(discipline, enrollment)).toBe('2026-12-20');
   });
 
   // The same journey started on a different date is a different set of dates
@@ -53,14 +53,14 @@ describe('day index and date mapping', () => {
   });
 
   it('maps a date back to its day index', () => {
-    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 11, 12))).toBe(1);
-    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 20, 12))).toBe(10);
-    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 11, 19, 12))).toBe(100);
+    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 12, 12))).toBe(1);
+    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 21, 12))).toBe(10);
+    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 11, 20, 12))).toBe(100);
   });
 
   it('has no day index outside the window', () => {
-    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 10, 12))).toBeNull();
-    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 11, 20, 12))).toBeNull();
+    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 8, 11, 12))).toBeNull();
+    expect(getDayIndexForDate(discipline, enrollment, new Date(2026, 11, 21, 12))).toBeNull();
     expect(getCurrentDayIndex(discipline, enrollment, new Date(2025, 0, 1, 12))).toBeNull();
   });
 

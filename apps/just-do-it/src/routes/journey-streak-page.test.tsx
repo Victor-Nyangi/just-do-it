@@ -4,13 +4,18 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDayPlan, useJourneyStore } from '../features/journeys';
+import {
+  buildCompletionsFileContents,
+  buildDayPlan,
+  getInitialJourneyCompletions,
+  useJourneyStore,
+} from '../features/journeys';
 import { JourneyStreakPage } from './journey-streak-page';
 
 // Midday on day five. Far enough in that there are finished days behind, a day
 // in hand, and ninety-five ahead — which is what makes every dot state
 // reachable in one render.
-const pinnedNow = new Date(2026, 8, 15, 12, 0, 0);
+const pinnedNow = new Date(2026, 8, 16, 12, 0, 0);
 const ENROLLMENT_ID = 'enrollment-discipline';
 
 function renderStreak(enrollmentId = ENROLLMENT_ID) {
@@ -114,13 +119,13 @@ describe('JourneyStreakPage — the activity map', () => {
     renderStreak();
 
     expect(
-      screen.getByRole('listitem', { name: 'Day 1, 11 Sep 2026 — complete' }),
+      screen.getByRole('listitem', { name: 'Day 1, 12 Sep 2026 — complete' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('listitem', { name: 'Day 2, 12 Sep 2026 — missed' }),
+      screen.getByRole('listitem', { name: 'Day 2, 13 Sep 2026 — missed' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('listitem', { name: 'Day 40, 20 Oct 2026 — upcoming' }),
+      screen.getByRole('listitem', { name: 'Day 40, 21 Oct 2026 — upcoming' }),
     ).toBeInTheDocument();
   });
 
@@ -130,10 +135,10 @@ describe('JourneyStreakPage — the activity map', () => {
     renderStreak();
 
     expect(
-      screen.getByRole('listitem', { name: 'Day 5, 15 Sep 2026 — in progress, nothing done yet' }),
+      screen.getByRole('listitem', { name: 'Day 5, 16 Sep 2026 — in progress, nothing done yet' }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('listitem', { name: 'Day 4, 14 Sep 2026 — missed' }),
+      screen.getByRole('listitem', { name: 'Day 4, 15 Sep 2026 — missed' }),
     ).toBeInTheDocument();
   });
 
@@ -142,14 +147,14 @@ describe('JourneyStreakPage — the activity map', () => {
     renderStreak();
 
     expect(
-      screen.getByRole('listitem', { name: 'Day 2, 12 Sep 2026 — 1 of 5 done' }),
+      screen.getByRole('listitem', { name: 'Day 2, 13 Sep 2026 — 1 of 5 done' }),
     ).toBeInTheDocument();
   });
 
   it('draws a shorter journey to its own length', () => {
     const enrollmentId = useJourneyStore
       .getState()
-      .enrollInJourney('deep-work-reset', '2026-09-11');
+      .enrollInJourney('deep-work-reset', '2026-09-12');
 
     if (!enrollmentId) throw new Error('Expected an enrollment');
 
@@ -200,7 +205,7 @@ describe('JourneyStreakPage — the breakdown', () => {
   it('omits a category the journey never schedules', () => {
     const enrollmentId = useJourneyStore
       .getState()
-      .enrollInJourney('deep-work-reset', '2026-09-11');
+      .enrollInJourney('deep-work-reset', '2026-09-12');
 
     if (!enrollmentId) throw new Error('Expected an enrollment');
 
@@ -273,6 +278,68 @@ describe('JourneyStreakPage — publishing progress', () => {
     await user.click(screen.getByRole('button', { name: /Copy file contents/ }));
 
     expect(screen.getByRole('button', { name: /Copied/ })).toBeInTheDocument();
+  });
+
+  // Signed in, the store holds D1's rows and D1 owns the enrollment id, so the
+  // run on screen is not `enrollment-discipline`. Exporting those rows verbatim
+  // would write completions pointing at an enrollment the repo has never heard
+  // of, and `journey-data.ts` throws on that at module load — the paste would
+  // white-screen the deployed app rather than fail a test.
+  it('publishes a server-owned run under the committed enrollment id', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    const serverEnrollment = {
+      id: 'c2f0e6a4-0000-4000-8000-000000000000',
+      journeyId: 'hundred-day-discipline',
+      startDate: '2026-09-12',
+      createdAt: '2026-09-12T06:00:00.000Z',
+    };
+
+    useJourneyStore.getState().adoptServerState(
+      [serverEnrollment],
+      getInitialJourneyCompletions().map((entry) => ({
+        ...entry,
+        id: `${serverEnrollment.id}:${entry.dayIndex}:${entry.activityId}`,
+        enrollmentId: serverEnrollment.id,
+      })),
+    );
+    renderStreak(serverEnrollment.id);
+
+    expect(screen.getByText('Matches the repo')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /Copy file contents/ }));
+
+    expect(await navigator.clipboard.readText()).toBe(
+      buildCompletionsFileContents(getInitialJourneyCompletions()),
+    );
+  });
+
+  // Day numbers are what cross over, so a run that began on another date would
+  // publish its day one as the repo's day one — a different calendar day.
+  it('warns when the run and the published record start on different dates', () => {
+    const enrollmentId = useJourneyStore
+      .getState()
+      .enrollInJourney('hundred-day-discipline', '2026-10-01');
+
+    if (!enrollmentId) throw new Error('Expected an enrollment');
+
+    renderStreak(enrollmentId);
+
+    expect(screen.getByText(/started on 2026-10-01/)).toBeInTheDocument();
+    expect(screen.getByText(/published record starts on 2026-09-12/)).toBeInTheDocument();
+  });
+
+  // A journey the repo publishes no run of has nothing to paste over.
+  it('offers no export for a run the repository does not publish', () => {
+    const enrollmentId = useJourneyStore
+      .getState()
+      .enrollInJourney('deep-work-reset', '2026-09-12');
+
+    if (!enrollmentId) throw new Error('Expected an enrollment');
+
+    renderStreak(enrollmentId);
+
+    expect(screen.queryByRole('button', { name: /Copy file contents/ })).not.toBeInTheDocument();
+    expect(screen.getByText(/This run is yours alone/)).toBeInTheDocument();
   });
 
   it('resets back to the committed record', async () => {
