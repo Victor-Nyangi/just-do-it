@@ -3,9 +3,16 @@ import type { Env } from './types';
 // One list, two jobs: which origins a browser may call this Worker from, and
 // which origins a Clerk token may have been minted for. They are the same set,
 // so they are parsed in one place rather than drifting apart.
+//
+// Trailing slashes are stripped because an `Origin` header never has one, while
+// the URL a person copies out of a browser bar always does. Left as an exact
+// match, `https://example.app/` in the config silently matches nothing, and the
+// failure surfaces as an opaque CORS error plus a rejected token — two symptoms,
+// no clue. Case is normalised for the same reason: the scheme and host of an
+// origin are case-insensitive, but a string compare is not.
 export function parseAllowedOrigins(env: Env): string[] {
   return env.ALLOWED_ORIGINS.split(',')
-    .map((origin) => origin.trim())
+    .map((origin) => origin.trim().replace(/\/+$/, '').toLowerCase())
     .filter(Boolean);
 }
 
@@ -15,7 +22,11 @@ export function parseAllowedOrigins(env: Env): string[] {
 export function resolveAllowedOrigin(env: Env, requestOrigin: string | null): string | null {
   if (!requestOrigin) return null;
 
-  return parseAllowedOrigins(env).includes(requestOrigin) ? requestOrigin : null;
+  // Compared normalised, but echoed back exactly as the browser sent it —
+  // `Access-Control-Allow-Origin` has to match the request's own origin.
+  const normalized = requestOrigin.trim().replace(/\/+$/, '').toLowerCase();
+
+  return parseAllowedOrigins(env).includes(normalized) ? requestOrigin : null;
 }
 
 export function corsHeaders(allowedOrigin: string | null): Record<string, string> {
