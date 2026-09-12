@@ -34,11 +34,22 @@ All require `Authorization: Bearer <clerk session token>` except `/api/health`.
 `db.ts` filters on it. A signed-in user cannot reach another user's enrollment by guessing its id;
 that returns 404 rather than 403, so the response does not confirm the row exists.
 
-## Tests
+## Commands
+
+Run these from the repo root, or anywhere inside it — `--filter` resolves by package name.
 
 ```sh
 pnpm --filter @just-do-it/api test
+pnpm --filter @just-do-it/api dev             # local Worker + local D1
+pnpm --filter @just-do-it/api db:migrate      # apply migrations to the real database
+pnpm --filter @just-do-it/api run deploy      # `run` is required — see below
 ```
+
+`deploy` is the one script that needs an explicit `run`: `pnpm deploy` is a built-in pnpm command
+(deploy a workspace package to a target directory), so the bare form fails with
+`ERR_PNPM_INVALID_DEPLOY_TARGET` rather than reaching wrangler.
+
+## Tests
 
 They run inside workerd against a real in-memory D1, applying the real migration files — so SQL
 that Cloudflare would reject fails here rather than on first deploy. The Clerk verifier is
