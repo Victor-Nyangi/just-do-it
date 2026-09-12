@@ -44,6 +44,40 @@ pnpm --filter @just-do-it/api db:migrate:local    # local, for `wrangler dev`
 
 ---
 
+### Doing it from the dashboard instead
+
+The Worker **cannot be created from the dashboard's editor** — that editor takes a single file with
+no build step, and `apps/api` is several TypeScript modules with npm dependencies that need
+bundling. Two things do work.
+
+**Hybrid (simplest).** Use the dashboard for what it is good at and `wrangler deploy` for the
+deploy:
+
+| Where                                                                   | What                                                                                         |
+| ----------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Storage & Databases → D1 → Create database**                          | Create `just-do-it`; copy its **Database ID** into `wrangler.toml`                           |
+| `pnpm --filter @just-do-it/api deploy`                                  | This is what _creates_ the Worker — it does not exist in the dashboard until you deploy once |
+| **Workers & Pages → just-do-it-api → Settings → Variables and Secrets** | Add `CLERK_SECRET_KEY` as a **Secret**, not a plaintext variable                             |
+| **Workers & Pages → just-do-it-api → Logs**                             | Real-time logs. The fastest way to tell a bad token from a bad binding                       |
+| **D1 → just-do-it → Console**                                           | Run SQL directly. `SELECT * FROM completions;` confirms a tick actually landed               |
+
+**Fully dashboard, via Workers Builds.** **Workers & Pages → Create → Workers → Import a
+repository** connects the GitHub repo and builds on push. For this monorepo set the root directory
+to `apps/api` and a deploy command like `npx wrangler deploy`. Untested against this repo, and
+pnpm workspaces are the awkward case — install resolves from the repo root while the deploy runs
+in `apps/api`. If it fights you, the hybrid path is shorter.
+
+> **Do not set `ALLOWED_ORIGINS` in the dashboard.** Plain-text variables set there are wiped by
+> the next `wrangler deploy`, because the Wrangler config is treated as the source of truth. Edit
+> it in `wrangler.toml` and redeploy.
+>
+> **Secrets are different and safe to set in the dashboard.** `wrangler deploy` never deletes
+> them — only `wrangler secret delete` does, and `wrangler secret put` overwrites. So a
+> dashboard-set secret plus CLI deploys is a fine combination.
+>
+> There is a `keep_vars = true` escape hatch for the first problem. Do not use it here: it would
+> mean the committed `ALLOWED_ORIGINS` silently stops taking effect, which is the worse failure.
+
 ## 2. Clerk — create the application
 
 Clerk shipped an official CLI in April 2026, so this step does not have to be done in the
@@ -275,6 +309,8 @@ it — Vite inlines these, so redeploy.
 
 ## Things that will bite
 
+- **Setting `ALLOWED_ORIGINS` in the Cloudflare dashboard.** The next `wrangler deploy` wipes it.
+  Plaintext variables live in `wrangler.toml`; only secrets belong in the dashboard.
 - **Using `pk_live_` on a `*.vercel.app` URL.** It cannot work — production instances need DNS
   records on a domain you control. Use the development instance until you have a custom domain.
 - **A secret key in the browser.** `pk_` is publishable and belongs in the frontend; `sk_` is a
