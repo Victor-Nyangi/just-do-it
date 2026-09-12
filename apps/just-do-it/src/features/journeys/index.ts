@@ -62,6 +62,7 @@ export {
   selectJourneyStats,
 } from './journey-selectors';
 export { toCompletionId, useJourneyStore } from './journey-store';
+export type { JourneyStoreState } from './journey-store';
 export {
   useCreateJourney,
   useJourneyById,

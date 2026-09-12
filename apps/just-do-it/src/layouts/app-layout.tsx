@@ -19,6 +19,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { Button, cn } from '@just-do-it/ui';
 import { SignInControl } from '../features/auth';
 import { CommandPalette } from '../features/command-palette';
+import { JourneySync } from '../features/sync';
 
 const navigation = [
   { label: 'Today', to: '/today', icon: LayoutDashboard },
@@ -100,50 +101,52 @@ export function AppLayout() {
   );
 
   return (
-    <div className="min-h-screen bg-[var(--background)]">
-      <div className="fixed inset-y-0 left-0 hidden lg:block">{sidebar}</div>
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <button
-            aria-label="Close navigation"
-            className="absolute inset-0 bg-[var(--overlay)]"
-            onClick={() => setMobileNavOpen(false)}
-          />
-          {/* Only as wide as the sidebar itself. As a full-width block this sat
+    <JourneySync>
+      <div className="min-h-screen bg-[var(--background)]">
+        <div className="fixed inset-y-0 left-0 hidden lg:block">{sidebar}</div>
+        {mobileNavOpen && (
+          <div className="fixed inset-0 z-50 lg:hidden">
+            <button
+              aria-label="Close navigation"
+              className="absolute inset-0 bg-[var(--overlay)]"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            {/* Only as wide as the sidebar itself. As a full-width block this sat
               above the overlay button in paint order and swallowed every click
               meant to dismiss the drawer. */}
-          <div className="relative h-full w-72">{sidebar}</div>
-        </div>
-      )}
-      <main className="lg:pl-72">
-        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/90 px-4 backdrop-blur sm:px-8">
-          <Button
-            aria-label="Open navigation"
-            className="lg:hidden"
-            onClick={() => setMobileNavOpen(true)}
-            variant="ghost"
-          >
-            <Menu aria-hidden="true" className="size-5" />
-          </Button>
-          <div className="hidden lg:block" />
-          <div className="flex items-center gap-2">
+            <div className="relative h-full w-72">{sidebar}</div>
+          </div>
+        )}
+        <main className="lg:pl-72">
+          <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b border-[var(--border)] bg-[var(--background)]/90 px-4 backdrop-blur sm:px-8">
             <Button
-              aria-label={darkMode ? 'Use light theme' : 'Use dark theme'}
-              onClick={() => setDarkMode((current) => !current)}
+              aria-label="Open navigation"
+              className="lg:hidden"
+              onClick={() => setMobileNavOpen(true)}
               variant="ghost"
             >
-              {darkMode ? (
-                <Sun aria-hidden="true" className="size-5" />
-              ) : (
-                <Moon aria-hidden="true" className="size-5" />
-              )}
+              <Menu aria-hidden="true" className="size-5" />
             </Button>
-            <SignInControl />
-          </div>
-        </header>
-        <Outlet />
-      </main>
-      <CommandPalette onToggleTheme={() => setDarkMode((current) => !current)} />
-    </div>
+            <div className="hidden lg:block" />
+            <div className="flex items-center gap-2">
+              <Button
+                aria-label={darkMode ? 'Use light theme' : 'Use dark theme'}
+                onClick={() => setDarkMode((current) => !current)}
+                variant="ghost"
+              >
+                {darkMode ? (
+                  <Sun aria-hidden="true" className="size-5" />
+                ) : (
+                  <Moon aria-hidden="true" className="size-5" />
+                )}
+              </Button>
+              <SignInControl />
+            </div>
+          </header>
+          <Outlet />
+        </main>
+        <CommandPalette onToggleTheme={() => setDarkMode((current) => !current)} />
+      </div>
+    </JourneySync>
   );
 }
