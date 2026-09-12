@@ -52,6 +52,35 @@ pnpm --filter @just-do-it/api db:migrate:local    # local, for `wrangler dev`
    - **Publishable key** (`pk_test_…` / `pk_live_…`) — safe in the browser, goes to Vercel.
    - **Secret key** (`sk_test_…` / `sk_live_…`) — **never** in the browser or in git.
 
+### Development instance or production instance?
+
+This is the one Clerk decision that is not obvious, and getting it wrong wastes an afternoon.
+
+Clerk gives every application two separate instances. They do **not** share user data, so an
+account created on one does not exist on the other.
+
+|                   | Development (`pk_test_`)                                     | Production (`pk_live_`)                           |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------------- |
+| Runs on           | localhost **and** a host-provided domain like `*.vercel.app` | Only a domain you control                         |
+| Domain setup      | None                                                         | Add the domain in Clerk, then add its DNS records |
+| OAuth credentials | Clerk's shared ones                                          | Your own, per provider                            |
+| User cap          | 100                                                          | Your plan's limit                                 |
+
+**While the app lives on `*.vercel.app`, use the development instance.** A production instance
+cannot run there: Clerk verifies authentication requests through DNS records on your domain, and
+you cannot add DNS records to `vercel.app`. This is a documented limitation, not a misconfiguration
+to debug.
+
+For a personal tracker that is completely fine — the 100-user cap is 99 more than you need, and
+shared OAuth credentials only matter when other people sign in. The visible cost is a
+development-mode indicator from Clerk.
+
+**When you want `pk_live_`,** you need a custom domain first: point e.g. `journey.yourdomain.com`
+at Vercel, add it in Clerk's **Domains** page, and add the DNS records it gives you. Worth doing
+eventually for a portfolio piece, but it is a separate errand and nothing here depends on it.
+Remember that your development-instance account will not carry over — with one user, that is one
+more sign-in, not a migration.
+
 Hand the secret key to the Worker:
 
 ```sh
@@ -102,6 +131,12 @@ your real data is rarely what you want.
 
 If a request fails in the browser with an opaque CORS or "network" error and `/api/health` works
 from curl, this list is the first thing to check.
+
+**This list does double duty.** It is also passed to Clerk as `authorizedParties`, which checks
+that a token was minted for one of your origins — without it, a token issued for your app can be
+replayed from another site on the same device. So an origin missing here fails twice: CORS blocks
+the call, and the token would be rejected even if it did not. Add a deploy origin once and both
+are covered.
 
 ---
 
@@ -157,6 +192,8 @@ VITE_API_URL=http://localhost:8787
 
 ## Things that will bite
 
+- **Using `pk_live_` on a `*.vercel.app` URL.** It cannot work — production instances need DNS
+  records on a domain you control. Use the development instance until you have a custom domain.
 - **A secret key in the browser.** `pk_` is publishable and belongs in the frontend; `sk_` is a
   full-access credential. If an `sk_` value ever reaches a `VITE_` variable or a commit, rotate
   it in the Clerk dashboard immediately — anything in a client bundle on a public site is public,
