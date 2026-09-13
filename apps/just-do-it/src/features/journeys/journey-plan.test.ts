@@ -11,6 +11,7 @@ import {
   getEndDateKey,
   isValidDayIndex,
   selectBooksForTrack,
+  selectPhysicalLevelIndex,
 } from './journey-plan';
 import type { JourneyEnrollment } from './types';
 
@@ -110,35 +111,58 @@ describe('buildDayPlan — determinism', () => {
   });
 });
 
-describe('buildDayPlan — physical rotation', () => {
-  it('gives day one the first rotation entry', () => {
-    expect(planFor(1).activities.map((activity) => activity.id)).toEqual([
-      'day-1-walk-1km',
-      'day-1-push-ups-50',
-      'day-1-technical-reading',
-      'day-1-growth-reading',
-      'day-1-reflection',
-    ]);
+function physicalSlugs(dayIndex: number): string[] {
+  return planFor(dayIndex)
+    .activities.filter((activity) => activity.category === 'physical')
+    .map((activity) => activity.id.replace(`day-${dayIndex}-`, ''));
+}
+
+function movementById(activityId: string) {
+  const movement = discipline.physicalActivities.find((entry) => entry.id === activityId);
+  if (!movement) throw new Error(`Expected a movement called ${activityId}`);
+
+  return movement;
+}
+
+describe('buildDayPlan — physical work', () => {
+  // One from each track every day, which is the guard on the whole point of the
+  // split: a hundred days of movement rather than a hundred hard workouts.
+  it('draws exactly one movement from each track', () => {
+    for (const dayIndex of [1, 2, 17, 58, 100]) {
+      const tracks = physicalSlugs(dayIndex).map((slug) => movementById(slug).track);
+
+      expect(tracks.toSorted()).toEqual(['easy', 'main']);
+    }
   });
 
-  it('repeats the physical rotation every seven days', () => {
-    const physicalSlugs = (dayIndex: number) =>
-      planFor(dayIndex)
-        .activities.filter((activity) => activity.category === 'physical')
-        .map((activity) => activity.id.replace(`day-${dayIndex}-`, ''));
-
-    expect(physicalSlugs(8)).toEqual(physicalSlugs(1));
-    expect(physicalSlugs(15)).toEqual(physicalSlugs(1));
-    expect(physicalSlugs(9)).toEqual(physicalSlugs(2));
+  // The whole reason the rotation went: seven entries repeated fourteen times
+  // over a hundred days, however many movements the journey defined.
+  it('does not repeat itself every seven days', () => {
+    expect(physicalSlugs(8)).not.toEqual(physicalSlugs(1));
+    expect(physicalSlugs(15)).not.toEqual(physicalSlugs(1));
   });
 
-  it('varies how much physical work a day carries', () => {
-    expect(planFor(4).activities.filter((a) => a.category === 'physical')).toHaveLength(1);
-    expect(planFor(5).activities.filter((a) => a.category === 'physical')).toHaveLength(3);
+  it('is deterministic, so the same day always deals the same movements', () => {
+    expect(physicalSlugs(42)).toEqual(physicalSlugs(42));
+    expect(buildDayPlan(discipline, enrollment, 42)).toEqual(
+      buildDayPlan(discipline, enrollment, 42),
+    );
   });
 
-  // An empty rotation would divide by zero in the modulo that picks the day's
-  // entry, so this is a guard rather than a preference.
+  // Every movement on a track comes up exactly once per pass through it, which
+  // is what keeps the load even rather than leaving a movement unused for a
+  // hundred days while another lands every third day.
+  it('deals every movement on a track once per pass', () => {
+    for (const track of ['main', 'easy'] as const) {
+      const trackMovements = discipline.physicalActivities.filter((entry) => entry.track === track);
+      const firstPass = Array.from({ length: trackMovements.length }, (_, index) =>
+        physicalSlugs(index + 1).find((slug) => movementById(slug).track === track),
+      );
+
+      expect(new Set(firstPass).size).toBe(trackMovements.length);
+    }
+  });
+
   it('schedules no physical work for a journey that defines none', () => {
     const deepWorkEnrollment: JourneyEnrollment = {
       ...enrollment,
@@ -149,6 +173,70 @@ describe('buildDayPlan — physical rotation', () => {
 
     expect(plan?.activities.some((activity) => activity.category === 'physical')).toBe(false);
     expect(plan?.activities).toHaveLength(2);
+  });
+});
+
+describe('buildDayPlan — levelling up', () => {
+  function levelFor(dayIndex: number, activityId: string): string | null {
+    const activity = planFor(dayIndex).activities.find(
+      (entry) => entry.id === `day-${dayIndex}-${activityId}`,
+    );
+
+    return activity?.label ?? null;
+  }
+
+  it('opens the journey on the first level of whatever it deals', () => {
+    for (const slug of physicalSlugs(1)) {
+      expect(levelFor(1, slug)).toBe(movementById(slug).levels[0].label);
+    }
+  });
+
+  it('closes the journey on the last level', () => {
+    for (const slug of physicalSlugs(100)) {
+      expect(levelFor(100, slug)).toBe(movementById(slug).levels.at(-1)?.label);
+    }
+  });
+
+  // The level comes from where the day sits in the hundred, never from which
+  // movement the shuffle dealt, so a movement asks for the same thing whenever
+  // it lands on a given day.
+  it('takes the level from the day rather than from the draw', () => {
+    const pushUps = movementById('push-ups');
+    const levelOn = (dayIndex: number) => selectPhysicalLevelIndex(pushUps, discipline, dayIndex);
+
+    expect(levelOn(1)).toBe(0);
+    expect(levelOn(100)).toBe(pushUps.levels.length - 1);
+    expect(levelOn(50)).toBeGreaterThan(levelOn(1));
+    expect(levelOn(50)).toBeLessThan(levelOn(100));
+  });
+
+  it('never steps backwards as the journey runs', () => {
+    const movement = movementById('squats');
+    let previous = 0;
+
+    for (let dayIndex = 1; dayIndex <= discipline.totalDays; dayIndex += 1) {
+      const level = selectPhysicalLevelIndex(movement, discipline, dayIndex);
+
+      expect(level).toBeGreaterThanOrEqual(previous);
+      previous = level;
+    }
+
+    expect(previous).toBe(movement.levels.length - 1);
+  });
+
+  // A single-level movement has nothing to advertise, so it is spared the
+  // "Level 1 of 1" noise.
+  it('names the level in the detail only when there is more than one', () => {
+    const single = {
+      ...movementById('squats'),
+      id: 'single',
+      levels: [{ label: 'One rung', detail: 'Only rung' }],
+    };
+    const journey = { ...discipline, physicalActivities: [single] };
+    const plan = buildDayPlan(journey, enrollment, 1);
+
+    expect(plan?.activities[0]).toMatchObject({ label: 'One rung', detail: 'Only rung' });
+    expect(planFor(1).activities[0].detail).toMatch(/^Level 1 of \d+ · /);
   });
 });
 

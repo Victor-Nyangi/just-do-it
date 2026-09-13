@@ -6,6 +6,7 @@ import journeyEnrollmentsFixture from '../../data/journey-enrollments.json';
 import journeysFixture from '../../data/journeys.json';
 import {
   JOURNEY_BOOK_TRACK_VALUES,
+  JOURNEY_PHYSICAL_TRACK_VALUES,
   type Journey,
   type JourneyCompletion,
   type JourneyEnrollment,
@@ -23,10 +24,18 @@ const journeyTimestampSchema = z
   .min(1)
   .refine((value) => !Number.isNaN(Date.parse(value)), 'Expected an ISO timestamp');
 
-const journeyPhysicalActivitySchema = z.object({
-  id: z.string().min(1),
+const journeyPhysicalLevelSchema = z.object({
   label: z.string().trim().min(1),
   detail: z.string().trim().min(1),
+});
+
+const journeyPhysicalActivitySchema = z.object({
+  id: z.string().min(1),
+  name: z.string().trim().min(1),
+  track: z.enum(JOURNEY_PHYSICAL_TRACK_VALUES),
+  // At least one: a movement with no levels would schedule a day that asks for
+  // nothing, which is the empty-day problem the refinements below exist to stop.
+  levels: z.array(journeyPhysicalLevelSchema).min(1),
 });
 
 export const journeyBookSchema = z.object({
@@ -50,20 +59,15 @@ export const journeySchema = z
     // on a track, simply schedules none. Only a journey that would produce an
     // entirely empty day is refused, below.
     physicalActivities: z.array(journeyPhysicalActivitySchema),
-    physicalRotation: z.array(z.array(z.string().min(1))),
     books: z.array(journeyBookSchema),
   })
   .refine(
-    (journey) => {
-      const knownActivityIds = new Set(journey.physicalActivities.map((activity) => activity.id));
-
-      return journey.physicalRotation.every((day) =>
-        day.every((activityId) => knownActivityIds.has(activityId)),
-      );
-    },
+    (journey) =>
+      new Set(journey.physicalActivities.map((activity) => activity.id)).size ===
+      journey.physicalActivities.length,
     {
-      message: 'physicalRotation references a physical activity that does not exist',
-      path: ['physicalRotation'],
+      message: 'Duplicate physical activity id',
+      path: ['physicalActivities'],
     },
   )
   // Without this a journey could define nothing at all, and every one of its
@@ -72,10 +76,10 @@ export const journeySchema = z
     (journey) =>
       journey.reflectionLineCount > 0 ||
       journey.books.length > 0 ||
-      journey.physicalRotation.some((day) => day.length > 0),
+      journey.physicalActivities.length > 0,
     {
       message: 'A journey must schedule something: physical work, reading, or a reflection',
-      path: ['physicalRotation'],
+      path: ['physicalActivities'],
     },
   )
   .refine(
@@ -181,8 +185,10 @@ for (const completion of validatedJourneyCompletionFixture) {
 export function cloneJourney(journey: Journey): Journey {
   return {
     ...journey,
-    physicalActivities: journey.physicalActivities.map((activity) => ({ ...activity })),
-    physicalRotation: journey.physicalRotation.map((day) => [...day]),
+    physicalActivities: journey.physicalActivities.map((activity) => ({
+      ...activity,
+      levels: activity.levels.map((level) => ({ ...level })),
+    })),
     books: journey.books.map((book) => ({ ...book })),
   };
 }

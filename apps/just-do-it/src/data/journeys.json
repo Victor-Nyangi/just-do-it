@@ -8,29 +8,416 @@
     "reflectionLineCount": 3,
     "physicalActivities": [
       {
-        "id": "walk-1km",
-        "label": "Walk 1 km",
-        "detail": "Outdoors, unhurried, no headphones"
+        "id": "push-ups",
+        "name": "Push-ups",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 push-ups",
+            "detail": "Break into manageable sets"
+          },
+          {
+            "label": "40 push-ups",
+            "detail": "Any split across the day"
+          },
+          {
+            "label": "50 push-ups",
+            "detail": "Any split across the day"
+          },
+          {
+            "label": "60 push-ups",
+            "detail": "Progress from smaller sets rather than forcing one set"
+          }
+        ]
       },
       {
-        "id": "push-ups-50",
-        "label": "50 push-ups",
-        "detail": "Any split across the day"
+        "id": "run",
+        "name": "Run",
+        "track": "main",
+        "levels": [
+          {
+            "label": "10 minute run",
+            "detail": "Steady effort, conversational pace"
+          },
+          {
+            "label": "15 minute run",
+            "detail": "Easy continuous run"
+          },
+          {
+            "label": "20 minute run",
+            "detail": "Comfortable steady effort"
+          },
+          {
+            "label": "25 minute run",
+            "detail": "Hold the same easy effort for longer"
+          }
+        ]
       },
       {
-        "id": "run-10min",
-        "label": "10 minute run",
-        "detail": "Steady effort, conversational pace"
+        "id": "squats",
+        "name": "Squats",
+        "track": "main",
+        "levels": [
+          {
+            "label": "40 bodyweight squats",
+            "detail": "Controlled reps, split into sets if needed"
+          },
+          {
+            "label": "60 bodyweight squats",
+            "detail": "Controlled depth and steady tempo"
+          },
+          {
+            "label": "30 goblet squats",
+            "detail": "Hold one 12 kg dumbbell close to your chest"
+          },
+          {
+            "label": "30 slow goblet squats",
+            "detail": "Same weight, three seconds down on every rep"
+          }
+        ]
+      },
+      {
+        "id": "reverse-lunges",
+        "name": "Reverse lunges",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 reverse lunges",
+            "detail": "15 per leg, controlled movement"
+          },
+          {
+            "label": "40 reverse lunges",
+            "detail": "20 per leg, controlled movement"
+          },
+          {
+            "label": "30 weighted reverse lunges",
+            "detail": "15 per leg holding a dumbbell at your side"
+          }
+        ]
+      },
+      {
+        "id": "glute-bridges",
+        "name": "Glute bridges",
+        "track": "main",
+        "levels": [
+          {
+            "label": "40 glute bridges",
+            "detail": "Pause briefly at the top of each rep"
+          },
+          {
+            "label": "60 glute bridges",
+            "detail": "Pause briefly at the top of each rep"
+          },
+          {
+            "label": "30 single-leg glute bridges",
+            "detail": "15 per leg, pause at the top"
+          }
+        ]
+      },
+      {
+        "id": "plank",
+        "name": "Plank",
+        "track": "main",
+        "levels": [
+          {
+            "label": "3 × 30 second planks",
+            "detail": "30 seconds work with comfortable breaks"
+          },
+          {
+            "label": "60 second plank",
+            "detail": "Keep your body steady and stop if your form breaks"
+          },
+          {
+            "label": "90 second plank",
+            "detail": "Stop the moment your hips drop rather than pushing through"
+          }
+        ]
+      },
+      {
+        "id": "db-rows",
+        "name": "Dumbbell rows",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 dumbbell rows",
+            "detail": "15 per side using your 12 kg dumbbell"
+          },
+          {
+            "label": "40 dumbbell rows",
+            "detail": "20 per side using controlled reps"
+          },
+          {
+            "label": "40 slow dumbbell rows",
+            "detail": "20 per side with a pause at the top"
+          }
+        ]
+      },
+      {
+        "id": "db-floor-press",
+        "name": "Dumbbell floor press",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 dumbbell floor presses",
+            "detail": "Controlled reps using your dumbbells"
+          },
+          {
+            "label": "40 dumbbell floor presses",
+            "detail": "Controlled reps, split into sets"
+          },
+          {
+            "label": "40 slow dumbbell floor presses",
+            "detail": "Three seconds lowering on every rep"
+          }
+        ]
+      },
+      {
+        "id": "db-shoulder-press",
+        "name": "Dumbbell shoulder press",
+        "track": "main",
+        "levels": [
+          {
+            "label": "20 dumbbell shoulder presses",
+            "detail": "Use a manageable weight and keep the movement controlled"
+          },
+          {
+            "label": "30 dumbbell shoulder presses",
+            "detail": "Same weight, split into more sets"
+          },
+          {
+            "label": "30 strict dumbbell shoulder presses",
+            "detail": "No leg drive, pause at the bottom"
+          }
+        ]
+      },
+      {
+        "id": "db-rdl",
+        "name": "Romanian deadlifts",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 dumbbell Romanian deadlifts",
+            "detail": "Slow controlled lowering, focus on the hip movement"
+          },
+          {
+            "label": "40 dumbbell Romanian deadlifts",
+            "detail": "Same control, split into sets"
+          },
+          {
+            "label": "30 single-leg Romanian deadlifts",
+            "detail": "15 per leg, balance before adding speed"
+          }
+        ]
+      },
+      {
+        "id": "db-curls",
+        "name": "Dumbbell curls",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 dumbbell curls",
+            "detail": "Controlled reps without swinging"
+          },
+          {
+            "label": "40 dumbbell curls",
+            "detail": "Controlled reps without swinging"
+          },
+          {
+            "label": "30 slow dumbbell curls",
+            "detail": "Three seconds lowering on every rep"
+          }
+        ]
+      },
+      {
+        "id": "step-ups",
+        "name": "Step-ups",
+        "track": "main",
+        "levels": [
+          {
+            "label": "30 step-ups",
+            "detail": "Use a stable low step and alternate legs"
+          },
+          {
+            "label": "40 step-ups",
+            "detail": "Alternate legs, steady tempo"
+          },
+          {
+            "label": "30 weighted step-ups",
+            "detail": "Hold a dumbbell and keep the step controlled"
+          }
+        ]
+      },
+      {
+        "id": "mountain-climbers",
+        "name": "Mountain climbers",
+        "track": "main",
+        "levels": [
+          {
+            "label": "40 mountain climbers",
+            "detail": "Controlled pace, split into sets"
+          },
+          {
+            "label": "60 mountain climbers",
+            "detail": "Controlled pace, split into sets"
+          },
+          {
+            "label": "80 mountain climbers",
+            "detail": "Keep your hips low rather than chasing speed"
+          }
+        ]
+      },
+      {
+        "id": "field-strides",
+        "name": "Strides",
+        "track": "main",
+        "levels": [
+          {
+            "label": "6 × 20 second strides",
+            "detail": "Fast but controlled efforts with plenty of easy walking between"
+          },
+          {
+            "label": "8 × 20 second strides",
+            "detail": "Fast but controlled efforts with plenty of easy walking between"
+          },
+          {
+            "label": "10 × 20 second strides",
+            "detail": "Fast but controlled efforts with plenty of easy walking between"
+          }
+        ]
+      },
+      {
+        "id": "field-jog",
+        "name": "Field jog",
+        "track": "main",
+        "levels": [
+          {
+            "label": "15 minute field jog",
+            "detail": "Easy pace with short walking breaks if needed"
+          },
+          {
+            "label": "20 minute field jog",
+            "detail": "Easy pace, fewer walking breaks"
+          },
+          {
+            "label": "25 minute field jog",
+            "detail": "Hold the easy pace the whole way"
+          }
+        ]
+      },
+      {
+        "id": "walk-distance",
+        "name": "Walk",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "Walk 1 km",
+            "detail": "Outdoors, unhurried, no headphones"
+          },
+          {
+            "label": "Walk 2 km",
+            "detail": "Steady comfortable pace"
+          },
+          {
+            "label": "Walk 3 km",
+            "detail": "Steady comfortable pace, no rush"
+          }
+        ]
+      },
+      {
+        "id": "walk-timed",
+        "name": "Timed walk",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "20 minute walk",
+            "detail": "Keep moving continuously at an easy pace"
+          },
+          {
+            "label": "30 minute walk",
+            "detail": "Keep moving continuously at an easy-to-moderate pace"
+          },
+          {
+            "label": "40 minute walk",
+            "detail": "Easy pace, let it be the restful part of the day"
+          }
+        ]
+      },
+      {
+        "id": "walk-run",
+        "name": "Walk/run",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "15 minute walk/run",
+            "detail": "Alternate easy jogging and walking"
+          },
+          {
+            "label": "20 minute walk/run",
+            "detail": "Alternate easy jogging and walking"
+          },
+          {
+            "label": "25 minute walk/run",
+            "detail": "Longer jogging intervals, walk whenever you want"
+          }
+        ]
+      },
+      {
+        "id": "mobility",
+        "name": "Mobility",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "10 minute mobility",
+            "detail": "Move through hips, shoulders, ankles and upper back"
+          },
+          {
+            "label": "15 minute mobility",
+            "detail": "Move through hips, shoulders, ankles and upper back"
+          },
+          {
+            "label": "20 minute mobility",
+            "detail": "Take the positions that feel worst and stay in them longer"
+          }
+        ]
+      },
+      {
+        "id": "movement-session",
+        "name": "Movement session",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "8 minute movement session",
+            "detail": "Alternate bear crawls, walking and easy bodyweight movements"
+          },
+          {
+            "label": "10 minute movement session",
+            "detail": "Alternate bear crawls, walking and easy bodyweight movements"
+          },
+          {
+            "label": "12 minute movement session",
+            "detail": "Same mix, keep it playful rather than hard"
+          }
+        ]
+      },
+      {
+        "id": "farmer-carry",
+        "name": "Farmer carry",
+        "track": "easy",
+        "levels": [
+          {
+            "label": "3 minute farmer carry",
+            "detail": "Carry your dumbbells in short manageable intervals"
+          },
+          {
+            "label": "5 minute farmer carry",
+            "detail": "Carry your dumbbells in short manageable intervals"
+          },
+          {
+            "label": "7 minute farmer carry",
+            "detail": "Longer intervals, put them down before your grip fails"
+          }
+        ]
       }
-    ],
-    "physicalRotation": [
-      ["walk-1km", "push-ups-50"],
-      ["run-10min", "push-ups-50"],
-      ["walk-1km", "run-10min"],
-      ["push-ups-50"],
-      ["walk-1km", "push-ups-50", "run-10min"],
-      ["run-10min"],
-      ["walk-1km", "push-ups-50"]
     ],
     "books": [
       {
@@ -171,12 +558,11 @@
   {
     "id": "deep-work-reset",
     "title": "30-Day Deep Work Reset",
-    "description": "Reading and reflection only \u2014 no physical work, one track.",
+    "description": "Reading and reflection only — no physical work, one track.",
     "totalDays": 30,
     "readingPagesPerSession": 15,
     "reflectionLineCount": 2,
     "physicalActivities": [],
-    "physicalRotation": [],
     "books": [
       {
         "id": "deep-work",

@@ -4,7 +4,13 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { useJourneyStore } from '../features/journeys';
+import {
+  buildDayPlan,
+  getInitialJourneyEnrollments,
+  getInitialJourneys,
+  useJourneyStore,
+} from '../features/journeys';
+import { EXAMPLE_JOURNEY_COMPLETIONS } from '../test/journey-baseline';
 import { JourneyDayPage } from './journey-day-page';
 
 // Friday 11 September 2026, midday — day one of the seeded enrollment, and
@@ -12,10 +18,37 @@ import { JourneyDayPage } from './journey-day-page';
 // `shouldAdvanceTime` cannot roll the date over. The page reads `new Date()` on
 // render, so the clock has to be pinned.
 //
-// Day one carries five activities, two of which the fixture has already
-// completed: the walk and the technical reading.
+// Day one carries five activities, two of which the baseline has already
+// completed. Which movements a day asks for is generated from the journey
+// definition rather than listed there, so the labels below are read off the plan
+// instead of written out — editing the movements must not break these.
 const pinnedNow = new Date(2026, 8, 12, 12, 0, 0);
 const ENROLLMENT_ID = 'enrollment-discipline';
+
+function planFor(dayIndex: number) {
+  const [journey] = getInitialJourneys();
+  const [enrollment] = getInitialJourneyEnrollments();
+  const plan = buildDayPlan(journey, enrollment, dayIndex);
+
+  if (!plan) throw new Error(`No plan for day ${dayIndex}`);
+
+  return plan;
+}
+
+function activityFor(dayIndex: number, activityId: string) {
+  const activity = planFor(dayIndex).activities.find((entry) => entry.id === activityId);
+
+  if (!activity) throw new Error(`Day ${dayIndex} does not schedule ${activityId}`);
+
+  return activity;
+}
+
+// The first activity the baseline has already ticked, and one it has not.
+const seededDoneLabel = activityFor(1, EXAMPLE_JOURNEY_COMPLETIONS[0].activityId).label;
+const untickedDay1 = planFor(1).activities.filter(
+  (activity) =>
+    !EXAMPLE_JOURNEY_COMPLETIONS.some((completion) => completion.activityId === activity.id),
+);
 
 // The route takes a dynamic segment, so it has to be mounted through
 // Routes/Route with initialEntries — a bare MemoryRouter resolves no params.
@@ -87,21 +120,31 @@ describe('JourneyDayPage — the checklist', () => {
     }
   });
 
-  it('offers the rotation the day actually calls for', () => {
+  it('offers the movements the day actually calls for', () => {
     renderDay();
 
+    for (const activity of planFor(1).activities) {
+      expect(screen.getByRole('button', { name: new RegExp(activity.label) })).toBeInTheDocument();
+    }
+
+    // A movement the shuffle dealt to another day is not on this one.
+    const elsewhere = planFor(2).activities.find(
+      (activity) =>
+        activity.category === 'physical' &&
+        !planFor(1).activities.some((entry) => entry.label === activity.label),
+    );
+
+    expect(elsewhere).toBeDefined();
     expect(
-      screen.getByRole('button', { name: 'Mark Walk 1 km incomplete for day 1' }),
-    ).toBeInTheDocument();
-    // Day one's rotation does not include the run.
-    expect(screen.queryByRole('button', { name: /10 minute run/ })).not.toBeInTheDocument();
+      screen.queryByRole('button', { name: new RegExp(elsewhere?.label ?? 'nothing') }),
+    ).not.toBeInTheDocument();
   });
 
   it('separates what is done from what is not', () => {
     renderDay();
 
     expect(
-      screen.getByRole('button', { name: 'Mark Walk 1 km incomplete for day 1' }),
+      screen.getByRole('button', { name: `Mark ${seededDoneLabel} incomplete for day 1` }),
     ).toHaveAttribute('aria-pressed', 'true');
     expect(
       screen.getByRole('button', { name: 'Mark Daily reflection complete for day 1' }),
@@ -143,12 +186,10 @@ describe('JourneyDayPage — ticking an activity', () => {
     const user = setUpUser();
     renderDay();
 
-    for (const name of [
-      'Mark 50 push-ups complete for day 1',
-      "Mark Man's Search for Meaning complete for day 1",
-      'Mark Daily reflection complete for day 1',
-    ]) {
-      await user.click(screen.getByRole('button', { name }));
+    for (const activity of untickedDay1) {
+      await user.click(
+        screen.getByRole('button', { name: `Mark ${activity.label} complete for day 1` }),
+      );
     }
 
     expect(screen.getByText('Day complete')).toBeInTheDocument();
@@ -169,9 +210,12 @@ describe('JourneyDayPage — moving between days', () => {
     await user.click(screen.getByRole('button', { name: 'Go to the next day' }));
 
     expect(screen.getByRole('heading', { level: 1, name: 'Day 2 of 100' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: 'Mark 10 minute run complete for day 2' }),
-    ).toBeInTheDocument();
+
+    for (const activity of planFor(2).activities) {
+      expect(
+        screen.getByRole('button', { name: `Mark ${activity.label} complete for day 2` }),
+      ).toBeInTheDocument();
+    }
     expect(screen.getByText('0 of 5 done')).toBeInTheDocument();
   });
 
