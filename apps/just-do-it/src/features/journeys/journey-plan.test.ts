@@ -12,6 +12,7 @@ import {
   isValidDayIndex,
   selectBooksForTrack,
   selectPhysicalLevelIndex,
+  spaceOutPhysicalFocus,
 } from './journey-plan';
 import type { JourneyEnrollment } from './types';
 
@@ -173,6 +174,62 @@ describe('buildDayPlan — physical work', () => {
 
     expect(plan?.activities.some((activity) => activity.category === 'physical')).toBe(false);
     expect(plan?.activities).toHaveLength(2);
+  });
+});
+
+describe('buildDayPlan — spacing the focuses', () => {
+  function focusSequence(track: 'main' | 'easy'): (string | undefined)[] {
+    return Array.from({ length: discipline.totalDays }, (_, index) => {
+      const slug = physicalSlugs(index + 1).find((entry) => movementById(entry).track === track);
+
+      return slug ? movementById(slug).focus : undefined;
+    });
+  }
+
+  function adjacentClashes(track: 'main' | 'easy'): number {
+    const sequence = focusSequence(track);
+
+    return sequence.filter((focus, index) => index > 0 && focus === sequence[index - 1]).length;
+  }
+
+  // A plain shuffle left twenty-seven of the ninety-nine adjacent pairs sharing a
+  // focus, including runs of three pushing days. This is the guard on that, and
+  // it is deliberately a budget rather than zero: the greedy pass cannot always
+  // avoid a clash when the movements left in a pass all tax the same thing.
+  it('almost never asks for the same kind of work two days running', () => {
+    expect(adjacentClashes('main')).toBeLessThanOrEqual(4);
+  });
+
+  // Three of the six easy movements are walks, so a walk-after-walk is sometimes
+  // forced. It should still be rare.
+  it('keeps the easy track varied too', () => {
+    expect(adjacentClashes('easy')).toBeLessThanOrEqual(8);
+  });
+
+  // The spacing reorders a pass; it must not drop or duplicate anything, or the
+  // even load that the permutation exists to give would be gone.
+  it('reorders a pass without adding or losing a movement', () => {
+    const mainMovements = discipline.physicalActivities.filter((entry) => entry.track === 'main');
+    const arranged = spaceOutPhysicalFocus(mainMovements, null);
+
+    expect(arranged.map((entry) => entry.id).toSorted()).toEqual(
+      mainMovements.map((entry) => entry.id).toSorted(),
+    );
+  });
+
+  it('honours the focus already used when a pass begins', () => {
+    const mainMovements = discipline.physicalActivities.filter((entry) => entry.track === 'main');
+    const arranged = spaceOutPhysicalFocus(mainMovements, mainMovements[0].focus);
+
+    expect(arranged[0].focus).not.toBe(mainMovements[0].focus);
+  });
+
+  // Everything left sharing one focus is the one case it cannot solve, and it
+  // must still deal them rather than loop or drop them.
+  it('still deals a pass whose movements all tax the same thing', () => {
+    const pushOnly = discipline.physicalActivities.filter((entry) => entry.focus === 'push');
+
+    expect(spaceOutPhysicalFocus(pushOnly, 'push')).toHaveLength(pushOnly.length);
   });
 });
 

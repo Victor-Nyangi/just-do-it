@@ -6,6 +6,7 @@ import journeyEnrollmentsFixture from '../../data/journey-enrollments.json';
 import journeysFixture from '../../data/journeys.json';
 import {
   JOURNEY_BOOK_TRACK_VALUES,
+  JOURNEY_PHYSICAL_FOCUS_VALUES,
   JOURNEY_PHYSICAL_TRACK_VALUES,
   type Journey,
   type JourneyCompletion,
@@ -33,6 +34,7 @@ const journeyPhysicalActivitySchema = z.object({
   id: z.string().min(1),
   name: z.string().trim().min(1),
   track: z.enum(JOURNEY_PHYSICAL_TRACK_VALUES),
+  focus: z.enum(JOURNEY_PHYSICAL_FOCUS_VALUES),
   // At least one: a movement with no levels would schedule a day that asks for
   // nothing, which is the empty-day problem the refinements below exist to stop.
   levels: z.array(journeyPhysicalLevelSchema).min(1),
