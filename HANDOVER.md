@@ -54,9 +54,11 @@ determinism is load-bearing rather than decorative — a completion row points a
 activity id like `day-4-growth-reading`, so a plan that changed between renders
 would silently re-point it.
 
-Physical work carries **two tracks and a progression**. A day draws one movement
-from `main` and one from `easy`, so a tired day is still a day of movement rather
-than a skipped one; and each movement has ordered levels spread across the hundred
+Physical work carries **two tracks, a focus and a progression**. A day draws one
+movement from `main` and one from `easy`, so a tired day is still a day of movement
+rather than a skipped one; each movement is tagged with what it taxes, and each
+shuffled pass is re-ordered so the same kind of work almost never lands two days
+running (twenty-seven adjacent clashes became two); and each movement has ordered levels spread across the hundred
 days, so the same push-ups that ask for thirty on day one ask for sixty by the end.
 Where more reps stop meaning more, a level raises the difficulty instead — 30
 squats becomes 30 goblet squats becomes 30 slow goblet squats. The level comes from

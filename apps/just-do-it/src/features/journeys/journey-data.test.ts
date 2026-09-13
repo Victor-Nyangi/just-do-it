@@ -26,6 +26,7 @@ function buildJourneyInput(overrides: Record<string, unknown> = {}) {
         id: 'walk',
         name: 'Walk',
         track: 'easy',
+        focus: 'walk',
         levels: [{ label: 'Walk 1 km', detail: 'Outdoors' }],
       },
     ],
@@ -51,6 +52,9 @@ describe('the journey fixtures', () => {
     );
     expect(discipline.physicalActivities.filter((entry) => entry.track === 'easy')).toHaveLength(6);
     expect(discipline.physicalActivities.every((entry) => entry.levels.length > 0)).toBe(true);
+    // Every movement is tagged, which is what lets the plan builder keep two of
+    // the same kind off consecutive days.
+    expect(discipline.physicalActivities.every((entry) => Boolean(entry.focus))).toBe(true);
     expect(discipline.books.filter((book) => book.track === 'technical')).toHaveLength(6);
     expect(discipline.books.filter((book) => book.track === 'growth')).toHaveLength(13);
   });
@@ -151,6 +155,7 @@ describe('journeySchema', () => {
       id: 'walk',
       name: 'Walk',
       track: 'easy',
+      focus: 'walk',
       levels: [{ label: 'Walk 1 km', detail: 'Outdoors' }],
     };
     const result = journeySchema.safeParse(
@@ -165,7 +170,27 @@ describe('journeySchema', () => {
   it('refuses a movement with no levels', () => {
     const result = journeySchema.safeParse(
       buildJourneyInput({
-        physicalActivities: [{ id: 'walk', name: 'Walk', track: 'easy', levels: [] }],
+        physicalActivities: [
+          { id: 'walk', name: 'Walk', track: 'easy', focus: 'walk', levels: [] },
+        ],
+      }),
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it('refuses a movement whose focus the model does not define', () => {
+    const result = journeySchema.safeParse(
+      buildJourneyInput({
+        physicalActivities: [
+          {
+            id: 'walk',
+            name: 'Walk',
+            track: 'easy',
+            focus: 'vibes',
+            levels: [{ label: 'Walk', detail: 'Out' }],
+          },
+        ],
       }),
     );
 
@@ -176,7 +201,13 @@ describe('journeySchema', () => {
     const result = journeySchema.safeParse(
       buildJourneyInput({
         physicalActivities: [
-          { id: 'walk', name: 'Walk', track: 'gentle', levels: [{ label: 'Walk', detail: 'Out' }] },
+          {
+            id: 'walk',
+            name: 'Walk',
+            track: 'gentle',
+            focus: 'walk',
+            levels: [{ label: 'Walk', detail: 'Out' }],
+          },
         ],
       }),
     );

@@ -11,6 +11,7 @@
         "id": "push-ups",
         "name": "Push-ups",
         "track": "main",
+        "focus": "push",
         "levels": [
           {
             "label": "30 push-ups",
@@ -34,6 +35,7 @@
         "id": "run",
         "name": "Run",
         "track": "main",
+        "focus": "cardio",
         "levels": [
           {
             "label": "10 minute run",
@@ -57,6 +59,7 @@
         "id": "squats",
         "name": "Squats",
         "track": "main",
+        "focus": "legs",
         "levels": [
           {
             "label": "40 bodyweight squats",
@@ -80,6 +83,7 @@
         "id": "reverse-lunges",
         "name": "Reverse lunges",
         "track": "main",
+        "focus": "legs",
         "levels": [
           {
             "label": "30 reverse lunges",
@@ -99,6 +103,7 @@
         "id": "glute-bridges",
         "name": "Glute bridges",
         "track": "main",
+        "focus": "legs",
         "levels": [
           {
             "label": "40 glute bridges",
@@ -118,6 +123,7 @@
         "id": "plank",
         "name": "Plank",
         "track": "main",
+        "focus": "core",
         "levels": [
           {
             "label": "3 × 30 second planks",
@@ -137,6 +143,7 @@
         "id": "db-rows",
         "name": "Dumbbell rows",
         "track": "main",
+        "focus": "pull",
         "levels": [
           {
             "label": "30 dumbbell rows",
@@ -156,6 +163,7 @@
         "id": "db-floor-press",
         "name": "Dumbbell floor press",
         "track": "main",
+        "focus": "push",
         "levels": [
           {
             "label": "30 dumbbell floor presses",
@@ -175,6 +183,7 @@
         "id": "db-shoulder-press",
         "name": "Dumbbell shoulder press",
         "track": "main",
+        "focus": "push",
         "levels": [
           {
             "label": "20 dumbbell shoulder presses",
@@ -194,6 +203,7 @@
         "id": "db-rdl",
         "name": "Romanian deadlifts",
         "track": "main",
+        "focus": "legs",
         "levels": [
           {
             "label": "30 dumbbell Romanian deadlifts",
@@ -213,6 +223,7 @@
         "id": "db-curls",
         "name": "Dumbbell curls",
         "track": "main",
+        "focus": "pull",
         "levels": [
           {
             "label": "30 dumbbell curls",
@@ -232,6 +243,7 @@
         "id": "step-ups",
         "name": "Step-ups",
         "track": "main",
+        "focus": "legs",
         "levels": [
           {
             "label": "30 step-ups",
@@ -251,6 +263,7 @@
         "id": "mountain-climbers",
         "name": "Mountain climbers",
         "track": "main",
+        "focus": "core",
         "levels": [
           {
             "label": "40 mountain climbers",
@@ -270,6 +283,7 @@
         "id": "field-strides",
         "name": "Strides",
         "track": "main",
+        "focus": "cardio",
         "levels": [
           {
             "label": "6 × 20 second strides",
@@ -289,6 +303,7 @@
         "id": "field-jog",
         "name": "Field jog",
         "track": "main",
+        "focus": "cardio",
         "levels": [
           {
             "label": "15 minute field jog",
@@ -308,6 +323,7 @@
         "id": "walk-distance",
         "name": "Walk",
         "track": "easy",
+        "focus": "walk",
         "levels": [
           {
             "label": "Walk 1 km",
@@ -327,6 +343,7 @@
         "id": "walk-timed",
         "name": "Timed walk",
         "track": "easy",
+        "focus": "walk",
         "levels": [
           {
             "label": "20 minute walk",
@@ -346,6 +363,7 @@
         "id": "walk-run",
         "name": "Walk/run",
         "track": "easy",
+        "focus": "walk",
         "levels": [
           {
             "label": "15 minute walk/run",
@@ -365,6 +383,7 @@
         "id": "mobility",
         "name": "Mobility",
         "track": "easy",
+        "focus": "mobility",
         "levels": [
           {
             "label": "10 minute mobility",
@@ -384,6 +403,7 @@
         "id": "movement-session",
         "name": "Movement session",
         "track": "easy",
+        "focus": "mobility",
         "levels": [
           {
             "label": "8 minute movement session",
@@ -403,6 +423,7 @@
         "id": "farmer-carry",
         "name": "Farmer carry",
         "track": "easy",
+        "focus": "carry",
         "levels": [
           {
             "label": "3 minute farmer carry",

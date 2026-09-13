@@ -19,6 +19,24 @@ export const JOURNEY_PHYSICAL_TRACK_VALUES = ['main', 'easy'] as const;
 
 export type JourneyPhysicalTrack = (typeof JOURNEY_PHYSICAL_TRACK_VALUES)[number];
 
+// What a movement actually taxes. Dealing each movement once per pass keeps the
+// *movements* varied but says nothing about the muscles: a shuffle is perfectly
+// happy to follow push-ups with a floor press with more push-ups. The plan
+// builder spaces these apart instead, so a hundred days of movement does not
+// land three leg days in a row.
+export const JOURNEY_PHYSICAL_FOCUS_VALUES = [
+  'push',
+  'pull',
+  'legs',
+  'core',
+  'cardio',
+  'walk',
+  'mobility',
+  'carry',
+] as const;
+
+export type JourneyPhysicalFocus = (typeof JOURNEY_PHYSICAL_FOCUS_VALUES)[number];
+
 export const JOURNEY_DAY_STATUS_VALUES = [
   'complete',
   'partial',
@@ -46,6 +64,7 @@ export type JourneyPhysicalActivity = {
   id: string;
   name: string;
   track: JourneyPhysicalTrack;
+  focus: JourneyPhysicalFocus;
   // Ordered easiest first, and walked through as the journey progresses.
   levels: JourneyPhysicalLevel[];
 };

@@ -10,6 +10,7 @@ import {
   type JourneyDayPlan,
   type JourneyEnrollment,
   type JourneyPhysicalActivity,
+  type JourneyPhysicalFocus,
   type JourneyPhysicalTrack,
 } from './types';
 
@@ -152,6 +153,62 @@ export function selectPhysicalActivitiesForTrack(
   return activities.filter((activity) => activity.track === track);
 }
 
+// Dealing each movement once per pass keeps the movements varied and the load
+// even, but it says nothing about what they tax — a shuffle is perfectly happy
+// to follow push-ups with a floor press with more push-ups, and over a hundred
+// days that happened on twenty-seven adjacent pairs, including runs of three.
+// So the shuffled pass is re-ordered greedily: take the next movement whose
+// focus differs from the one just used, and fall back to the first remaining
+// only when everything left shares that focus. Nothing is added or dropped, so
+// every movement still comes up exactly once per pass.
+export function spaceOutPhysicalFocus(
+  shuffled: readonly JourneyPhysicalActivity[],
+  previousFocus: JourneyPhysicalFocus | null,
+): JourneyPhysicalActivity[] {
+  const remaining = [...shuffled];
+  const arranged: JourneyPhysicalActivity[] = [];
+  let lastFocus = previousFocus;
+
+  while (remaining.length > 0) {
+    const nextIndex = remaining.findIndex((activity) => activity.focus !== lastFocus);
+    const [next] = remaining.splice(nextIndex === -1 ? 0 : nextIndex, 1);
+
+    arranged.push(next);
+    lastFocus = next.focus;
+  }
+
+  return arranged;
+}
+
+// Cycles are built from the first rather than jumped to, because the last
+// movement of one pass has to be known before the next pass can avoid repeating
+// its focus — a boundary clash is exactly as tiring as one in the middle. Seven
+// passes of fifteen over a hundred days, so walking them costs nothing, and
+// building them rather than caching keeps this a pure function.
+function buildPhysicalArrangement(
+  trackActivities: readonly JourneyPhysicalActivity[],
+  track: JourneyPhysicalTrack,
+  cycleIndex: number,
+): JourneyPhysicalActivity[] {
+  let previousFocus: JourneyPhysicalFocus | null = null;
+  let arranged: JourneyPhysicalActivity[] = [];
+
+  for (let cycle = 0; cycle <= cycleIndex; cycle += 1) {
+    const order = buildSeededPermutation(
+      trackActivities.length,
+      hashSeed(`physical:${track}:${cycle}`),
+    );
+
+    arranged = spaceOutPhysicalFocus(
+      order.map((index) => trackActivities[index]),
+      previousFocus,
+    );
+    previousFocus = arranged[arranged.length - 1]?.focus ?? null;
+  }
+
+  return arranged;
+}
+
 function selectPhysicalActivityForDay(
   journey: Journey,
   track: JourneyPhysicalTrack,
@@ -162,12 +219,8 @@ function selectPhysicalActivityForDay(
 
   const cycleIndex = Math.floor(dayOffset / trackActivities.length);
   const positionInCycle = dayOffset % trackActivities.length;
-  const order = buildSeededPermutation(
-    trackActivities.length,
-    hashSeed(`physical:${track}:${cycleIndex}`),
-  );
 
-  return trackActivities[order[positionInCycle]];
+  return buildPhysicalArrangement(trackActivities, track, cycleIndex)[positionInCycle];
 }
 
 // The movement is randomised; the effort is not. A movement's levels are spread
