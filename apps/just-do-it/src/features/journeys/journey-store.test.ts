@@ -50,9 +50,11 @@ describe('toggleActivityCompletion', () => {
   });
 
   it('unticks one that was', () => {
-    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 1, 'day-1-walk-1km');
+    const [firstSeeded, ...rest] = EXAMPLE_JOURNEY_COMPLETIONS;
 
-    expect(completionIds()).toEqual(['day-1-technical-reading']);
+    useJourneyStore.getState().toggleActivityCompletion(ENROLLMENT_ID, 1, firstSeeded.activityId);
+
+    expect(completionIds()).toEqual(rest.map((completion) => completion.activityId));
   });
 
   // The id is derived from (enrollment, day, activity) rather than being a

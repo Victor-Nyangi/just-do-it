@@ -47,12 +47,21 @@ without the runs colliding. It is also why every selector takes an
 `EnrolledJourney` pair rather than a journey.
 
 Day plans are **generated, not stored**. `journey-plan.ts` derives them purely from
-the definition and the day index: the physical rotation by `(dayIndex - 1) % 7`,
-and each track's book by a seeded Fisher-Yates permutation reshuffled per cycle, so
-every book comes up exactly once per pass while still looking shuffled. That
+the definition and the day index. Movements and books are dealt the same way — a
+seeded Fisher-Yates permutation of the track's list, reshuffled per cycle, so every
+entry comes up exactly once per pass while the order looks arbitrary. That
 determinism is load-bearing rather than decorative — a completion row points at an
 activity id like `day-4-growth-reading`, so a plan that changed between renders
 would silently re-point it.
+
+Physical work carries **two tracks and a progression**. A day draws one movement
+from `main` and one from `easy`, so a tired day is still a day of movement rather
+than a skipped one; and each movement has ordered levels spread across the hundred
+days, so the same push-ups that ask for thirty on day one ask for sixty by the end.
+Where more reps stop meaning more, a level raises the difficulty instead — 30
+squats becomes 30 goblet squats becomes 30 slow goblet squats. The level comes from
+the day, never from the draw, and the completion id embeds the movement rather than
+the level, so levelling up never orphans a tick.
 
 ### The backend
 

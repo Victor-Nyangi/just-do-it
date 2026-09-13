@@ -21,8 +21,14 @@ function buildJourneyInput(overrides: Record<string, unknown> = {}) {
     totalDays: 10,
     readingPagesPerSession: 10,
     reflectionLineCount: 3,
-    physicalActivities: [{ id: 'walk', label: 'Walk', detail: 'Outdoors' }],
-    physicalRotation: [['walk']],
+    physicalActivities: [
+      {
+        id: 'walk',
+        name: 'Walk',
+        track: 'easy',
+        levels: [{ label: 'Walk 1 km', detail: 'Outdoors' }],
+      },
+    ],
     books: [],
     ...overrides,
   };
@@ -40,6 +46,11 @@ describe('the journey fixtures', () => {
     const [discipline] = getInitialJourneys();
 
     expect(discipline.totalDays).toBe(100);
+    expect(discipline.physicalActivities.filter((entry) => entry.track === 'main')).toHaveLength(
+      15,
+    );
+    expect(discipline.physicalActivities.filter((entry) => entry.track === 'easy')).toHaveLength(6);
+    expect(discipline.physicalActivities.every((entry) => entry.levels.length > 0)).toBe(true);
     expect(discipline.books.filter((book) => book.track === 'technical')).toHaveLength(6);
     expect(discipline.books.filter((book) => book.track === 'growth')).toHaveLength(13);
   });
@@ -50,7 +61,7 @@ describe('the journey fixtures', () => {
     const deepWork = getInitialJourneys()[1];
 
     expect(deepWork.totalDays).toBe(30);
-    expect(deepWork.physicalRotation).toEqual([]);
+    expect(deepWork.physicalActivities).toEqual([]);
     expect(deepWork.books.every((book) => book.track === 'technical')).toBe(true);
   });
 
@@ -99,7 +110,7 @@ describe('the journey fixtures', () => {
     const [second] = getInitialJourneys();
 
     expect(first).not.toBe(second);
-    expect(first.physicalRotation[0]).not.toBe(second.physicalRotation[0]);
+    expect(first.physicalActivities[0]).not.toBe(second.physicalActivities[0]);
     expect(first.books[0]).not.toBe(second.books[0]);
   });
 });
@@ -110,9 +121,7 @@ describe('journeySchema', () => {
   });
 
   it('accepts a journey with no physical work at all', () => {
-    const result = journeySchema.safeParse(
-      buildJourneyInput({ physicalActivities: [], physicalRotation: [] }),
-    );
+    const result = journeySchema.safeParse(buildJourneyInput({ physicalActivities: [] }));
 
     expect(result.success).toBe(true);
   });
@@ -130,7 +139,6 @@ describe('journeySchema', () => {
       buildJourneyInput({
         reflectionLineCount: 0,
         physicalActivities: [],
-        physicalRotation: [],
         books: [],
       }),
     );
@@ -138,9 +146,39 @@ describe('journeySchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('refuses a rotation that names an activity the journey does not define', () => {
+  it('refuses duplicate physical activity ids', () => {
+    const walk = {
+      id: 'walk',
+      name: 'Walk',
+      track: 'easy',
+      levels: [{ label: 'Walk 1 km', detail: 'Outdoors' }],
+    };
     const result = journeySchema.safeParse(
-      buildJourneyInput({ physicalRotation: [['walk'], ['swim']] }),
+      buildJourneyInput({ physicalActivities: [walk, { ...walk, name: 'Walk again' }] }),
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  // A movement with no levels would schedule a day that asks for nothing, which
+  // is the empty-day problem the other guards exist to stop.
+  it('refuses a movement with no levels', () => {
+    const result = journeySchema.safeParse(
+      buildJourneyInput({
+        physicalActivities: [{ id: 'walk', name: 'Walk', track: 'easy', levels: [] }],
+      }),
+    );
+
+    expect(result.success).toBe(false);
+  });
+
+  it('refuses a movement on a track the model does not define', () => {
+    const result = journeySchema.safeParse(
+      buildJourneyInput({
+        physicalActivities: [
+          { id: 'walk', name: 'Walk', track: 'gentle', levels: [{ label: 'Walk', detail: 'Out' }] },
+        ],
+      }),
     );
 
     expect(result.success).toBe(false);

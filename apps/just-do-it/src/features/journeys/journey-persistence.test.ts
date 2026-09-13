@@ -12,7 +12,7 @@ import {
   loadPersistedJourneyState,
   savePersistedJourneyState,
 } from './journey-persistence';
-import { seedJourneyStore } from '../../test/journey-baseline';
+import { EXAMPLE_JOURNEY_COMPLETIONS, seedJourneyStore } from '../../test/journey-baseline';
 import { useJourneyStore } from './journey-store';
 
 const STORAGE_KEY = 'just-do-it:journeys:v1';
@@ -192,13 +192,15 @@ describe('the store writing through to storage', () => {
   });
 
   it('persists an untick as an absence', () => {
+    const [seeded] = EXAMPLE_JOURNEY_COMPLETIONS;
+
     useJourneyStore
       .getState()
-      .toggleActivityCompletion('enrollment-discipline', 1, 'day-1-walk-1km');
+      .toggleActivityCompletion('enrollment-discipline', 1, seeded.activityId);
 
     expect(
       loadPersistedJourneyState()?.completions.map((completion) => completion.activityId),
-    ).not.toContain('day-1-walk-1km');
+    ).not.toContain(seeded.activityId);
   });
 
   it('persists leaving a journey', () => {

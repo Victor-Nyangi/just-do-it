@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { completeJourneyActivity, getJourneyDay, getJourneyStats } from './journey-api';
-import { seedJourneyStore } from '../../test/journey-baseline';
+import {
+  activityIdsForDay,
+  EXAMPLE_JOURNEY_COMPLETIONS,
+  seedJourneyStore,
+} from '../../test/journey-baseline';
 import { useJourneyStore } from './journey-store';
 
 const ENROLLMENT_ID = 'enrollment-discipline';
@@ -32,9 +36,10 @@ describe('getJourneyDay — GET /api/enrollments/[id]/day/[dayIndex]', () => {
   it('lists the completed ids in plan order rather than tick order', () => {
     completeJourneyActivity(ENROLLMENT_ID, 1, 'day-1-reflection');
 
+    // Plan order, not tick order: the reflection was ticked last but sorts last
+    // because it is scheduled last.
     expect(getJourneyDay(ENROLLMENT_ID, 1)?.completedActivityIds).toEqual([
-      'day-1-walk-1km',
-      'day-1-technical-reading',
+      ...EXAMPLE_JOURNEY_COMPLETIONS.map((completion) => completion.activityId),
       'day-1-reflection',
     ]);
   });
@@ -77,7 +82,11 @@ describe('completeJourneyActivity — POST /api/enrollments/[id]/day/[dayIndex]/
   });
 
   it('reports the day complete once nothing is left', () => {
-    for (const activityId of ['day-1-push-ups-50', 'day-1-growth-reading', 'day-1-reflection']) {
+    const alreadyDone = new Set(
+      EXAMPLE_JOURNEY_COMPLETIONS.map((completion) => completion.activityId),
+    );
+
+    for (const activityId of activityIdsForDay(1).filter((id) => !alreadyDone.has(id))) {
       completeJourneyActivity(ENROLLMENT_ID, 1, activityId);
     }
 
@@ -101,7 +110,7 @@ describe('getJourneyStats — GET /api/enrollments/[id]/stats', () => {
       currentDayIndex: 1,
       currentStreak: 0,
       completedActivityCount: 2,
-      totalActivityCount: 486,
+      totalActivityCount: 500,
     });
   });
 

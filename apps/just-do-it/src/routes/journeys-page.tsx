@@ -29,8 +29,8 @@ function formatJourneyDate(dateKey: string): string {
 function describeJourneyShape(journey: Journey): string {
   const parts: string[] = [`${journey.totalDays} days`];
 
-  if (journey.physicalRotation.some((day) => day.length > 0)) {
-    parts.push(`${journey.physicalRotation.length}-day physical rotation`);
+  if (journey.physicalActivities.length > 0) {
+    parts.push(`${journey.physicalActivities.length} movements`);
   }
 
   if (journey.books.length > 0) {

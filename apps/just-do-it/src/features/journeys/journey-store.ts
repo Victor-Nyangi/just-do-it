@@ -55,7 +55,6 @@ function buildJourneyRecord(journeyId: string, input: JourneyInput): Journey {
     readingPagesPerSession: input.readingPagesPerSession ?? 10,
     reflectionLineCount: input.reflectionLineCount ?? 3,
     physicalActivities: input.physicalActivities ?? [],
-    physicalRotation: input.physicalRotation ?? [],
     books: input.books ?? [],
   });
 }

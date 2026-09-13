@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { activityIdForDay, activityIdsForDay } from '../../test/journey-baseline';
 import { getInitialJourneyEnrollments, getInitialJourneys } from './journey-data';
 import { buildDayPlan } from './journey-plan';
 import {
@@ -97,7 +98,7 @@ describe('selectDayProgress', () => {
   });
 
   it('counts a partly finished day without calling it complete', () => {
-    const completions = completeActivities(['day-1-walk-1km', 'day-1-reflection']);
+    const completions = completeActivities([activityIdForDay(1, 'physical'), 'day-1-reflection']);
 
     expect(selectDayProgress(planFor(1), completions)).toMatchObject({
       completedCount: 2,
@@ -136,7 +137,10 @@ describe('selectDaySummaries', () => {
   });
 
   it('grades a finished day and a half-finished one differently', () => {
-    const completions = [...completeWholeDays([1]), ...completeActivities(['day-2-run-10min'])];
+    const completions = [
+      ...completeWholeDays([1]),
+      ...completeActivities([activityIdForDay(2, 'physical')]),
+    ];
     const summaries = selectDaySummaries(enrolled, completions, dayFive);
 
     expect(summaries[0].status).toBe('complete');
@@ -155,7 +159,9 @@ describe('selectJourneyStats', () => {
   it('counts every activity across the whole journey', () => {
     const stats = selectJourneyStats(enrolled, [], dayFive);
 
-    expect(stats.totalActivityCount).toBe(486);
+    // Five a day, every day: one main movement, one easy movement, two reading
+    // slots and the reflection.
+    expect(stats.totalActivityCount).toBe(500);
     expect(stats.completedActivityCount).toBe(0);
     expect(stats).toMatchObject({
       currentDayIndex: 5,
@@ -194,10 +200,7 @@ describe('selectJourneyStats', () => {
 
   it('breaks down the completed activities by category', () => {
     const completions = completeActivities([
-      'day-1-walk-1km',
-      'day-1-push-ups-50',
-      'day-1-technical-reading',
-      'day-1-reflection',
+      ...activityIdsForDay(1).filter((activityId) => activityId !== 'day-1-growth-reading'),
     ]);
     const stats = selectJourneyStats(enrolled, completions, dayFive);
     const byCategory = Object.fromEntries(
@@ -315,9 +318,12 @@ describe('selectActivitiesByCategory', () => {
   });
 
   it('keeps every activity of a category together', () => {
-    const groups = selectActivitiesByCategory(planFor(5));
+    const plan = planFor(5);
+    const groups = selectActivitiesByCategory(plan);
 
-    expect(groups[0].activities).toHaveLength(3);
-    expect(groups.flatMap((group) => group.activities)).toHaveLength(planFor(5).activities.length);
+    expect(groups[0].activities).toEqual(
+      plan.activities.filter((activity) => activity.category === 'physical'),
+    );
+    expect(groups.flatMap((group) => group.activities)).toHaveLength(plan.activities.length);
   });
 });

@@ -1,13 +1,16 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 
 import { addJourneyDays } from './journey-data';
-import type {
-  Journey,
-  JourneyActivity,
-  JourneyBook,
-  JourneyBookTrack,
-  JourneyDayPlan,
-  JourneyEnrollment,
+import {
+  JOURNEY_PHYSICAL_TRACK_VALUES,
+  type Journey,
+  type JourneyActivity,
+  type JourneyBook,
+  type JourneyBookTrack,
+  type JourneyDayPlan,
+  type JourneyEnrollment,
+  type JourneyPhysicalActivity,
+  type JourneyPhysicalTrack,
 } from './types';
 
 // A day's plan is generated, not stored: it is a pure function of the journey
@@ -132,37 +135,82 @@ export function getCurrentDayIndex(
   return getDayIndexForDate(journey, enrollment, now);
 }
 
+// Physical work is drawn exactly the way the books are, and for the same
+// reason: a fixed rotation repeats itself. A seven-day rotation over a hundred
+// days shows the same seven combinations fourteen times however many movements
+// the journey defines, so the day deals from a seeded permutation instead —
+// every movement comes up once per pass, the order inside a pass looks
+// arbitrary, and the next pass is reshuffled.
+//
+// One movement is drawn per track rather than N from one pool, which is what
+// keeps the hundred days survivable: `main` asks something of you, `easy` is the
+// walk or the mobility that still counts as a day of movement.
+export function selectPhysicalActivitiesForTrack(
+  activities: readonly JourneyPhysicalActivity[],
+  track: JourneyPhysicalTrack,
+): JourneyPhysicalActivity[] {
+  return activities.filter((activity) => activity.track === track);
+}
+
+function selectPhysicalActivityForDay(
+  journey: Journey,
+  track: JourneyPhysicalTrack,
+  dayOffset: number,
+): JourneyPhysicalActivity | null {
+  const trackActivities = selectPhysicalActivitiesForTrack(journey.physicalActivities, track);
+  if (trackActivities.length === 0) return null;
+
+  const cycleIndex = Math.floor(dayOffset / trackActivities.length);
+  const positionInCycle = dayOffset % trackActivities.length;
+  const order = buildSeededPermutation(
+    trackActivities.length,
+    hashSeed(`physical:${track}:${cycleIndex}`),
+  );
+
+  return trackActivities[order[positionInCycle]];
+}
+
+// The movement is randomised; the effort is not. A movement's levels are spread
+// evenly across the journey, so the same push-ups that asked for thirty on day
+// one ask for sixty by the end — and where more reps stop meaning more, a level
+// raises the difficulty at the same reps instead. Progress comes from where you
+// are in the hundred days, never from which movement the shuffle dealt.
+export function selectPhysicalLevelIndex(
+  activity: JourneyPhysicalActivity,
+  journey: Journey,
+  dayIndex: number,
+): number {
+  const lastIndex = activity.levels.length - 1;
+  if (lastIndex <= 0) return 0;
+
+  const progressed = Math.floor(((dayIndex - 1) * activity.levels.length) / journey.totalDays);
+
+  return Math.min(lastIndex, Math.max(0, progressed));
+}
+
 function buildPhysicalActivities(
   journey: Journey,
   dayIndex: number,
   dayOffset: number,
 ): JourneyActivity[] {
-  // A journey with no physical work has an empty rotation, and the modulo below
-  // would divide by zero.
-  if (journey.physicalRotation.length === 0) return [];
+  return JOURNEY_PHYSICAL_TRACK_VALUES.flatMap((track) => {
+    const activity = selectPhysicalActivityForDay(journey, track, dayOffset);
+    if (!activity) return [];
 
-  const rotationIndex = dayOffset % journey.physicalRotation.length;
-  const scheduledIds = journey.physicalRotation[rotationIndex];
-
-  return scheduledIds.flatMap((activityId) => {
-    const physicalActivity = journey.physicalActivities.find(
-      (activity) => activity.id === activityId,
-    );
-
-    // Unreachable for a parsed journey — `journeySchema` refuses a rotation
-    // that names an unknown activity — but flatMap lets an unknown id drop out
-    // rather than putting an undefined into the checklist.
-    if (!physicalActivity) return [];
+    const levelIndex = selectPhysicalLevelIndex(activity, journey, dayIndex);
+    const level = activity.levels[levelIndex];
 
     return [
       {
-        // The id embeds the activity slug rather than its position in the day,
-        // so reordering a rotation entry does not silently re-point completions
-        // that were already written against it.
-        id: `day-${dayIndex}-${physicalActivity.id}`,
+        // The id is the movement, not the level, so a movement that levels up on
+        // day twenty-six does not orphan the ticks written against it before.
+        id: `day-${dayIndex}-${activity.id}`,
         category: 'physical' as const,
-        label: physicalActivity.label,
-        detail: physicalActivity.detail,
+        label: level.label,
+        detail:
+          activity.levels.length > 1
+            ? `Level ${levelIndex + 1} of ${activity.levels.length} · ${level.detail}`
+            : level.detail,
       },
     ];
   });

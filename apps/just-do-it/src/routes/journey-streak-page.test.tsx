@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { EXAMPLE_JOURNEY_COMPLETIONS } from '../test/journey-baseline';
 import {
   buildCompletionsFileContents,
   buildDayPlan,
@@ -96,7 +97,7 @@ describe('JourneyStreakPage — the stats cards', () => {
   it('counts the activities done against the whole journey', () => {
     renderStreak();
 
-    expect(screen.getByText('Of 486 across the journey')).toBeInTheDocument();
+    expect(screen.getByText('Of 500 across the journey')).toBeInTheDocument();
     const activitiesDone = screen.getByText('Activities done').closest('div');
     expect(within(activitiesDone as HTMLElement).getByText('2')).toBeInTheDocument();
   });
@@ -191,7 +192,9 @@ describe('JourneyStreakPage — the breakdown', () => {
 
     expect(categoryCount('Reflection')).toBe('0 of 100');
     expect(categoryCount('Technical reading')).toBe('1 of 100');
-    expect(categoryCount('Physical')).toBe('1 of 186');
+    // Two movements every day now — one main, one easy — where the old rotation
+    // varied between one and three.
+    expect(categoryCount('Physical')).toBe('1 of 200');
   });
 
   it('moves a category when one of its activities is completed', () => {
@@ -222,7 +225,7 @@ describe('JourneyStreakPage — the breakdown', () => {
       'aria-valuenow',
       '0',
     );
-    expect(screen.getByText('2 of 486 activities ticked off.')).toBeInTheDocument();
+    expect(screen.getByText('2 of 500 activities ticked off.')).toBeInTheDocument();
   });
 });
 
@@ -302,11 +305,12 @@ describe('JourneyStreakPage — publishing progress', () => {
 
     const written = JSON.parse(await navigator.clipboard.readText());
 
-    expect(written.map((entry: { activityId: string }) => entry.activityId)).toEqual([
-      'day-1-technical-reading',
-      'day-1-walk-1km',
-      'day-2-reflection',
-    ]);
+    expect(written.map((entry: { activityId: string }) => entry.activityId)).toEqual(
+      [
+        ...EXAMPLE_JOURNEY_COMPLETIONS.map((completion) => completion.activityId),
+        'day-2-reflection',
+      ].toSorted(),
+    );
   });
 
   it('confirms the copy on the button itself', async () => {

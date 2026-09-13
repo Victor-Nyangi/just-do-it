@@ -11,6 +11,14 @@ export const JOURNEY_BOOK_TRACK_VALUES = ['technical', 'growth'] as const;
 
 export type JourneyBookTrack = (typeof JOURNEY_BOOK_TRACK_VALUES)[number];
 
+// A day draws one movement from each track, which is what stops a hundred days
+// of movement from turning into a hundred hard workouts: `main` is the session
+// that asks something, `easy` is the walk, the mobility, the loose jog that
+// keeps the streak going on a tired day.
+export const JOURNEY_PHYSICAL_TRACK_VALUES = ['main', 'easy'] as const;
+
+export type JourneyPhysicalTrack = (typeof JOURNEY_PHYSICAL_TRACK_VALUES)[number];
+
 export const JOURNEY_DAY_STATUS_VALUES = [
   'complete',
   'partial',
@@ -21,10 +29,25 @@ export const JOURNEY_DAY_STATUS_VALUES = [
 
 export type JourneyDayStatus = (typeof JOURNEY_DAY_STATUS_VALUES)[number];
 
-export type JourneyPhysicalActivity = {
-  id: string;
+// One rung of a movement's progression. The label is what the day asks for, so
+// a rung can raise the reps (30 → 40 push-ups) or raise the difficulty at the
+// same reps (30 squats → 30 goblet squats → 30 slow goblet squats), which is the
+// honest way to keep progressing once more reps stop meaning more.
+export type JourneyPhysicalLevel = {
   label: string;
   detail: string;
+};
+
+// The movement, not the prescription: `push-ups` stays `push-ups` all hundred
+// days while what it asks for grows. That matters beyond tidiness — a completion
+// id embeds this id, so a movement that levels up must not become a new movement
+// or every tick already written against it would be orphaned.
+export type JourneyPhysicalActivity = {
+  id: string;
+  name: string;
+  track: JourneyPhysicalTrack;
+  // Ordered easiest first, and walked through as the journey progresses.
+  levels: JourneyPhysicalLevel[];
 };
 
 export type JourneyBook = {
@@ -51,9 +74,9 @@ export type Journey = {
   readingPagesPerSession: number;
   // Zero means this journey asks for no written reflection.
   reflectionLineCount: number;
-  // Both may be empty: a journey with no physical work simply schedules none.
+  // A track with no movements schedules none, exactly as an empty book track
+  // does. An empty list means a journey with no physical work at all.
   physicalActivities: JourneyPhysicalActivity[];
-  physicalRotation: string[][];
   // A track with no books schedules no reading for that track.
   books: JourneyBook[];
 };
@@ -153,6 +176,5 @@ export type JourneyInput = {
   readingPagesPerSession?: number;
   reflectionLineCount?: number;
   physicalActivities?: JourneyPhysicalActivity[];
-  physicalRotation?: string[][];
   books?: JourneyBook[];
 };
