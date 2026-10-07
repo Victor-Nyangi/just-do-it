@@ -17,7 +17,7 @@ database_id = "126f330e-d988-4921-abeb-7a5d5566a73a"
 # Comma-separated. Vercel preview deployments get their own subdomain per
 # branch, so the production origin alone is not enough if you want previews to
 # talk to the API too.
-ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173"
+ALLOWED_ORIGINS = "http://localhost:5173,http://localhost:4173,https://just-do-it-just-do-it.vercel.app"
 
 # CLERK_SECRET_KEY is a secret and must NOT live here.
 #   pnpm --filter @just-do-it/api exec wrangler secret put CLERK_SECRET_KEY
