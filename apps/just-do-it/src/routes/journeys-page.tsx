@@ -1,11 +1,12 @@
 import { format, parseISO } from 'date-fns';
-import { Compass, Play, Plus, Trash2 } from 'lucide-react';
+import { Compass, Play, Plus, RotateCcw, Trash2 } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 
 import { Badge, Button, Card, Input } from '@just-do-it/ui';
 import {
   JourneyProgressBar,
+  RestartJourneyDialog,
   getCurrentDayIndex,
   getEndDateKey,
   selectCompletionsForEnrollment,
@@ -20,7 +21,13 @@ import {
   type Journey,
   type JourneyCompletion,
 } from '../features/journeys';
-import { useSyncedEnrollInJourney, useSyncedLeaveJourney } from '../features/sync';
+import {
+  useSyncedEnrollInJourney,
+  useSyncedLeaveJourney,
+  useSyncedRestartEnrollment,
+} from '../features/sync';
+
+type RestartNotice = { tone: 'success' | 'problem'; text: string };
 
 function formatJourneyDate(dateKey: string): string {
   return format(parseISO(dateKey), 'd MMM yyyy');
@@ -48,10 +55,12 @@ function EnrolledJourneyCard({
   completions,
   enrolled,
   onLeave,
+  onRestart,
 }: {
   completions: readonly JourneyCompletion[];
   enrolled: EnrolledJourney;
   onLeave: () => void;
+  onRestart: () => void;
 }) {
   const { enrollment, journey } = enrolled;
   const now = new Date();
@@ -101,9 +110,15 @@ function EnrolledJourneyCard({
         >
           Open
         </Link>
-        <Button aria-label={`Leave ${journey.title}`} onClick={onLeave} variant="ghost">
-          <Trash2 aria-hidden="true" className="size-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button aria-label={`Restart ${journey.title}`} onClick={onRestart} variant="ghost">
+            <RotateCcw aria-hidden="true" className="mr-2 size-4" />
+            Restart
+          </Button>
+          <Button aria-label={`Leave ${journey.title}`} onClick={onLeave} variant="ghost">
+            <Trash2 aria-hidden="true" className="size-4" />
+          </Button>
+        </div>
       </div>
     </Card>
   );
@@ -115,15 +130,49 @@ export function JourneysPage() {
   const completions = useJourneyCompletions();
   const enrollInJourney = useSyncedEnrollInJourney();
   const leaveJourney = useSyncedLeaveJourney();
+  const restartEnrollment = useSyncedRestartEnrollment();
   const createJourney = useCreateJourney();
 
   const [startDate, setStartDate] = useState(() => toJourneyDateKey(new Date()));
   const [newJourneyTitle, setNewJourneyTitle] = useState('');
   const [newJourneyDays, setNewJourneyDays] = useState(30);
+  const [restartingId, setRestartingId] = useState<string | null>(null);
+  const [restartError, setRestartError] = useState<string | null>(null);
+  const [restartNotice, setRestartNotice] = useState<RestartNotice | null>(null);
 
   const enrolledJourneys = selectEnrolledJourneys(journeys, enrollments);
   const enrolledJourneyIds = new Set(enrolledJourneys.map((entry) => entry.journey.id));
   const availableJourneys = journeys.filter((journey) => !enrolledJourneyIds.has(journey.id));
+  const restarting = enrolledJourneys.find((entry) => entry.enrollment.id === restartingId) ?? null;
+
+  function openRestart(enrollmentId: string) {
+    setRestartError(null);
+    setRestartNotice(null);
+    setRestartingId(enrollmentId);
+  }
+
+  async function handleRestart(enrolled: EnrolledJourney, startDate: string) {
+    const { title } = enrolled.journey;
+    const dayOne = formatJourneyDate(startDate);
+    const result = await restartEnrollment(enrolled.enrollment.id, startDate).catch(
+      () => ({ status: 'not-restarted' }) as const,
+    );
+
+    if (result.status === 'not-restarted') {
+      setRestartError(`Couldn't restart ${title}. Nothing was changed, so you can try again.`);
+      return;
+    }
+
+    setRestartingId(null);
+    setRestartNotice(
+      result.status === 'restarted'
+        ? { tone: 'success', text: `Restarted ${title}. Day 1 is ${dayOne}.` }
+        : {
+            tone: 'problem',
+            text: `Started ${title} again from ${dayOne}, but couldn't remove the old run. Leave the old one to tidy up.`,
+          },
+    );
+  }
 
   function handleCreateJourney(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -160,6 +209,24 @@ export function JourneysPage() {
           Running
         </h2>
 
+        {/* Always mounted, so a screen reader is already listening when the
+            restart lands. The problem case is an alert and interrupts. */}
+        <div role="status">
+          {restartNotice?.tone === 'success' ? (
+            <p className="rounded-lg bg-[var(--success-subtle)] p-3 text-sm text-[var(--success)]">
+              {restartNotice.text}
+            </p>
+          ) : null}
+        </div>
+        {restartNotice?.tone === 'problem' ? (
+          <p
+            className="rounded-lg bg-[var(--warning-subtle)] p-3 text-sm text-[var(--warning)]"
+            role="alert"
+          >
+            {restartNotice.text}
+          </p>
+        ) : null}
+
         {enrolledJourneys.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--border)] bg-[var(--surface-muted)] p-6 text-center">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-[var(--surface)] text-[var(--muted-foreground)]">
@@ -177,6 +244,7 @@ export function JourneysPage() {
                 enrolled={enrolled}
                 key={enrolled.enrollment.id}
                 onLeave={() => leaveJourney(enrolled.enrollment.id)}
+                onRestart={() => openRestart(enrolled.enrollment.id)}
               />
             ))}
           </div>
@@ -282,6 +350,18 @@ export function JourneysPage() {
           </form>
         </Card>
       </section>
+
+      {restarting ? (
+        <RestartJourneyDialog
+          completedCount={
+            selectCompletionsForEnrollment(completions, restarting.enrollment.id).length
+          }
+          error={restartError}
+          journeyTitle={restarting.journey.title}
+          onCancel={() => setRestartingId(null)}
+          onRestart={(startDate) => handleRestart(restarting, startDate)}
+        />
+      ) : null}
     </div>
   );
 }
