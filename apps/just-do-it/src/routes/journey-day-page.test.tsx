@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -59,8 +59,17 @@ function renderDay(enrollmentId = ENROLLMENT_ID) {
         <Route path="/journeys/:enrollmentId" element={<JourneyDayPage />} />
         <Route path="/journeys" element={<p>Journeys list</p>} />
       </Routes>
+      <LocationProbe />
     </MemoryRouter>,
   );
+}
+
+// Restart replaces the enrollment in the URL, so the tests read where the router
+// ended up rather than trusting what the page happens to render.
+function LocationProbe() {
+  const location = useLocation();
+
+  return <p data-testid="location">{location.pathname}</p>;
 }
 
 function setUpUser() {
@@ -279,5 +288,70 @@ describe('JourneyDayPage — outside the window', () => {
       'href',
       '/journeys',
     );
+  });
+});
+
+describe('JourneyDayPage — restarting', () => {
+  async function restartFromHeader(user: ReturnType<typeof setUpUser>, startDate?: string) {
+    await user.click(screen.getByRole('button', { name: 'Restart 100-Day Discipline Challenge' }));
+
+    const dialog = screen.getByRole('dialog', { name: 'Restart 100-Day Discipline Challenge?' });
+
+    if (startDate) {
+      await user.click(within(dialog).getByRole('radio', { name: 'Start on a date' }));
+      fireEvent.change(within(dialog).getByLabelText('Start date'), {
+        target: { value: startDate },
+      });
+    }
+
+    await user.click(within(dialog).getByRole('button', { name: 'Restart' }));
+  }
+
+  function newEnrollmentId(): string {
+    const [enrollment] = useJourneyStore.getState().enrollments;
+
+    if (!enrollment) throw new Error('Expected a running enrollment');
+
+    return enrollment.id;
+  }
+
+  it('offers a restart in the header', () => {
+    renderDay();
+
+    expect(
+      screen.getByRole('button', { name: 'Restart 100-Day Discipline Challenge' }),
+    ).toBeInTheDocument();
+  });
+
+  it('moves to the new run after restarting today, with nothing ticked', async () => {
+    const user = setUpUser();
+    renderDay();
+
+    await restartFromHeader(user);
+
+    const enrollmentId = newEnrollmentId();
+
+    expect(enrollmentId).not.toBe(ENROLLMENT_ID);
+    // The navigation follows the restart's promise, so it lands a tick later.
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent(`/journeys/${enrollmentId}`),
+    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Day 1 of 100' })).toBeInTheDocument();
+    expect(screen.getByText('0 of 5 done')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Restarted 100-Day Discipline Challenge. Day 1 is 12 Sep 2026.',
+    );
+  });
+
+  it('counts days from the chosen start date', async () => {
+    const user = setUpUser();
+    renderDay();
+
+    await restartFromHeader(user, '2026-09-05');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('location')).toHaveTextContent(`/journeys/${newEnrollmentId()}`),
+    );
+    expect(screen.getByRole('heading', { level: 1, name: 'Day 8 of 100' })).toBeInTheDocument();
   });
 });
