@@ -2,6 +2,7 @@ export {
   useSyncStatus,
   useSyncedEnrollInJourney,
   useSyncedLeaveJourney,
+  useSyncedRestartEnrollment,
   useSyncedToggleActivity,
 } from './hooks';
 export { JourneySync } from './journey-sync';
@@ -15,5 +16,5 @@ export {
 } from './sync-client';
 export type { TokenGetter } from './sync-client';
 export { apiUrl, isApiConfigured } from './sync-config';
-export type { SyncSnapshot, SyncStatus, SyncedState } from './types';
+export type { JourneyRestartResult, SyncSnapshot, SyncStatus, SyncedState } from './types';
 export { SYNC_STATUS_VALUES } from './types';

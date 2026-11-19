@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
-import { render, screen } from '@testing-library/react';
+import { act, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { EXAMPLE_JOURNEY_COMPLETIONS } from '../../test/journey-baseline';
 import { useJourneyStore } from '../journeys';
-import { useSyncedEnrollInJourney, useSyncedLeaveJourney, useSyncedToggleActivity } from './hooks';
+import {
+  useSyncedEnrollInJourney,
+  useSyncedLeaveJourney,
+  useSyncedRestartEnrollment,
+  useSyncedToggleActivity,
+} from './hooks';
+import type { JourneyRestartResult } from './types';
 import { JourneySync } from './journey-sync';
 
 // This build has no VITE_API_URL and no Clerk key — Vite inlines both, so a test
@@ -106,6 +112,89 @@ describe('the synced hooks with no API configured', () => {
 
     expect(useJourneyStore.getState().enrollments).toHaveLength(0);
     expect(useJourneyStore.getState().completions).toHaveLength(0);
+  });
+});
+
+// Restart is enrol-then-leave: a new run of the same journey on the chosen date,
+// and the old run removed with its ticks. Signed out, both halves are local.
+describe('useSyncedRestartEnrollment with no API configured', () => {
+  async function restart(enrollmentId: string, startDate: string): Promise<JourneyRestartResult> {
+    const { result } = renderHook(() => useSyncedRestartEnrollment());
+    let outcome: JourneyRestartResult | undefined;
+
+    await act(async () => {
+      outcome = await result.current(enrollmentId, startDate);
+    });
+
+    if (!outcome) throw new Error('Expected the restart to settle');
+
+    return outcome;
+  }
+
+  it('starts a new run of the same journey on the chosen date', async () => {
+    const outcome = await restart(ENROLLMENT_ID, '2026-11-02');
+
+    if (outcome.status !== 'restarted')
+      throw new Error(`Expected a restart, got ${outcome.status}`);
+
+    const { enrollments } = useJourneyStore.getState();
+
+    expect(outcome.enrollmentId).not.toBe(ENROLLMENT_ID);
+    expect(enrollments).toHaveLength(1);
+    expect(enrollments[0]).toMatchObject({
+      id: outcome.enrollmentId,
+      journeyId: 'hundred-day-discipline',
+      startDate: '2026-11-02',
+    });
+  });
+
+  it('removes the old run and the activities ticked on it', async () => {
+    expect(useJourneyStore.getState().completions.length).toBeGreaterThan(0);
+
+    await restart(ENROLLMENT_ID, '2026-11-02');
+
+    const state = useJourneyStore.getState();
+
+    expect(state.enrollments.some((entry) => entry.id === ENROLLMENT_ID)).toBe(false);
+    expect(state.completions).toEqual([]);
+  });
+
+  it('leaves other runs and their ticks alone', async () => {
+    // A second run of the same journey shares its activity ids, which is what
+    // makes this worth checking: only the restarted run's ticks may go.
+    const otherId = useJourneyStore
+      .getState()
+      .enrollInJourney('hundred-day-discipline', '2027-01-01');
+
+    if (!otherId) throw new Error('Expected the second enrollment to be created');
+
+    useJourneyStore.getState().toggleActivityCompletion(otherId, 1, 'day-1-reflection');
+
+    await restart(ENROLLMENT_ID, '2026-11-02');
+
+    const state = useJourneyStore.getState();
+
+    expect(state.enrollments.map((entry) => entry.id)).toContain(otherId);
+    expect(state.completions.map((completion) => completion.enrollmentId)).toEqual([otherId]);
+  });
+
+  it('changes nothing for a run that does not exist', async () => {
+    const before = useJourneyStore.getState();
+
+    const outcome = await restart('no-such-run', '2026-11-02');
+
+    expect(outcome).toEqual({ status: 'not-restarted' });
+    expect(useJourneyStore.getState().enrollments).toEqual(before.enrollments);
+    expect(useJourneyStore.getState().completions).toEqual(before.completions);
+  });
+
+  it('makes no network request', async () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+
+    await restart(ENROLLMENT_ID, '2026-11-02');
+
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 });
 
