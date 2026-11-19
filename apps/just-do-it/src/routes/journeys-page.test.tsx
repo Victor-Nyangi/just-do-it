@@ -171,6 +171,95 @@ describe('JourneysPage — leaving a journey', () => {
   });
 });
 
+// Restarting is a fresh run of the same journey from a chosen day, replacing the
+// old run and the ticks on it. The card is the entry point.
+describe('JourneysPage — restarting a journey', () => {
+  async function openRestart(user: ReturnType<typeof setUpUser>) {
+    await user.click(
+      within(runningSection()).getByRole('button', {
+        name: 'Restart 100-Day Discipline Challenge',
+      }),
+    );
+
+    return screen.getByRole('dialog', { name: 'Restart 100-Day Discipline Challenge?' });
+  }
+
+  it('offers a restart beside leave on the running card', () => {
+    renderJourneys();
+
+    expect(
+      within(runningSection()).getByRole('button', {
+        name: 'Restart 100-Day Discipline Challenge',
+      }),
+    ).toBeInTheDocument();
+  });
+
+  it('says how many ticks the restart will clear', async () => {
+    const user = setUpUser();
+    renderJourneys();
+
+    const dialog = await openRestart(user);
+
+    expect(
+      within(dialog).getByText(
+        "This clears the 2 activities you've ticked on this run and starts day 1 on 12 Sep 2026. It can't be undone.",
+      ),
+    ).toBeInTheDocument();
+  });
+
+  it('closes without changing anything on cancel', async () => {
+    const user = setUpUser();
+    renderJourneys();
+    const before = useJourneyStore.getState();
+
+    const dialog = await openRestart(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(useJourneyStore.getState().enrollments).toEqual(before.enrollments);
+    expect(useJourneyStore.getState().completions).toEqual(before.completions);
+  });
+
+  it('restarts today as a new run with nothing ticked', async () => {
+    const user = setUpUser();
+    renderJourneys();
+
+    const dialog = await openRestart(user);
+    await user.click(within(dialog).getByRole('button', { name: 'Restart' }));
+
+    const { completions, enrollments } = useJourneyStore.getState();
+
+    expect(enrollments).toHaveLength(1);
+    expect(enrollments[0]).toMatchObject({
+      journeyId: 'hundred-day-discipline',
+      startDate: '2026-09-12',
+    });
+    expect(enrollments[0].id).not.toBe('enrollment-discipline');
+    expect(completions).toEqual([]);
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(within(runningSection()).getByText('Day 1/100')).toBeInTheDocument();
+    expect(within(runningSection()).getByText('0%')).toBeInTheDocument();
+  });
+
+  it('restarts on a chosen date and says so', async () => {
+    const user = setUpUser();
+    renderJourneys();
+
+    const dialog = await openRestart(user);
+    await user.click(within(dialog).getByRole('radio', { name: 'Start on a date' }));
+    fireEvent.change(within(dialog).getByLabelText('Start date'), {
+      target: { value: '2026-09-05' },
+    });
+    await user.click(within(dialog).getByRole('button', { name: 'Restart' }));
+
+    expect(within(runningSection()).getByText(/5 Sep 2026\s*–\s*13 Dec 2026/)).toBeInTheDocument();
+    expect(within(runningSection()).getByText('Day 8/100')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Restarted 100-Day Discipline Challenge. Day 1 is 5 Sep 2026.',
+    );
+  });
+});
+
 describe('JourneysPage — creating a journey', () => {
   it('adds the new journey to the available list', async () => {
     const user = setUpUser();
