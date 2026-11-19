@@ -1,13 +1,23 @@
 import { format, parseISO } from 'date-fns';
-import { BookOpen, Brain, Check, ChevronLeft, ChevronRight, Dumbbell, PenLine } from 'lucide-react';
+import {
+  BookOpen,
+  Brain,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  PenLine,
+  RotateCcw,
+} from 'lucide-react';
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 
 import { Badge, Button, Card, cn } from '@just-do-it/ui';
 import {
   JourneyNav,
   JourneyNotFound,
   JourneyProgressBar,
+  RestartJourneyDialog,
   buildDayPlan,
   clampDayIndex,
   getCurrentDayIndex,
@@ -22,7 +32,9 @@ import {
   type JourneyActivityCategory,
   type JourneyCompletion,
 } from '../features/journeys';
-import { useSyncedToggleActivity } from '../features/sync';
+import { useSyncedRestartEnrollment, useSyncedToggleActivity } from '../features/sync';
+
+type RestartNotice = { tone: 'success' | 'problem'; text: string };
 
 const CATEGORY_LABELS: Readonly<Record<JourneyActivityCategory, string>> = {
   physical: 'Physical',
@@ -42,12 +54,20 @@ function formatJourneyDate(dateKey: string): string {
   return format(parseISO(dateKey), 'EEEE, d MMMM yyyy');
 }
 
+function formatShortDate(dateKey: string): string {
+  return format(parseISO(dateKey), 'd MMM yyyy');
+}
+
 function JourneyDayView({
   completions,
   enrolled,
+  onRestart,
+  restartNotice,
 }: {
   completions: readonly JourneyCompletion[];
   enrolled: EnrolledJourney;
+  onRestart: () => void;
+  restartNotice: RestartNotice | null;
 }) {
   const { enrollment, journey } = enrolled;
   const now = new Date();
@@ -81,13 +101,40 @@ function JourneyDayView({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-8 sm:py-12">
-      <section className="mb-6">
-        <Badge tone="accent">{journey.title}</Badge>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-          Day {plan.dayIndex} of {journey.totalDays}
-        </h1>
-        <p className="mt-2 text-[var(--muted-foreground)]">{formatJourneyDate(plan.date)}</p>
+      <section className="mb-6 flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <Badge tone="accent">{journey.title}</Badge>
+          <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
+            Day {plan.dayIndex} of {journey.totalDays}
+          </h1>
+          <p className="mt-2 text-[var(--muted-foreground)]">{formatJourneyDate(plan.date)}</p>
+        </div>
+        <Button
+          aria-label={`Restart ${journey.title}`}
+          className="shrink-0"
+          onClick={onRestart}
+          variant="secondary"
+        >
+          <RotateCcw aria-hidden="true" className="size-4 sm:mr-2" />
+          <span className="hidden sm:inline">Restart</span>
+        </Button>
       </section>
+
+      <div className="mb-6 empty:hidden" role="status">
+        {restartNotice?.tone === 'success' ? (
+          <p className="rounded-lg bg-[var(--success-subtle)] p-3 text-sm text-[var(--success)]">
+            {restartNotice.text}
+          </p>
+        ) : null}
+      </div>
+      {restartNotice?.tone === 'problem' ? (
+        <p
+          className="mb-6 rounded-lg bg-[var(--warning-subtle)] p-3 text-sm text-[var(--warning)]"
+          role="alert"
+        >
+          {restartNotice.text}
+        </p>
+      ) : null}
 
       <div className="mb-6">
         <JourneyNav enrollmentId={enrollment.id} />
@@ -239,16 +286,72 @@ export function JourneyDayPage() {
   const enrollment = useJourneyEnrollment(enrollmentId);
   const journey = useJourneyById(enrollment?.journeyId ?? '');
   const allCompletions = useJourneyCompletions();
+  const restartEnrollment = useSyncedRestartEnrollment();
+  const navigate = useNavigate();
+
+  // Held out here rather than in the view: a restart swaps the enrollment in
+  // the URL, which remounts the keyed view, and the notice has to survive that.
+  const [restartOpen, setRestartOpen] = useState(false);
+  const [restartError, setRestartError] = useState<string | null>(null);
+  const [restartNotice, setRestartNotice] = useState<RestartNotice | null>(null);
 
   if (!enrollment || !journey) return <JourneyNotFound />;
 
+  const completions = selectCompletionsForEnrollment(allCompletions, enrollment.id);
+
+  function openRestart() {
+    setRestartError(null);
+    setRestartNotice(null);
+    setRestartOpen(true);
+  }
+
+  async function handleRestart(title: string, oldEnrollmentId: string, startDate: string) {
+    const dayOne = formatShortDate(startDate);
+    const result = await restartEnrollment(oldEnrollmentId, startDate).catch(
+      () => ({ status: 'not-restarted' }) as const,
+    );
+
+    if (result.status === 'not-restarted') {
+      setRestartError(`Couldn't restart ${title}. Nothing was changed, so you can try again.`);
+      return;
+    }
+
+    setRestartOpen(false);
+    setRestartNotice(
+      result.status === 'restarted'
+        ? { tone: 'success', text: `Restarted ${title}. Day 1 is ${dayOne}.` }
+        : {
+            tone: 'problem',
+            text: `Started ${title} again from ${dayOne}, but couldn't remove the old run. Leave the old one from Journeys to tidy up.`,
+          },
+    );
+    // The old enrollment's URL now points at nothing (or, if it could not be
+    // removed, at the run the person just replaced), so this page follows the
+    // new one. Replace rather than push, so Back does not land on it.
+    navigate(`/journeys/${result.enrollmentId}`, { replace: true });
+  }
+
   return (
-    <JourneyDayView
-      completions={selectCompletionsForEnrollment(allCompletions, enrollment.id)}
-      enrolled={{ enrollment, journey }}
-      // Switching enrollment must reset which day is being viewed, and that
-      // day lives in `useState` inside the view.
-      key={enrollment.id}
-    />
+    <>
+      <JourneyDayView
+        completions={completions}
+        enrolled={{ enrollment, journey }}
+        // Switching enrollment must reset which day is being viewed, and that
+        // day lives in `useState` inside the view.
+        key={enrollment.id}
+        onRestart={openRestart}
+        restartNotice={restartNotice}
+      />
+
+      {restartOpen ? (
+        <RestartJourneyDialog
+          completedCount={completions.length}
+          error={restartError}
+          journeyTitle={journey.title}
+          onCancel={() => setRestartOpen(false)}
+          onRestart={(startDate) => handleRestart(journey.title, enrollment.id, startDate)}
+        />
+      ) : null}
+    </>
   );
 }
