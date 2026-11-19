@@ -5,7 +5,7 @@ import { useJourneyStore } from '../journeys';
 import { createRemoteEnrollment, deleteRemoteEnrollment, pushToggle } from './sync-client';
 import { isApiConfigured } from './sync-config';
 import { SyncStatusContext } from './sync-context';
-import type { SyncSnapshot } from './types';
+import type { JourneyRestartResult, SyncSnapshot } from './types';
 
 export function useSyncStatus(): SyncSnapshot {
   return useContext(SyncStatusContext);
@@ -99,5 +99,60 @@ export function useSyncedLeaveJourney(): (enrollmentId: string) => void {
       });
     },
     [getToken, leaveLocally, syncing],
+  );
+}
+
+const NOT_RESTARTED: JourneyRestartResult = { status: 'not-restarted' };
+
+// Restarting is a new run of the same journey on a chosen day, replacing the
+// old run and everything ticked on it. It is composed from the two paths above
+// rather than being a single server call, so the API needs nothing new.
+//
+// The order is the point: the new run is created first and the old one removed
+// only once that has worked. A failure part-way therefore leaves, at worst, two
+// runs of the same journey — which the server already permits — and never none.
+export function useSyncedRestartEnrollment(): (
+  enrollmentId: string,
+  startDate: string,
+) => Promise<JourneyRestartResult> {
+  const syncing = useIsSyncing();
+  const getToken = useAuthTokenGetter();
+  const enrollInJourney = useSyncedEnrollInJourney();
+  const leaveLocally = useJourneyStore((state) => state.leaveJourney);
+
+  return useCallback(
+    async (enrollmentId, startDate) => {
+      // Read at call time rather than subscribed to: the hook has no reason to
+      // re-render when enrollments change, only to know which journey this is.
+      const existing = useJourneyStore
+        .getState()
+        .enrollments.find((enrollment) => enrollment.id === enrollmentId);
+
+      if (!existing) return NOT_RESTARTED;
+
+      // Signed in, this round-trips and adopts the server's row; signed out it
+      // is the local action. Either way a failure is a null and nothing moved.
+      const newEnrollmentId = await enrollInJourney(existing.journeyId, startDate);
+
+      if (!newEnrollmentId) return NOT_RESTARTED;
+
+      if (syncing) {
+        // Unlike a plain leave, this waits for the server before touching the
+        // local record. A leave that fails is invisible until the next
+        // hydration brings the run back; here the person has just been told
+        // their journey restarted, so a run that would quietly reappear has to
+        // be reported instead, and kept locally so what they see stays true.
+        try {
+          await deleteRemoteEnrollment(getToken, enrollmentId);
+        } catch {
+          return { status: 'old-run-kept', enrollmentId: newEnrollmentId };
+        }
+      }
+
+      leaveLocally(enrollmentId);
+
+      return { status: 'restarted', enrollmentId: newEnrollmentId };
+    },
+    [enrollInJourney, getToken, leaveLocally, syncing],
   );
 }
