@@ -2,6 +2,8 @@ export { JourneyNotFound } from './components/journey-not-found';
 export { JourneyExportCard } from './components/journey-export-card';
 export { JourneyNav } from './components/journey-nav';
 export { JourneyProgressBar } from './components/journey-progress-bar';
+export { RestartJourneyDialog } from './components/restart-journey-dialog';
+export type { RestartJourneyDialogProps } from './components/restart-journey-dialog';
 export { completeJourneyActivity, getJourneyDay, getJourneyStats } from './journey-api';
 export type { JourneyDayResponse } from './journey-api';
 export {
